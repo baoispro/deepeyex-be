@@ -13,7 +13,7 @@ DATA_DIR = os.path.join(BASE_DIR, "data")
 MODEL_DIR = os.path.join(BASE_DIR, "models")
 
 BATCH_SIZE = 16
-EPOCHS = 10
+EPOCHS = 20
 LR = 1e-4
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -50,13 +50,16 @@ def main():
     model = timm.create_model("efficientnet_b3", pretrained=True)
     model.classifier = nn.Linear(model.classifier.in_features, NUM_CLASSES)
     model = model.to(DEVICE)
+    
+    for param in model.parameters():
+        param.requires_grad = True
 
     # ===== 5. Loss & Optimizer =====
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=LR)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=LR, weight_decay=1e-4)
 
     # Scheduler giảm lr mỗi 3 epoch
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', patience=3, factor=0.1)
 
     train_acc_history, test_acc_history = [], []
     best_acc = 0
@@ -101,7 +104,7 @@ def main():
         test_acc_history.append(test_acc)
 
         # Update learning rate
-        scheduler.step()
+        scheduler.step(test_acc)
 
         print(f"Epoch [{epoch+1}/{EPOCHS}] "
               f"Train Acc: {train_acc:.2f}% | Test Acc: {test_acc:.2f}%")
@@ -110,7 +113,7 @@ def main():
         if test_acc > best_acc:
             best_acc = test_acc
             os.makedirs(MODEL_DIR, exist_ok=True)
-            torch.save(model.state_dict(), os.path.join(MODEL_DIR, "best_efficientnet_b3.pth"))
+            torch.save(model.state_dict(), os.path.join(MODEL_DIR, "best_efficientnet_b3_ver2.pth"))
             print(f"✅ Best model saved with Test Acc: {best_acc:.2f}%")
 
     # ===== 7. Plot accuracy =====
