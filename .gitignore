@@ -1,3 +1,5 @@
 .venv
 retinal_service/data
 retinal_service/raw-images
+external_eye_service/data
+external_eye_service/raw-images

@@ -2,3 +2,7 @@ torch
 torchvision
 timm
 matplotlib
+fastapi
+uvicorn[standard]
+numpy
+python-multipart
