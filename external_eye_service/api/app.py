@@ -105,7 +105,7 @@ except Exception as e:
     print(f"[WARN] Không thể load model: {e}")
 
 # -------- FastAPI app --------
-app = FastAPI(title="Retinal Disease Classifier")
+app = FastAPI(title="External Eye Disease Classifier")
 
 @app.get("/health")
 def health():
@@ -179,5 +179,4 @@ async def predict_and_save(file: UploadFile = File(...), folder: str = "uploads"
     return {"saved_to": save_path, "predictions": results}
 
 if __name__ == "__main__":
-    # Chạy server FastAPI
-    uvicorn.run(app, host="0.0.0.0", port=8083, reload=True)
+    uvicorn.run("app:app", host="0.0.0.0", port=8083, reload=True)
