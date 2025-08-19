@@ -12,6 +12,8 @@ services:
       - "5432:5432"
     volumes:
       - kong_db_data:/var/lib/postgresql/data
+    networks:
+      - kong-net
 
   kong-migrations:
     image: kong:3.6
@@ -25,6 +27,8 @@ services:
       KONG_PG_PASSWORD: 12345
       KONG_PG_USER: postgres
       KONG_PG_DATABASE: kong
+    networks:
+      - kong-net
 
   kong:
     image: kong:3.6
@@ -47,6 +51,25 @@ services:
       - "8443:8443"
       - "8001:8001"
       - "8444:8444"
+    networks:
+      - kong-net
+
+  konga:
+    image: pantsel/konga
+    container_name: konga
+    restart: always
+    environment:
+      NODE_ENV: production
+    ports:
+      - "1337:1337"
+    networks:
+      - kong-net
+    depends_on:
+      - kong
 
 volumes:
   kong_db_data:
+
+networks:
+  kong-net:
+    driver: bridge
