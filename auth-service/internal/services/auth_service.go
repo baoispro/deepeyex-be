@@ -6,6 +6,8 @@ import (
 	"auth-service/internal/models"
 	"auth-service/internal/repositories"
 	"auth-service/internal/utils"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"time"
 
@@ -23,7 +25,7 @@ func NewAuthService(cfg config.Config, ur *repositories.UserRepo, tr *repositori
 	return &AuthService{cfg: cfg, userRepo: ur, tokenRepo: tr}
 }
 
-// Register user
+// ---------------- Register ----------------
 func (s *AuthService) Register(username, password string, role enums.Role) error {
 	if role != enums.Patient && role != enums.Doctor && role != enums.Admin {
 		return errors.New("invalid role")
@@ -31,17 +33,18 @@ func (s *AuthService) Register(username, password string, role enums.Role) error
 	if _, err := s.userRepo.FindByUsername(username); err == nil {
 		return errors.New("username already exists")
 	}
-	pwd, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+
+	hashedPwd, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	u := &models.User{
 		ID:       uuid.NewString(),
 		Username: username,
-		Password: string(pwd),
+		Password: string(hashedPwd),
 		Role:     role,
 	}
 	return s.userRepo.Create(u)
 }
 
-// Login -> return access, refresh, expires, user info
+// ---------------- Login ----------------
 func (s *AuthService) Login(username, password string) (access string, aExp time.Time, refresh string, rExp time.Time, u *models.User, err error) {
 	u, err = s.userRepo.FindByUsername(username)
 	if err != nil {
@@ -51,30 +54,32 @@ func (s *AuthService) Login(username, password string) (access string, aExp time
 		return "", time.Time{}, "", time.Time{}, nil, errors.New("invalid credentials")
 	}
 
+	// Revoke all existing refresh tokens
+	if err := s.tokenRepo.RevokeAllForUser(u.ID); err != nil {
+		return "", time.Time{}, "", time.Time{}, nil, err
+	}
+
+	// Generate access & refresh tokens
 	access, aExp, _ = utils.GenerateAccessToken(s.cfg, u.ID, string(u.Role))
 	refresh, rExp, _ = utils.GenerateRefreshToken(s.cfg, u.ID)
 
-	// Save refresh token hash
-	if err := s.tokenRepo.Save(u.ID, hashString(refresh), rExp); err != nil {
+	// Save refresh token hash (SHA256) vào DB
+	if err := s.tokenRepo.Save(u.ID, hashToken(refresh), rExp); err != nil {
 		return "", time.Time{}, "", time.Time{}, nil, err
 	}
+
 	return access, aExp, refresh, rExp, u, nil
 }
 
-// Refresh token -> new access, new refresh
+// ---------------- Refresh ----------------
 func (s *AuthService) Refresh(oldRefresh string) (access string, aExp time.Time, newRefresh string, newExp time.Time, err error) {
-	userIDClaims, err := utils.ParseRefreshToken(s.cfg, oldRefresh)
-	if err != nil {
-		return "", time.Time{}, "", time.Time{}, err
+	claims, err := utils.ParseRefreshToken(s.cfg, oldRefresh)
+	if err != nil || claims == nil {
+		return "", time.Time{}, "", time.Time{}, errors.New("invalid refresh token")
 	}
-	var userID string
-	if userIDClaims != nil {
-		userID = userIDClaims.Subject
-	} else {
-		return "", time.Time{}, "", time.Time{}, errors.New("invalid refresh token claims")
-	}
+	userID := claims.Subject
 
-	ok, uid, err := s.tokenRepo.IsValid(hashString(oldRefresh))
+	ok, uid, err := s.tokenRepo.IsValid(hashToken(oldRefresh))
 	if err != nil || !ok || uid != userID {
 		return "", time.Time{}, "", time.Time{}, errors.New("refresh token invalid/revoked")
 	}
@@ -84,26 +89,32 @@ func (s *AuthService) Refresh(oldRefresh string) (access string, aExp time.Time,
 		return "", time.Time{}, "", time.Time{}, errors.New("user not found")
 	}
 
-	// cấp access mới
+	// Generate new access token
 	access, aExp, _ = utils.GenerateAccessToken(s.cfg, u.ID, string(u.Role))
 
-	// rotate refresh token
-	_ = s.tokenRepo.RevokeByHash(hashString(oldRefresh))
+	// Revoke old refresh token
+	if err := s.tokenRepo.RevokeByHash(hashToken(oldRefresh)); err != nil {
+		return "", time.Time{}, "", time.Time{}, err
+	}
+
+	// Generate and save new refresh token
 	newRefresh, newExp, _ = utils.GenerateRefreshToken(s.cfg, u.ID)
-	_ = s.tokenRepo.Save(u.ID, hashString(newRefresh), newExp)
+	if err := s.tokenRepo.Save(u.ID, hashToken(newRefresh), newExp); err != nil {
+		return "", time.Time{}, "", time.Time{}, err
+	}
 
 	return access, aExp, newRefresh, newExp, nil
 }
 
-// Logout -> revoke token
+// ---------------- Logout ----------------
 func (s *AuthService) Logout(refresh string) {
 	if refresh != "" {
-		_ = s.tokenRepo.RevokeByHash(hashString(refresh))
+		_ = s.tokenRepo.RevokeByHash(hashToken(refresh))
 	}
 }
 
-// ----- helpers -----
-func hashString(s string) string {
-	b, _ := bcrypt.GenerateFromPassword([]byte(s), bcrypt.DefaultCost)
-	return string(b)
+// ---------------- Helpers ----------------
+func hashToken(token string) string {
+	h := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(h[:])
 }
