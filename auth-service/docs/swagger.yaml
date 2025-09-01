@@ -1,0 +1,168 @@
+basePath: /
+definitions:
+  enums.Role:
+    enum:
+    - patient
+    - doctor
+    - admin
+    type: string
+    x-enum-varnames:
+    - Patient
+    - Doctor
+    - Admin
+  handlers.loginReq:
+    properties:
+      password:
+        example: secret
+        type: string
+      username:
+        example: alice
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  handlers.registerReq:
+    properties:
+      password:
+        example: secret
+        type: string
+      role:
+        allOf:
+        - $ref: '#/definitions/enums.Role'
+        example: patient
+      username:
+        example: alice
+        type: string
+    required:
+    - password
+    - role
+    - username
+    type: object
+  handlers.tokenRes:
+    properties:
+      access_expire:
+        type: string
+      access_token:
+        type: string
+      role:
+        type: string
+      user_id:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Authentication service with JWT (access/refresh) via HttpOnly cookies
+  title: Auth Service API
+  version: "1.0"
+paths:
+  /login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Login
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.loginReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.tokenRes'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Login (set refresh cookie)
+      tags:
+      - Auth
+  /logout:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Logout (revoke refresh + clear cookie)
+      tags:
+      - Auth
+  /me:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get my profile (protected route)
+      tags:
+      - Me
+  /refresh:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.tokenRes'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Refresh access token (đọc refresh từ cookie) + rotate refresh token
+      tags:
+      - Auth
+  /register:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Register
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.registerReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Register user
+      tags:
+      - Auth
+swagger: "2.0"

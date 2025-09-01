@@ -1,0 +1,121 @@
+package handlers
+
+import (
+	"auth-service/internal/config"
+	"auth-service/internal/enums"
+	"auth-service/internal/services"
+	"net/http"
+	"time"
+
+	"github.com/gin-gonic/gin"
+)
+
+type AuthHandler struct {
+	service *services.AuthService
+	cfg     config.Config
+}
+
+func NewAuthHandler(cfg config.Config, service *services.AuthService) *AuthHandler {
+	return &AuthHandler{service: service, cfg: cfg}
+}
+
+type registerReq struct {
+	Username string     `json:"username" example:"alice" binding:"required"`
+	Password string     `json:"password" example:"secret" binding:"required"`
+	Role     enums.Role `json:"role" example:"patient" binding:"required"`
+}
+type loginReq struct {
+	Username string `json:"username" example:"alice" binding:"required"`
+	Password string `json:"password" example:"secret" binding:"required"`
+}
+type tokenRes struct {
+	AccessToken  string    `json:"access_token"`
+	AccessExpire time.Time `json:"access_expire"`
+	UserID       string    `json:"user_id,omitempty"`
+	Role         string    `json:"role,omitempty"`
+}
+
+// ----- helpers cookie -----
+func (h *AuthHandler) setRefreshCookie(c *gin.Context, token string, expires time.Time) {
+	c.SetCookie(
+		h.cfg.RefreshCookieName,
+		token,
+		int(time.Until(expires).Seconds()),
+		"/",
+		h.cfg.CookieDomain,
+		h.cfg.CookieSecure,
+		true,
+	)
+}
+
+func (h *AuthHandler) clearRefreshCookie(c *gin.Context) {
+	c.SetCookie(h.cfg.RefreshCookieName, "", -1, "/", h.cfg.CookieDomain, h.cfg.CookieSecure, true)
+}
+
+// Register
+func (h *AuthHandler) Register(c *gin.Context) {
+	var req registerReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
+		return
+	}
+	if err := h.service.Register(req.Username, req.Password, req.Role); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"message": "user registered"})
+}
+
+// Login
+func (h *AuthHandler) Login(c *gin.Context) {
+	var req loginReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
+		return
+	}
+	access, aExp, refresh, rExp, u, err := h.service.Login(req.Username, req.Password)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	h.setRefreshCookie(c, refresh, rExp)
+	c.JSON(http.StatusOK, tokenRes{
+		AccessToken:  access,
+		AccessExpire: aExp,
+		UserID:       u.ID,
+		Role:         string(u.Role),
+	})
+}
+
+// Refresh
+func (h *AuthHandler) Refresh(c *gin.Context) {
+	refreshCookie, err := c.Cookie(h.cfg.RefreshCookieName)
+	if err != nil || refreshCookie == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "missing refresh cookie"})
+		return
+	}
+
+	access, aExp, newRefresh, newExp, err := h.service.Refresh(refreshCookie)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	h.setRefreshCookie(c, newRefresh, newExp)
+	c.JSON(http.StatusOK, tokenRes{AccessToken: access, AccessExpire: aExp})
+}
+
+// Logout
+func (h *AuthHandler) Logout(c *gin.Context) {
+	if refresh, err := c.Cookie(h.cfg.RefreshCookieName); err == nil && refresh != "" {
+		h.service.Logout(refresh)
+	}
+	h.clearRefreshCookie(c)
+	c.JSON(http.StatusOK, gin.H{"message": "logged out"})
+}
+
+// Me
+func (h *AuthHandler) Me(c *gin.Context) {
+	uid := c.GetString("uid")
+	role := c.GetString("role")
+	c.JSON(http.StatusOK, gin.H{"user_id": uid, "role": role})
+}
