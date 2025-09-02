@@ -11,6 +11,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -46,29 +47,39 @@ func (s *AuthService) Register(username, password string, role enums.Role) error
 
 // ---------------- Login ----------------
 func (s *AuthService) Login(username, password string) (access string, aExp time.Time, refresh string, rExp time.Time, u *models.User, err error) {
-	u, err = s.userRepo.FindByUsername(username)
-	if err != nil {
-		return "", time.Time{}, "", time.Time{}, nil, errors.New("invalid credentials")
-	}
-	if bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password)) != nil {
-		return "", time.Time{}, "", time.Time{}, nil, errors.New("invalid credentials")
-	}
+    u, err = s.userRepo.FindByUsername(username)
+    if err != nil {
+        return "", time.Time{}, "", time.Time{}, nil, errors.New("invalid credentials")
+    }
+    if bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password)) != nil {
+        return "", time.Time{}, "", time.Time{}, nil, errors.New("invalid credentials")
+    }
 
-	// Revoke all existing refresh tokens
-	if err := s.tokenRepo.RevokeAllForUser(u.ID); err != nil {
-		return "", time.Time{}, "", time.Time{}, nil, err
-	}
+    // Lấy key/secret từ config hoặc DB (do bạn add trong Kong)
+    kongKey := "tMK7AdrE6lHxsFU1Qk0EPczXYvRKLw4K"
+    kongSecret := "Cdes9ghOllkzh0ZgmOvLdH97tdjImE42"
 
-	// Generate access & refresh tokens
-	access, aExp, _ = utils.GenerateAccessToken(s.cfg, u.ID, string(u.Role))
-	refresh, rExp, _ = utils.GenerateRefreshToken(s.cfg, u.ID)
+    // Sinh access token theo Kong yêu cầu
+    aExp = time.Now().Add(time.Hour)
+    claims := jwt.MapClaims{
+        "iss": kongKey,
+        "exp": aExp.Unix(),
+        "sub": u.ID,
+        "role": string(u.Role),
+    }
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+    access, err = token.SignedString([]byte(kongSecret))
+    if err != nil {
+        return "", time.Time{}, "", time.Time{}, nil, err
+    }
 
-	// Save refresh token hash (SHA256) vào DB
-	if err := s.tokenRepo.Save(u.ID, hashToken(refresh), rExp); err != nil {
-		return "", time.Time{}, "", time.Time{}, nil, err
-	}
+    // Refresh token logic: bạn vẫn có thể giữ như cũ (DB quản lý)
+    refresh, rExp, _ = utils.GenerateRefreshToken(s.cfg, u.ID)
+    if err := s.tokenRepo.Save(u.ID, hashToken(refresh), rExp); err != nil {
+        return "", time.Time{}, "", time.Time{}, nil, err
+    }
 
-	return access, aExp, refresh, rExp, u, nil
+    return access, aExp, refresh, rExp, u, nil
 }
 
 // ---------------- Refresh ----------------

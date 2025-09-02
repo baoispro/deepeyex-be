@@ -14,7 +14,6 @@ import (
 
 // @title Auth Service API
 // @version 1.0
-// @description Authentication service with JWT (access/refresh) via HttpOnly cookies
 // @BasePath /
 // @host localhost:8080
 func main() {

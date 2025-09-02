@@ -12,16 +12,19 @@ import (
 func SetupRouter(cfg *config.Config, authHandler *handlers.AuthHandler) *gin.Engine {
 	r := gin.Default()
 
-	// Auth routes
-	r.POST("/register", authHandler.Register)
-	r.POST("/login", authHandler.Login)
-	r.POST("/refresh", authHandler.Refresh)
-	r.POST("/logout", authHandler.Logout)
-
-	// Protected route sample
-	me := r.Group("/me")
+	// ===== Public routes =====
+	public := r.Group("/public")
 	{
-		me.GET("", authHandler.Me)
+		public.POST("/register", authHandler.Register)
+		public.POST("/login", authHandler.Login)
+		public.POST("/refresh", authHandler.Refresh)
+		public.POST("/logout", authHandler.Logout)
+	}
+
+	// ===== Protected routes (cần JWT) =====
+	private := r.Group("/private")
+	{
+		private.GET("/me", authHandler.Me)
 	}
 
 	// Swagger

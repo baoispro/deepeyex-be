@@ -53,6 +53,16 @@ func (h *AuthHandler) clearRefreshCookie(c *gin.Context) {
 }
 
 // Register
+// Register godoc
+// @Summary Register a new user
+// @Description Create a new account
+// @Tags Public
+// @Accept json
+// @Produce json
+// @Param user body registerReq true "Register request"
+// @Success 201 {object} map[string]string "User registered"
+// @Failure 400 {object} map[string]string "Invalid payload or registration failed"
+// @Router /public/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req registerReq
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -67,6 +77,16 @@ func (h *AuthHandler) Register(c *gin.Context) {
 }
 
 // Login
+// Login godoc
+// @Summary Login user
+// @Description Authenticate user and return access/refresh tokens
+// @Tags Public
+// @Accept json
+// @Produce json
+// @Param login body loginReq true "Login request"
+// @Success 200 {object} tokenRes
+// @Failure 401 {object} map[string]string "Invalid credentials"
+// @Router /public/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req loginReq
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -88,6 +108,13 @@ func (h *AuthHandler) Login(c *gin.Context) {
 }
 
 // Refresh
+// @Summary Refresh access token
+// @Description Generate new access token using refresh cookie
+// @Tags Public
+// @Produce json
+// @Success 200 {object} tokenRes
+// @Failure 401 {object} map[string]string "Missing or invalid refresh token"
+// @Router /public/refresh [post]
 func (h *AuthHandler) Refresh(c *gin.Context) {
 	refreshCookie, err := c.Cookie(h.cfg.RefreshCookieName)
 	if err != nil || refreshCookie == "" {
@@ -105,6 +132,13 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 }
 
 // Logout
+// Logout godoc
+// @Summary Logout user
+// @Description Clear refresh cookie and invalidate refresh token
+// @Tags Public
+// @Produce json
+// @Success 200 {object} map[string]string "Logged out"
+// @Router /public/logout [post]
 func (h *AuthHandler) Logout(c *gin.Context) {
 	if refresh, err := c.Cookie(h.cfg.RefreshCookieName); err == nil && refresh != "" {
 		h.service.Logout(refresh)
@@ -114,6 +148,14 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 }
 
 // Me
+// Me godoc
+// @Summary Get current user info
+// @Description Return user ID and role from JWT claims
+// @Tags Private
+// @Security BearerAuth
+// @Produce json
+// @Success 200 {object} map[string]string "User info"
+// @Router /private/me [get]
 func (h *AuthHandler) Me(c *gin.Context) {
 	uid := c.GetString("uid")
 	role := c.GetString("role")

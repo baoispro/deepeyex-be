@@ -15,8 +15,37 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/login": {
+        "/private/me": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Return user ID and role from JWT claims",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Private"
+                ],
+                "summary": "Get current user info",
+                "responses": {
+                    "200": {
+                        "description": "User info",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/public/login": {
             "post": {
+                "description": "Authenticate user and return access/refresh tokens",
                 "consumes": [
                     "application/json"
                 ],
@@ -24,13 +53,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Auth"
+                    "Public"
                 ],
-                "summary": "Login (set refresh cookie)",
+                "summary": "Login user",
                 "parameters": [
                     {
-                        "description": "Login",
-                        "name": "request",
+                        "description": "Login request",
+                        "name": "login",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -46,7 +75,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "Invalid credentials",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -57,18 +86,19 @@ const docTemplate = `{
                 }
             }
         },
-        "/logout": {
+        "/public/logout": {
             "post": {
+                "description": "Clear refresh cookie and invalidate refresh token",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "Auth"
+                    "Public"
                 ],
-                "summary": "Logout (revoke refresh + clear cookie)",
+                "summary": "Logout user",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Logged out",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -79,46 +109,16 @@ const docTemplate = `{
                 }
             }
         },
-        "/me": {
-            "get": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Me"
-                ],
-                "summary": "Get my profile (protected route)",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/refresh": {
+        "/public/refresh": {
             "post": {
+                "description": "Generate new access token using refresh cookie",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "Auth"
+                    "Public"
                 ],
-                "summary": "Refresh access token (đọc refresh từ cookie) + rotate refresh token",
+                "summary": "Refresh access token",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -127,7 +127,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "Missing or invalid refresh token",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -138,8 +138,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/register": {
+        "/public/register": {
             "post": {
+                "description": "Create a new account",
                 "consumes": [
                     "application/json"
                 ],
@@ -147,13 +148,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Auth"
+                    "Public"
                 ],
-                "summary": "Register user",
+                "summary": "Register a new user",
                 "parameters": [
                     {
-                        "description": "Register",
-                        "name": "request",
+                        "description": "Register request",
+                        "name": "user",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -163,7 +164,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created",
+                        "description": "User registered",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -172,7 +173,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid payload or registration failed",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -268,7 +269,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "Auth Service API",
-	Description:      "Authentication service with JWT (access/refresh) via HttpOnly cookies",
+	Description:      "",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

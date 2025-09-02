@@ -53,18 +53,35 @@ definitions:
 host: localhost:8080
 info:
   contact: {}
-  description: Authentication service with JWT (access/refresh) via HttpOnly cookies
   title: Auth Service API
   version: "1.0"
 paths:
-  /login:
+  /private/me:
+    get:
+      description: Return user ID and role from JWT claims
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User info
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get current user info
+      tags:
+      - Private
+  /public/login:
     post:
       consumes:
       - application/json
+      description: Authenticate user and return access/refresh tokens
       parameters:
-      - description: Login
+      - description: Login request
         in: body
-        name: request
+        name: login
         required: true
         schema:
           $ref: '#/definitions/handlers.loginReq'
@@ -76,50 +93,32 @@ paths:
           schema:
             $ref: '#/definitions/handlers.tokenRes'
         "401":
-          description: Unauthorized
+          description: Invalid credentials
           schema:
             additionalProperties:
               type: string
             type: object
-      summary: Login (set refresh cookie)
+      summary: Login user
       tags:
-      - Auth
-  /logout:
+      - Public
+  /public/logout:
     post:
+      description: Clear refresh cookie and invalidate refresh token
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Logged out
           schema:
             additionalProperties:
               type: string
             type: object
-      summary: Logout (revoke refresh + clear cookie)
+      summary: Logout user
       tags:
-      - Auth
-  /me:
-    get:
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Get my profile (protected route)
-      tags:
-      - Me
-  /refresh:
+      - Public
+  /public/refresh:
     post:
+      description: Generate new access token using refresh cookie
       produces:
       - application/json
       responses:
@@ -128,22 +127,23 @@ paths:
           schema:
             $ref: '#/definitions/handlers.tokenRes'
         "401":
-          description: Unauthorized
+          description: Missing or invalid refresh token
           schema:
             additionalProperties:
               type: string
             type: object
-      summary: Refresh access token (đọc refresh từ cookie) + rotate refresh token
+      summary: Refresh access token
       tags:
-      - Auth
-  /register:
+      - Public
+  /public/register:
     post:
       consumes:
       - application/json
+      description: Create a new account
       parameters:
-      - description: Register
+      - description: Register request
         in: body
-        name: request
+        name: user
         required: true
         schema:
           $ref: '#/definitions/handlers.registerReq'
@@ -151,18 +151,18 @@ paths:
       - application/json
       responses:
         "201":
-          description: Created
+          description: User registered
           schema:
             additionalProperties:
               type: string
             type: object
         "400":
-          description: Bad Request
+          description: Invalid payload or registration failed
           schema:
             additionalProperties:
               type: string
             type: object
-      summary: Register user
+      summary: Register a new user
       tags:
-      - Auth
+      - Public
 swagger: "2.0"
