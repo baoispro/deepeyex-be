@@ -1,0 +1,259 @@
+basePath: /
+definitions:
+  enums.Gender:
+    enum:
+    - male
+    - female
+    type: string
+    x-enum-varnames:
+    - Male
+    - Female
+  patient.Patient:
+    properties:
+      address:
+        type: string
+      created_at:
+        type: string
+      dob:
+        type: string
+      email:
+        type: string
+      full_name:
+        type: string
+      gender:
+        $ref: '#/definitions/enums.Gender'
+      patient_id:
+        type: string
+      phone:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  patienthandler.createPatientReq:
+    properties:
+      address:
+        type: string
+      dob:
+        type: string
+      email:
+        type: string
+      full_name:
+        type: string
+      gender:
+        enum:
+        - male
+        - female
+        - other
+        type: string
+      phone:
+        type: string
+      user_id:
+        type: string
+    required:
+    - dob
+    - full_name
+    - gender
+    - user_id
+    type: object
+  patienthandler.updatePatientReq:
+    properties:
+      address:
+        type: string
+      dob:
+        type: string
+      email:
+        type: string
+      full_name:
+        type: string
+      gender:
+        enum:
+        - male
+        - female
+        - other
+        type: string
+      phone:
+        type: string
+    type: object
+host: localhost:8081
+info:
+  contact: {}
+  title: Auth Service API
+  version: "1.0"
+paths:
+  /patients:
+    get:
+      description: Retrieve all patients
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/patient.Patient'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List all patients
+      tags:
+      - Patients
+    post:
+      consumes:
+      - application/json
+      description: Add a new patient record
+      parameters:
+      - description: Patient info
+        in: body
+        name: patient
+        required: true
+        schema:
+          $ref: '#/definitions/patienthandler.createPatientReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/patient.Patient'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new patient
+      tags:
+      - Patients
+  /patients/{patient_id}:
+    delete:
+      description: Delete patient by patient ID
+      parameters:
+      - description: Patient ID
+        in: path
+        name: patient_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete patient
+      tags:
+      - Patients
+    get:
+      description: Retrieve patient record using patient ID
+      parameters:
+      - description: Patient ID
+        in: path
+        name: patient_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/patient.Patient'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get patient by patient ID
+      tags:
+      - Patients
+    put:
+      consumes:
+      - application/json
+      description: Update patient record by patient ID
+      parameters:
+      - description: Patient ID
+        in: path
+        name: patient_id
+        required: true
+        type: string
+      - description: Updated patient info
+        in: body
+        name: patient
+        required: true
+        schema:
+          $ref: '#/definitions/patienthandler.updatePatientReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/patient.Patient'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update patient info
+      tags:
+      - Patients
+  /patients/user/{user_id}:
+    get:
+      description: Retrieve patient record using user ID
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/patient.Patient'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get patient by user ID
+      tags:
+      - Patients
+swagger: "2.0"
