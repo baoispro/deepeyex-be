@@ -1,5 +1,61 @@
 basePath: /
 definitions:
+  doctor.Doctor:
+    properties:
+      created_at:
+        description: Hospital   hospital.Hospital    `json:"hospital" gorm:"foreignKey:HospitalID;references:HospitalID"`
+        type: string
+      doctor_id:
+        type: string
+      email:
+        type: string
+      full_name:
+        type: string
+      hospital_id:
+        description: FK
+        type: string
+      phone:
+        type: string
+      specialty:
+        $ref: '#/definitions/enums.Specialty'
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  doctorhandler.createDoctorReq:
+    properties:
+      email:
+        type: string
+      full_name:
+        type: string
+      hospital_id:
+        type: string
+      phone:
+        type: string
+      specialty:
+        $ref: '#/definitions/enums.Specialty'
+      user_id:
+        type: string
+    required:
+    - full_name
+    - hospital_id
+    - specialty
+    - user_id
+    type: object
+  doctorhandler.updateDoctorReq:
+    properties:
+      email:
+        type: string
+      full_name:
+        type: string
+      hospital_id:
+        type: string
+      phone:
+        type: string
+      specialty:
+        $ref: '#/definitions/enums.Specialty'
+    type: object
   enums.Gender:
     enum:
     - male
@@ -8,6 +64,62 @@ definitions:
     x-enum-varnames:
     - Male
     - Female
+  enums.Specialty:
+    enum:
+    - ophthalmology
+    - internal_medicine
+    - surgery
+    - dermatology
+    - cardiology
+    type: string
+    x-enum-varnames:
+    - Ophthalmology
+    - Internal_medicine
+    - Surgery
+    - Dermatology
+    - Cardiology
+  hospital.Hospital:
+    properties:
+      address:
+        type: string
+      created_at:
+        type: string
+      email:
+        type: string
+      hospital_id:
+        description: PK
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  hospitalhandler.createHospitalReq:
+    properties:
+      address:
+        type: string
+      email:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+    required:
+    - name
+    type: object
+  hospitalhandler.updateHospitalReq:
+    properties:
+      address:
+        type: string
+      email:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+    type: object
   patient.Patient:
     properties:
       address:
@@ -82,6 +194,356 @@ info:
   title: Auth Service API
   version: "1.0"
 paths:
+  /doctors:
+    get:
+      description: Retrieve all doctors
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/doctor.Doctor'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List all doctors
+      tags:
+      - Doctors
+    post:
+      consumes:
+      - application/json
+      description: Add a new doctor record
+      parameters:
+      - description: Doctor info
+        in: body
+        name: doctor
+        required: true
+        schema:
+          $ref: '#/definitions/doctorhandler.createDoctorReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/doctor.Doctor'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new doctor
+      tags:
+      - Doctors
+  /doctors/{doctor_id}:
+    delete:
+      description: Delete doctor by doctor ID
+      parameters:
+      - description: Doctor ID
+        in: path
+        name: doctor_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete doctor
+      tags:
+      - Doctors
+    get:
+      description: Retrieve doctor record using doctor ID
+      parameters:
+      - description: Doctor ID
+        in: path
+        name: doctor_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/doctor.Doctor'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get doctor by doctor ID
+      tags:
+      - Doctors
+    put:
+      consumes:
+      - application/json
+      description: Update doctor record by doctor ID
+      parameters:
+      - description: Doctor ID
+        in: path
+        name: doctor_id
+        required: true
+        type: string
+      - description: Updated doctor info
+        in: body
+        name: doctor
+        required: true
+        schema:
+          $ref: '#/definitions/doctorhandler.updateDoctorReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/doctor.Doctor'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update doctor info
+      tags:
+      - Doctors
+  /doctors/hospital/{hospital_id}:
+    get:
+      description: Retrieve doctors for a specific hospital
+      parameters:
+      - description: Hospital ID
+        in: path
+        name: hospital_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/doctor.Doctor'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List doctors by hospital ID
+      tags:
+      - Doctors
+  /doctors/user/{user_id}:
+    get:
+      description: Retrieve doctor record using user ID
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/doctor.Doctor'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get doctor by user ID
+      tags:
+      - Doctors
+  /hospitals:
+    get:
+      description: Retrieve all hospitals
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/hospital.Hospital'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List all hospitals
+      tags:
+      - Hospitals
+    post:
+      consumes:
+      - application/json
+      description: Add a new hospital record
+      parameters:
+      - description: Hospital info
+        in: body
+        name: hospital
+        required: true
+        schema:
+          $ref: '#/definitions/hospitalhandler.createHospitalReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/hospital.Hospital'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new hospital
+      tags:
+      - Hospitals
+  /hospitals/{hospital_id}:
+    delete:
+      description: Delete hospital by hospital ID
+      parameters:
+      - description: Hospital ID
+        in: path
+        name: hospital_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete hospital
+      tags:
+      - Hospitals
+    get:
+      description: Retrieve hospital record using hospital ID
+      parameters:
+      - description: Hospital ID
+        in: path
+        name: hospital_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/hospital.Hospital'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get hospital by ID
+      tags:
+      - Hospitals
+    put:
+      consumes:
+      - application/json
+      description: Update hospital record by hospital ID
+      parameters:
+      - description: Hospital ID
+        in: path
+        name: hospital_id
+        required: true
+        type: string
+      - description: Updated hospital info
+        in: body
+        name: hospital
+        required: true
+        schema:
+          $ref: '#/definitions/hospitalhandler.updateHospitalReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/hospital.Hospital'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update hospital info
+      tags:
+      - Hospitals
   /patients:
     get:
       description: Retrieve all patients

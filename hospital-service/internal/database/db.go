@@ -2,6 +2,8 @@ package database
 
 import (
 	"hospital-service/internal/config"
+	"hospital-service/internal/models/doctor"
+	"hospital-service/internal/models/hospital"
 	"hospital-service/internal/models/patient"
 	"log"
 
@@ -17,6 +19,12 @@ func Connect(cfg config.Config) *gorm.DB {
 	return db
 }
 
+// AutoMigrate tự động tạo hoặc cập nhật bảng trong database
 func AutoMigrate(db *gorm.DB) error {
-	return db.AutoMigrate(&patient.Patient{})
+	// Thêm tất cả model bạn muốn migrate vào đây
+	return db.AutoMigrate(
+		&patient.Patient{},
+		&doctor.Doctor{},
+		&hospital.Hospital{},
+	)
 }

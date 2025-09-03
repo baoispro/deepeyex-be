@@ -9,6 +9,15 @@ import (
 	patienthandler "hospital-service/internal/handlers/patienthandler"
 	patientrepo "hospital-service/internal/repositories/patientrepo"
 	patientservice "hospital-service/internal/services/patientservice"
+
+	doctorhandler "hospital-service/internal/handlers/doctorhandler"
+	doctorrepo "hospital-service/internal/repositories/doctorrepo"
+	doctorservice "hospital-service/internal/services/doctorservice"
+
+	hospitalhandler "hospital-service/internal/handlers/hospitalhandler"
+	hospitalrepo "hospital-service/internal/repositories/hospitalrepo"
+	hospitalservice "hospital-service/internal/services/hospitalservice"
+
 	"hospital-service/internal/routers"
 )
 
@@ -28,15 +37,21 @@ func main() {
 
 	// Initialize repositories
 	pRepo := patientrepo.NewPatientRepo(db)
+	dRepo := doctorrepo.NewDoctorRepo(db)
+	hRepo := hospitalrepo.NewHospitalRepo(db)
 
 	// Initialize services
 	pService := patientservice.NewPatientService(pRepo)
+	dService := doctorservice.NewDoctorService(dRepo)
+	hService := hospitalservice.NewHospitalService(hRepo)
 
 	// Initialize handlers
 	pHandler := patienthandler.NewPatientHandler(cfg,pService)
+	dHandler := doctorhandler.NewDoctorHandler(cfg, dService)
+	hHandler := hospitalhandler.NewHospitalHandler(cfg, hService)
 
 	// Setup router
-	r := routers.SetupRouter(&cfg, pHandler)
+	r := routers.SetupRouter(&cfg, pHandler, dHandler, hHandler)
 
 	log.Printf("Hospital service running on :%s", cfg.Port)
 	if err := r.Run(":" + cfg.Port); err != nil {
