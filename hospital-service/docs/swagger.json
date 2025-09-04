@@ -8,6 +8,535 @@
     "host": "localhost:8081",
     "basePath": "/",
     "paths": {
+        "/doctors": {
+            "get": {
+                "description": "Retrieve all doctors",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Doctors"
+                ],
+                "summary": "List all doctors",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/doctor.Doctor"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Add a new doctor record",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Doctors"
+                ],
+                "summary": "Create a new doctor",
+                "parameters": [
+                    {
+                        "description": "Doctor info",
+                        "name": "doctor",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/doctorhandler.createDoctorReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/doctor.Doctor"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/doctors/hospital/{hospital_id}": {
+            "get": {
+                "description": "Retrieve doctors for a specific hospital",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Doctors"
+                ],
+                "summary": "List doctors by hospital ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Hospital ID",
+                        "name": "hospital_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/doctor.Doctor"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/doctors/user/{user_id}": {
+            "get": {
+                "description": "Retrieve doctor record using user ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Doctors"
+                ],
+                "summary": "Get doctor by user ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/doctor.Doctor"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/doctors/{doctor_id}": {
+            "get": {
+                "description": "Retrieve doctor record using doctor ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Doctors"
+                ],
+                "summary": "Get doctor by doctor ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Doctor ID",
+                        "name": "doctor_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/doctor.Doctor"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update doctor record by doctor ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Doctors"
+                ],
+                "summary": "Update doctor info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Doctor ID",
+                        "name": "doctor_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated doctor info",
+                        "name": "doctor",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/doctorhandler.updateDoctorReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/doctor.Doctor"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete doctor by doctor ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Doctors"
+                ],
+                "summary": "Delete doctor",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Doctor ID",
+                        "name": "doctor_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/hospitals": {
+            "get": {
+                "description": "Retrieve all hospitals",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hospitals"
+                ],
+                "summary": "List all hospitals",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/hospital.Hospital"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Add a new hospital record",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hospitals"
+                ],
+                "summary": "Create a new hospital",
+                "parameters": [
+                    {
+                        "description": "Hospital info",
+                        "name": "hospital",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/hospitalhandler.createHospitalReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/hospital.Hospital"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/hospitals/{hospital_id}": {
+            "get": {
+                "description": "Retrieve hospital record using hospital ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hospitals"
+                ],
+                "summary": "Get hospital by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Hospital ID",
+                        "name": "hospital_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/hospital.Hospital"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update hospital record by hospital ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hospitals"
+                ],
+                "summary": "Update hospital info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Hospital ID",
+                        "name": "hospital_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated hospital info",
+                        "name": "hospital",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/hospitalhandler.updateHospitalReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/hospital.Hospital"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete hospital by hospital ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hospitals"
+                ],
+                "summary": "Delete hospital",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Hospital ID",
+                        "name": "hospital_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/patients": {
             "get": {
                 "description": "Retrieve all patients",
@@ -273,6 +802,96 @@
         }
     },
     "definitions": {
+        "doctor.Doctor": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "doctor_id": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "full_name": {
+                    "type": "string"
+                },
+                "hospital": {
+                    "$ref": "#/definitions/hospital.Hospital"
+                },
+                "hospital_id": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "specialty": {
+                    "$ref": "#/definitions/enums.Specialty"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "doctorhandler.createDoctorReq": {
+            "type": "object",
+            "required": [
+                "full_name",
+                "hospital_id",
+                "specialty",
+                "user_id"
+            ],
+            "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "full_name": {
+                    "type": "string"
+                },
+                "hospital_id": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "specialty": {
+                    "$ref": "#/definitions/enums.Specialty"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "doctorhandler.updateDoctorReq": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "full_name": {
+                    "type": "string"
+                },
+                "hospital_id": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "specialty": {
+                    "$ref": "#/definitions/enums.Specialty"
+                }
+            }
+        },
         "enums.Gender": {
             "type": "string",
             "enum": [
@@ -284,10 +903,99 @@
                 "Female"
             ]
         },
+        "enums.Specialty": {
+            "type": "string",
+            "enum": [
+                "ophthalmology",
+                "internal_medicine",
+                "neurology",
+                "endocrinology",
+                "pediatrics"
+            ],
+            "x-enum-varnames": [
+                "SpecialtyOphthalmology",
+                "SpecialtyInternalMedicine",
+                "SpecialtyNeurology",
+                "SpecialtyEndocrinology",
+                "SpecialtyPediatrics"
+            ]
+        },
+        "hospital.Hospital": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "hospital_id": {
+                    "type": "string"
+                },
+                "logo_url": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "hospitalhandler.createHospitalReq": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "logo_url": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                }
+            }
+        },
+        "hospitalhandler.updateHospitalReq": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                }
+            }
+        },
         "patient.Patient": {
             "type": "object",
             "properties": {
                 "address": {
+                    "type": "string"
+                },
+                "avatar_url": {
                     "type": "string"
                 },
                 "created_at": {
@@ -329,6 +1037,9 @@
             ],
             "properties": {
                 "address": {
+                    "type": "string"
+                },
+                "avatar_url": {
                     "type": "string"
                 },
                 "dob": {

@@ -10,6 +10,16 @@ definitions:
     - Patient
     - Doctor
     - Admin
+  handlers.loginFirebaseReq:
+    properties:
+      email:
+        type: string
+      firebase_uid:
+        type: string
+    required:
+    - email
+    - firebase_uid
+    type: object
   handlers.loginReq:
     properties:
       password:
@@ -99,6 +109,35 @@ paths:
               type: string
             type: object
       summary: Login user
+      tags:
+      - Public
+  /public/login/firebase:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user using Firebase UID & email, then return access/refresh
+        tokens
+      parameters:
+      - description: Firebase login request
+        in: body
+        name: loginFirebase
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.loginFirebaseReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.tokenRes'
+        "401":
+          description: Invalid firebase payload or login failed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Login with Firebase
       tags:
       - Public
   /public/logout:

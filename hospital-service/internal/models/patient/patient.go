@@ -14,7 +14,7 @@ type Patient struct {
 	Address   string       `json:"address" gorm:"size:255"`
 	Phone     string       `json:"phone" gorm:"size:20"`
 	Email     string       `json:"email" gorm:"size:100"`
-
+	AvatarURL string       `json:"avatar_url" gorm:"size:255"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }

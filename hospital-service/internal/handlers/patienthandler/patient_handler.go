@@ -27,6 +27,7 @@ type createPatientReq struct {
 	Address  string    `json:"address"`
 	Phone    string    `json:"phone"`
 	Email    string    `json:"email"`
+	AvatarURL string   `json:"avatar_url"`
 }
 
 type updatePatientReq struct {
@@ -56,7 +57,7 @@ func (h *PatientHandler) CreatePatient(c *gin.Context) {
 		return
 	}
 
-	p, err := h.service.CreatePatient(req.UserID, req.FullName, req.DOB, enums.Gender(req.Gender), req.Address, req.Phone, req.Email)
+	p, err := h.service.CreatePatient(req.UserID, req.FullName, req.DOB, enums.Gender(req.Gender), req.Address, req.Phone, req.Email, req.AvatarURL)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
