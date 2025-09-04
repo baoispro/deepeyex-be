@@ -26,6 +26,7 @@ type createHospitalReq struct {
 	Address string `json:"address"`
 	Phone   string `json:"phone"`
 	Email   string `json:"email"`
+	LogoURL string `json:"logo_url"`
 }
 
 type updateHospitalReq struct {
@@ -54,7 +55,7 @@ func (h *HospitalHandler) CreateHospital(c *gin.Context) {
 	}
 
 	
-	created, err := h.service.CreateHospital(req.Name, req.Address, req.Phone, req.Email)
+	created, err := h.service.CreateHospital(req.Name, req.Address, req.Phone, req.Email, req.LogoURL)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

@@ -86,6 +86,49 @@ const docTemplate = `{
                 }
             }
         },
+        "/public/login/firebase": {
+            "post": {
+                "description": "Authenticate user using Firebase UID \u0026 email, then return access/refresh tokens",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Public"
+                ],
+                "summary": "Login with Firebase",
+                "parameters": [
+                    {
+                        "description": "Firebase login request",
+                        "name": "loginFirebase",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.loginFirebaseReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.tokenRes"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid firebase payload or login failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/public/logout": {
             "post": {
                 "description": "Clear refresh cookie and invalidate refresh token",
@@ -198,6 +241,21 @@ const docTemplate = `{
                 "Doctor",
                 "Admin"
             ]
+        },
+        "handlers.loginFirebaseReq": {
+            "type": "object",
+            "required": [
+                "email",
+                "firebase_uid"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "firebase_uid": {
+                    "type": "string"
+                }
+            }
         },
         "handlers.loginReq": {
             "type": "object",

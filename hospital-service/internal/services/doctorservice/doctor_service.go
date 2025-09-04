@@ -17,16 +17,16 @@ func NewDoctorService(repo *doctorrepo.DoctorRepo) *DoctorService {
 }
 
 // ---------------- CreateDoctor ----------------
-func (s *DoctorService) CreateDoctor(userID, fullName string, specialty enums.Specialty, hospitalID, phone, email string) (*doctor.Doctor, error) {
+func (s *DoctorService) CreateDoctor(userID, fullName string, specialty enums.Specialty, hospitalID, phone, email, avatarURL string) (*doctor.Doctor, error) {
 	d := &doctor.Doctor{
-		DoctorID:  generateDoctorID(), // tạo ID mới
-		UserID:    userID,
-		FullName:  fullName,
-		Specialty: specialty,
-
-		HospitalID: hospitalID, // thay thế hospital bằng hospital_id
-		Phone:     phone,
-		Email:     email,
+		DoctorID:   generateDoctorID(),
+		UserID:     userID,
+		FullName:   fullName,
+		Specialty:  specialty,
+		HospitalID: hospitalID,
+		Phone:      phone,
+		Email:      email,
+		AvatarURL:  avatarURL,
 	}
 	err := s.doctorRepo.Create(d)
 	return d, err
@@ -57,7 +57,7 @@ func (s *DoctorService) FindByHospitalID(hospitalID string) ([]doctor.Doctor, er
 	return s.doctorRepo.FindByHospitalID(hospitalID)
 }
 
-//----------------- FindByUserID ----------------
+// ---------------- FindByUserID ----------------
 func (s *DoctorService) FindByUserID(userID string) (*doctor.Doctor, error) {
 	return s.doctorRepo.FindByUserID(userID)
 }

@@ -25,7 +25,10 @@ func (r *HospitalRepo) Create(h *hospital.Hospital) error {
 func (r *HospitalRepo) FindByID(id string) (*hospital.Hospital, error) {
 	var h hospital.Hospital
 	err := r.db.First(&h, "hospital_id = ?", id).Error
-	return &h, err
+	if err != nil {
+		return nil, err
+	}
+	return &h, nil
 }
 
 // Update hospital

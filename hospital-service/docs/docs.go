@@ -812,8 +812,10 @@ const docTemplate = `{
         "doctor.Doctor": {
             "type": "object",
             "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
                 "created_at": {
-                    "description": "Hospital   hospital.Hospital    ` + "`" + `json:\"hospital\" gorm:\"foreignKey:HospitalID;references:HospitalID\"` + "`" + `",
                     "type": "string"
                 },
                 "doctor_id": {
@@ -825,8 +827,10 @@ const docTemplate = `{
                 "full_name": {
                     "type": "string"
                 },
+                "hospital": {
+                    "$ref": "#/definitions/hospital.Hospital"
+                },
                 "hospital_id": {
-                    "description": "FK",
                     "type": "string"
                 },
                 "phone": {
@@ -852,6 +856,9 @@ const docTemplate = `{
                 "user_id"
             ],
             "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
                 "email": {
                     "type": "string"
                 },
@@ -908,16 +915,16 @@ const docTemplate = `{
             "enum": [
                 "ophthalmology",
                 "internal_medicine",
-                "surgery",
-                "dermatology",
-                "cardiology"
+                "neurology",
+                "endocrinology",
+                "pediatrics"
             ],
             "x-enum-varnames": [
-                "Ophthalmology",
-                "Internal_medicine",
-                "Surgery",
-                "Dermatology",
-                "Cardiology"
+                "SpecialtyOphthalmology",
+                "SpecialtyInternalMedicine",
+                "SpecialtyNeurology",
+                "SpecialtyEndocrinology",
+                "SpecialtyPediatrics"
             ]
         },
         "hospital.Hospital": {
@@ -933,7 +940,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "hospital_id": {
-                    "description": "PK",
+                    "type": "string"
+                },
+                "logo_url": {
                     "type": "string"
                 },
                 "name": {
@@ -957,6 +966,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "email": {
+                    "type": "string"
+                },
+                "logo_url": {
                     "type": "string"
                 },
                 "name": {
@@ -988,6 +1000,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "address": {
+                    "type": "string"
+                },
+                "avatar_url": {
                     "type": "string"
                 },
                 "created_at": {
@@ -1029,6 +1044,9 @@ const docTemplate = `{
             ],
             "properties": {
                 "address": {
+                    "type": "string"
+                },
+                "avatar_url": {
                     "type": "string"
                 },
                 "dob": {

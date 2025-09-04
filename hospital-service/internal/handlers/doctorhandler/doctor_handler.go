@@ -27,6 +27,7 @@ type createDoctorReq struct {
 	HospitalID string          `json:"hospital_id" binding:"required"`
 	Phone      string          `json:"phone"`
 	Email      string          `json:"email"`
+	AvatarURL  string          `json:"avatar_url"`
 }
 
 type updateDoctorReq struct {
@@ -62,6 +63,7 @@ func (h *DoctorHandler) CreateDoctor(c *gin.Context) {
 		req.HospitalID,
 		req.Phone,
 		req.Email,
+		req.AvatarURL,
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -90,7 +92,6 @@ func (h *DoctorHandler) GetDoctorByID(c *gin.Context) {
 	c.JSON(http.StatusOK, d)
 }
 
-
 // ---------------- Get Doctor By UserID ----------------
 // @Summary Get doctor by user ID
 // @Description Retrieve doctor record using user ID
@@ -102,14 +103,13 @@ func (h *DoctorHandler) GetDoctorByID(c *gin.Context) {
 // @Router /doctors/user/{user_id} [get]
 func (h *DoctorHandler) GetDoctorByUserID(c *gin.Context) {
 	userID := c.Param("user_id")
-	p, err := h.service.FindByUserID(userID)
+	d, err := h.service.FindByUserID(userID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "patient not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "doctor not found"})
 		return
 	}
-	c.JSON(http.StatusOK, p)
+	c.JSON(http.StatusOK, d)
 }
-
 
 // ---------------- Update Doctor ----------------
 // @Summary Update doctor info
@@ -139,7 +139,6 @@ func (h *DoctorHandler) UpdateDoctor(c *gin.Context) {
 		return
 	}
 
-	// Chỉ update các trường có giá trị
 	if req.FullName != "" {
 		d.FullName = req.FullName
 	}

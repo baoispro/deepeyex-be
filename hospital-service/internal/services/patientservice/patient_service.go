@@ -18,9 +18,9 @@ func NewPatientService(repo *patientrepo.PatientRepo) *PatientService {
 }
 
 // ---------------- CreatePatient ----------------
-func (s *PatientService) CreatePatient(userID, fullName string, dob time.Time, gender enums.Gender, address, phone, email string) (*patient.Patient, error) {
+func (s *PatientService) CreatePatient(userID, fullName string, dob time.Time, gender enums.Gender, address, phone, email, avatarURL string) (*patient.Patient, error) {
 	p := &patient.Patient{
-		PatientID: generatePatientID(), // bạn có thể dùng uuid.NewString() nếu muốn
+		PatientID: generatePatientID(),
 		UserID:    userID,
 		FullName:  fullName,
 		DOB:       dob,
@@ -28,6 +28,7 @@ func (s *PatientService) CreatePatient(userID, fullName string, dob time.Time, g
 		Address:   address,
 		Phone:     phone,
 		Email:     email,
+		AvatarURL: avatarURL,
 	}
 	err := s.patientRepo.Create(p)
 	return p, err
@@ -60,7 +61,5 @@ func (s *PatientService) ListPatients() ([]patient.Patient, error) {
 
 // ---------------- Helper ----------------
 func generatePatientID() string {
-	// Có thể dùng uuid.NewString() từ "github.com/google/uuid"
-	// Hoặc logic riêng nếu muốn
 	return uuid.NewString()
 }
