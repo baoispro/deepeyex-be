@@ -28,6 +28,10 @@ type loginReq struct {
 	Username string `json:"username" example:"alice" binding:"required"`
 	Password string `json:"password" example:"secret" binding:"required"`
 }
+type loginFirebaseReq struct {
+	FirebaseUID string `json:"firebase_uid" binding:"required"`
+	Email       string `json:"email" binding:"required,email"`
+}
 type tokenRes struct {
 	AccessToken  string    `json:"access_token"`
 	AccessExpire time.Time `json:"access_expire"`
@@ -94,6 +98,38 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 	access, aExp, refresh, rExp, u, err := h.service.Login(req.Username, req.Password)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	h.setRefreshCookie(c, refresh, rExp)
+	c.JSON(http.StatusOK, tokenRes{
+		AccessToken:  access,
+		AccessExpire: aExp,
+		UserID:       u.ID,
+		Role:         string(u.Role),
+	})
+}
+
+// Login firebase
+// LoginFirebase godoc
+// @Summary Login with Firebase
+// @Description Authenticate user using Firebase UID & email, then return access/refresh tokens
+// @Tags Public
+// @Accept json
+// @Produce json
+// @Param loginFirebase body loginFirebaseReq true "Firebase login request"
+// @Success 200 {object} tokenRes
+// @Failure 401 {object} map[string]string "Invalid firebase payload or login failed"
+// @Router /public/login/firebase [post]
+func (h *AuthHandler) LoginFirebase(c *gin.Context) {
+	var req loginFirebaseReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid firebase payload"})
+		return
+	}
+
+	access, aExp, refresh, rExp, u, err := h.service.LoginFirebase(req.FirebaseUID, req.Email)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return

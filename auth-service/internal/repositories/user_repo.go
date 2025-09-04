@@ -29,3 +29,19 @@ func (r *UserRepo) FindByID(id string) (*models.User, error) {
 	}
 	return &u, nil
 }
+
+func (r *UserRepo) FindByFirebaseUID(firebaseUID string) (*models.User, error) {
+    var u models.User
+    if err := r.db.Where("firebase_uid = ?", firebaseUID).First(&u).Error; err != nil {
+        return nil, err
+    }
+    return &u, nil
+}
+
+func (r *UserRepo) FindByEmail(email string) (*models.User, error) {
+    var u models.User
+    if err := r.db.Where("email = ?", email).First(&u).Error; err != nil {
+        return nil, err
+    }
+    return &u, nil
+}

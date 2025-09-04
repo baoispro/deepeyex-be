@@ -14,6 +14,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 type AuthService struct {
@@ -47,39 +48,47 @@ func (s *AuthService) Register(username, password string, role enums.Role) error
 
 // ---------------- Login ----------------
 func (s *AuthService) Login(username, password string) (access string, aExp time.Time, refresh string, rExp time.Time, u *models.User, err error) {
-    u, err = s.userRepo.FindByUsername(username)
-    if err != nil {
-        return "", time.Time{}, "", time.Time{}, nil, errors.New("invalid credentials")
-    }
-    if bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password)) != nil {
-        return "", time.Time{}, "", time.Time{}, nil, errors.New("invalid credentials")
-    }
+	u, err = s.userRepo.FindByUsername(username)
+	if err != nil {
+		return "", time.Time{}, "", time.Time{}, nil, errors.New("invalid credentials")
+	}
+	if bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password)) != nil {
+		return "", time.Time{}, "", time.Time{}, nil, errors.New("invalid credentials")
+	}
 
-    // Lấy key/secret từ config hoặc DB (do bạn add trong Kong)
-    kongKey := "tMK7AdrE6lHxsFU1Qk0EPczXYvRKLw4K"
-    kongSecret := "Cdes9ghOllkzh0ZgmOvLdH97tdjImE42"
+	access, aExp, refresh, rExp, err = s.generateTokensKong(u.ID, string(u.Role))
+	if err != nil {
+		return "", time.Time{}, "", time.Time{}, nil, err
+	}
+	return access, aExp, refresh, rExp, u, nil
+}
 
-    // Sinh access token theo Kong yêu cầu
-    aExp = time.Now().Add(time.Hour)
-    claims := jwt.MapClaims{
-        "iss": kongKey,
-        "exp": aExp.Unix(),
-        "sub": u.ID,
-        "role": string(u.Role),
-    }
-    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-    access, err = token.SignedString([]byte(kongSecret))
-    if err != nil {
-        return "", time.Time{}, "", time.Time{}, nil, err
-    }
+// ---------------- Login Firebase ----------------
+func (s *AuthService) LoginFirebase(firebaseUID, email string) (access string, aExp time.Time, refresh string, rExp time.Time, u *models.User, err error) {
+	u, err = s.userRepo.FindByFirebaseUID(firebaseUID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			u = &models.User{
+				ID:          uuid.NewString(),
+				FirebaseUID: firebaseUID,
+				Email:       email,
+				Role:        enums.Patient,
+				CreatedAt:   time.Now(),
+				UpdatedAt:   time.Now(),
+			}
+			if err := s.userRepo.Create(u); err != nil {
+				return "", time.Time{}, "", time.Time{}, nil, err
+			}
+		} else {
+			return "", time.Time{}, "", time.Time{}, nil, err
+		}
+	}
 
-    // Refresh token logic: bạn vẫn có thể giữ như cũ (DB quản lý)
-    refresh, rExp, _ = utils.GenerateRefreshToken(s.cfg, u.ID)
-    if err := s.tokenRepo.Save(u.ID, hashToken(refresh), rExp); err != nil {
-        return "", time.Time{}, "", time.Time{}, nil, err
-    }
-
-    return access, aExp, refresh, rExp, u, nil
+	access, aExp, refresh, rExp, err = s.generateTokensKong(u.ID, string(u.Role))
+	if err != nil {
+		return "", time.Time{}, "", time.Time{}, nil, err
+	}
+	return access, aExp, refresh, rExp, u, nil
 }
 
 // ---------------- Refresh ----------------
@@ -100,8 +109,11 @@ func (s *AuthService) Refresh(oldRefresh string) (access string, aExp time.Time,
 		return "", time.Time{}, "", time.Time{}, errors.New("user not found")
 	}
 
-	// Generate new access token
-	access, aExp, _ = utils.GenerateAccessToken(s.cfg, u.ID, string(u.Role))
+	// Generate new access token theo Kong
+	access, aExp, err = s.generateAccessTokenKong(u.ID, string(u.Role))
+	if err != nil {
+		return "", time.Time{}, "", time.Time{}, err
+	}
 
 	// Revoke old refresh token
 	if err := s.tokenRepo.RevokeByHash(hashToken(oldRefresh)); err != nil {
@@ -125,6 +137,40 @@ func (s *AuthService) Logout(refresh string) {
 }
 
 // ---------------- Helpers ----------------
+func (s *AuthService) generateTokensKong(userID string, role string) (access string, aExp time.Time, refresh string, rExp time.Time, err error) {
+	// Access token ký theo Kong
+	access, aExp, err = s.generateAccessTokenKong(userID, role)
+	if err != nil {
+		return "", time.Time{}, "", time.Time{}, err
+	}
+
+	// Refresh token vẫn tự quản lý
+	refresh, rExp, err = utils.GenerateRefreshToken(s.cfg, userID)
+	if err != nil {
+		return "", time.Time{}, "", time.Time{}, err
+	}
+	if err := s.tokenRepo.Save(userID, hashToken(refresh), rExp); err != nil {
+		return "", time.Time{}, "", time.Time{}, err
+	}
+	return access, aExp, refresh, rExp, nil
+}
+
+func (s *AuthService) generateAccessTokenKong(userID string, role string) (string, time.Time, error) {
+	kongKey := s.cfg.KongKey    // load từ config.yml hoặc env
+	kongSecret := s.cfg.KongSecret
+
+	aExp := time.Now().Add(time.Hour)
+	claims := jwt.MapClaims{
+		"iss":  kongKey,
+		"sub":  userID,
+		"role": role,
+		"exp":  aExp.Unix(),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signed, err := token.SignedString([]byte(kongSecret))
+	return signed, aExp, err
+}
+
 func hashToken(token string) string {
 	h := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(h[:])
