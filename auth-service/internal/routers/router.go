@@ -17,6 +17,7 @@ func SetupRouter(cfg *config.Config, authHandler *handlers.AuthHandler) *gin.Eng
 	{
 		public.POST("/register", authHandler.Register)
 		public.POST("/login", authHandler.Login)
+		public.POST("/login/firebase", authHandler.LoginFirebase)
 		public.POST("/refresh", authHandler.Refresh)
 		public.POST("/logout", authHandler.Logout)
 	}

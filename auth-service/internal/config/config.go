@@ -21,6 +21,8 @@ type Config struct {
 	CookieDomain      string
 	CookieSecure      bool
 	CookieSameSite    string // lax/strict/none
+	KongKey           string
+	KongSecret        string
 }
 
 func Load() Config {
@@ -37,6 +39,8 @@ func Load() Config {
 		CookieDomain:      getEnv("COOKIE_DOMAIN", "localhost"),
 		CookieSecure:      getEnvBool("COOKIE_SECURE", false),
 		CookieSameSite:    strings.ToLower(getEnv("COOKIE_SAMESITE", "strict")),
+		KongKey:           mustEnv("kongKey"),
+		KongSecret:        mustEnv("kongSecret"),
 	}
 }
 
