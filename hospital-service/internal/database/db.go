@@ -20,11 +20,25 @@ func Connect(cfg config.Config) *gorm.DB {
 }
 
 // AutoMigrate tự động tạo hoặc cập nhật bảng trong database
+// AutoMigrate tự động tạo hoặc cập nhật bảng trong database
 func AutoMigrate(db *gorm.DB) error {
-	// Thêm tất cả model bạn muốn migrate vào đây
-	return db.AutoMigrate(
-		&patient.Patient{},
-		&doctor.Doctor{},
-		&hospital.Hospital{},
-	)
+    // 1. Migrate bảng 'cha' (parent table) trước: Hospital
+    err := db.AutoMigrate(&hospital.Hospital{})
+    if err != nil {
+        return err
+    }
+
+    // 2. Migrate bảng 'con' (child table) sau: Doctor phụ thuộc vào Hospital
+    err = db.AutoMigrate(&doctor.Doctor{})
+    if err != nil {
+        return err
+    }
+
+    // 3. Migrate các bảng không có mối quan hệ phụ thuộc lẫn nhau
+    err = db.AutoMigrate(&patient.Patient{})
+    if err != nil {
+        return err
+    }
+
+    return nil
 }
