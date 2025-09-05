@@ -12,8 +12,6 @@ definitions:
         type: string
       full_name:
         type: string
-      hospital:
-        $ref: '#/definitions/hospital.Hospital'
       hospital_id:
         type: string
       phone:
@@ -88,6 +86,10 @@ definitions:
         type: string
       created_at:
         type: string
+      doctors:
+        items:
+          $ref: '#/definitions/doctor.Doctor'
+        type: array
       email:
         type: string
       hospital_id:

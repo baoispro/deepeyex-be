@@ -827,9 +827,6 @@ const docTemplate = `{
                 "full_name": {
                     "type": "string"
                 },
-                "hospital": {
-                    "$ref": "#/definitions/hospital.Hospital"
-                },
                 "hospital_id": {
                     "type": "string"
                 },
@@ -935,6 +932,12 @@ const docTemplate = `{
                 },
                 "created_at": {
                     "type": "string"
+                },
+                "doctors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/doctor.Doctor"
+                    }
                 },
                 "email": {
                     "type": "string"
