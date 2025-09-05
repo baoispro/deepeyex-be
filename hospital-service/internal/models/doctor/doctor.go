@@ -2,7 +2,6 @@ package doctor
 
 import (
 	"hospital-service/internal/enums"
-	"hospital-service/internal/models/hospital"
 	"time"
 )
 
@@ -15,7 +14,6 @@ type Doctor struct {
 	AvatarURL  string            `json:"avatar_url" gorm:"size:255"`
 	Specialty  enums.Specialty   `json:"specialty" gorm:"size:50;not null"`
 	HospitalID string            `json:"hospital_id" gorm:"type:uuid;not null"`
-	Hospital   hospital.Hospital `gorm:"foreignKey:HospitalID;references:HospitalID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	CreatedAt  time.Time         `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt  time.Time         `json:"updated_at" gorm:"autoUpdateTime"`
 }

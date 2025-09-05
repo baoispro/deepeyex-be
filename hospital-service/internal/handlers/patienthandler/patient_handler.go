@@ -4,6 +4,7 @@ import (
 	"hospital-service/internal/config"
 	"hospital-service/internal/enums"
 	"hospital-service/internal/services/patientservice"
+	"hospital-service/internal/utils"
 	"net/http"
 	"time"
 
@@ -20,14 +21,14 @@ func NewPatientHandler(cfg config.Config, service *patientservice.PatientService
 }
 
 type createPatientReq struct {
-	UserID   string    `json:"user_id" binding:"required"`
-	FullName string    `json:"full_name" binding:"required"`
-	DOB      time.Time `json:"dob" binding:"required"`
-	Gender   string    `json:"gender" binding:"required,oneof=male female other"`
-	Address  string    `json:"address"`
-	Phone    string    `json:"phone"`
-	Email    string    `json:"email"`
-	AvatarURL string   `json:"avatar_url"`
+	UserID    string    `json:"user_id" binding:"required"`
+	FullName  string    `json:"full_name" binding:"required"`
+	DOB       time.Time `json:"dob" binding:"required"`
+	Gender    string    `json:"gender" binding:"required,oneof=male female other"`
+	Address   string    `json:"address"`
+	Phone     string    `json:"phone"`
+	Email     string    `json:"email"`
+	AvatarURL string    `json:"avatar_url"`
 }
 
 type updatePatientReq struct {
@@ -53,17 +54,17 @@ type updatePatientReq struct {
 func (h *PatientHandler) CreatePatient(c *gin.Context) {
 	var req createPatientReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
 		return
 	}
 
 	p, err := h.service.CreatePatient(req.UserID, req.FullName, req.DOB, enums.Gender(req.Gender), req.Address, req.Phone, req.Email, req.AvatarURL)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusCreated, p)
+	c.JSON(http.StatusCreated, utils.SuccessResponse(http.StatusCreated, "Patient created successfully", p))
 }
 
 // ---------------- Get Patient By UserID ----------------
@@ -79,10 +80,10 @@ func (h *PatientHandler) GetPatientByUserID(c *gin.Context) {
 	userID := c.Param("user_id")
 	p, err := h.service.GetPatientByUserID(userID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "patient not found"})
+		c.JSON(http.StatusNotFound, utils.ErrorResponse(http.StatusNotFound, "Patient not found"))
 		return
 	}
-	c.JSON(http.StatusOK, p)
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Patient retrieved successfully", p))
 }
 
 // ---------------- Get Patient By PatientID ----------------
@@ -98,10 +99,10 @@ func (h *PatientHandler) GetPatientByID(c *gin.Context) {
 	patientID := c.Param("patient_id")
 	p, err := h.service.GetPatientByID(patientID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "patient not found"})
+		c.JSON(http.StatusNotFound, utils.ErrorResponse(http.StatusNotFound, "Patient not found"))
 		return
 	}
-	c.JSON(http.StatusOK, p)
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Patient retrieved successfully", p))
 }
 
 // ---------------- Update Patient ----------------
@@ -121,13 +122,13 @@ func (h *PatientHandler) UpdatePatient(c *gin.Context) {
 	patientID := c.Param("patient_id")
 	var req updatePatientReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
 		return
 	}
 
 	p, err := h.service.GetPatientByID(patientID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "patient not found"})
+		c.JSON(http.StatusNotFound, utils.ErrorResponse(http.StatusNotFound, "Patient not found"))
 		return
 	}
 
@@ -151,11 +152,11 @@ func (h *PatientHandler) UpdatePatient(c *gin.Context) {
 	}
 
 	if err := h.service.UpdatePatient(p); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusOK, p)
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Patient updated successfully", p))
 }
 
 // ---------------- Delete Patient ----------------
@@ -170,10 +171,10 @@ func (h *PatientHandler) UpdatePatient(c *gin.Context) {
 func (h *PatientHandler) DeletePatient(c *gin.Context) {
 	patientID := c.Param("patient_id")
 	if err := h.service.DeletePatient(patientID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "patient deleted"})
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Patient deleted successfully", nil))
 }
 
 // ---------------- List Patients ----------------
@@ -187,8 +188,8 @@ func (h *PatientHandler) DeletePatient(c *gin.Context) {
 func (h *PatientHandler) ListPatients(c *gin.Context) {
 	patients, err := h.service.ListPatients()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return
 	}
-	c.JSON(http.StatusOK, patients)
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Patients retrieved successfully", patients))
 }

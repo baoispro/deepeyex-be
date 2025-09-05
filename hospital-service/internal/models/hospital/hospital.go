@@ -1,6 +1,7 @@
 package hospital
 
 import (
+	"hospital-service/internal/models/doctor"
 	"time"
 )
 
@@ -13,4 +14,5 @@ type Hospital struct {
 	LogoURL    string    `json:"logo_url" gorm:"size:255"`
 	CreatedAt  time.Time `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt  time.Time `json:"updated_at" gorm:"autoUpdateTime"`
+	Doctors []doctor.Doctor  `gorm:"foreignKey:HospitalID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 }
