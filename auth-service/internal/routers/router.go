@@ -4,6 +4,7 @@ import (
 	"auth-service/internal/config"
 	"auth-service/internal/handlers"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -11,6 +12,7 @@ import (
 
 func SetupRouter(cfg *config.Config, authHandler *handlers.AuthHandler) *gin.Engine {
 	r := gin.Default()
+	r.Use(cors.Default())
 
 	// ===== Public routes =====
 	public := r.Group("/public")
