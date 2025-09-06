@@ -4,6 +4,8 @@ import (
 	"hospital-service/internal/enums"
 	"hospital-service/internal/models/patient"
 	"hospital-service/internal/repositories/patientrepo"
+	"hospital-service/internal/storage"
+	"path/filepath"
 	"time"
 
 	"github.com/google/uuid"
@@ -11,14 +13,28 @@ import (
 
 type PatientService struct {
 	patientRepo *patientrepo.PatientRepo
+	storage     *storage.S3Client
 }
 
-func NewPatientService(repo *patientrepo.PatientRepo) *PatientService {
-	return &PatientService{patientRepo: repo}
+func NewPatientService(repo *patientrepo.PatientRepo, storage *storage.S3Client) *PatientService {
+	return &PatientService{patientRepo: repo, storage: storage}
 }
 
 // ---------------- CreatePatient ----------------
-func (s *PatientService) CreatePatient(userID, fullName string, dob time.Time, gender enums.Gender, address, phone, email, avatarURL string) (*patient.Patient, error) {
+func (s *PatientService) CreatePatient(userID, fullName string, dob time.Time, gender enums.Gender,
+	address, phone, email string, avatarFile interface{}) (*patient.Patient, error) {
+
+	var avatarURL string
+	if avatarFile != nil {
+		fileHeader := avatarFile.(*storage.FileHeader)
+		key := "avatars/" + uuid.NewString() + filepath.Ext(fileHeader.Filename)
+		url, err := s.storage.UploadFile(fileHeader, key)
+		if err != nil {
+			return nil, err
+		}
+		avatarURL = url
+	}
+
 	p := &patient.Patient{
 		PatientID: generatePatientID(),
 		UserID:    userID,
@@ -45,7 +61,18 @@ func (s *PatientService) GetPatientByID(id string) (*patient.Patient, error) {
 }
 
 // ---------------- UpdatePatient ----------------
-func (s *PatientService) UpdatePatient(p *patient.Patient) error {
+func (s *PatientService) UpdatePatient(p *patient.Patient, avatarFile interface{}) error {
+	if avatarFile != nil {
+		fileHeader := avatarFile.(*storage.FileHeader)
+		key := "avatars/" + uuid.NewString() + filepath.Ext(fileHeader.Filename)
+
+		url, err := s.storage.UploadFile(fileHeader, key)
+		if err != nil {
+			return err
+		}
+		p.AvatarURL = url
+	}
+
 	return s.patientRepo.Update(p)
 }
 

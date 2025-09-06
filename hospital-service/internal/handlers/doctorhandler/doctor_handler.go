@@ -5,6 +5,7 @@ import (
 	"hospital-service/internal/enums"
 	"hospital-service/internal/services/doctorservice"
 	"hospital-service/internal/utils"
+	"mime/multipart"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -22,39 +23,52 @@ func NewDoctorHandler(cfg config.Config, service *doctorservice.DoctorService) *
 // ----------- Request DTOs -----------
 
 type createDoctorReq struct {
-	UserID     string          `json:"user_id" binding:"required"`
-	FullName   string          `json:"full_name" binding:"required"`
-	Specialty  enums.Specialty `json:"specialty" binding:"required"`
-	HospitalID string          `json:"hospital_id" binding:"required"`
-	Phone      string          `json:"phone"`
-	Email      string          `json:"email"`
-	AvatarURL  string          `json:"avatar_url"`
+	UserID     string          `form:"user_id" binding:"required"`
+	FullName   string          `form:"full_name" binding:"required"`
+	Specialty  enums.Specialty `form:"specialty" binding:"required"`
+	HospitalID string          `form:"hospital_id" binding:"required"`
+	Phone      string          `form:"phone"`
+	Email      string          `form:"email"`
+	// AvatarFile nhận file upload
+	AvatarFile *multipart.FileHeader `form:"avatar"`
 }
 
 type updateDoctorReq struct {
-	FullName   string          `json:"full_name"`
-	Specialty  enums.Specialty `json:"specialty"`
-	HospitalID string          `json:"hospital_id"`
-	Phone      string          `json:"phone"`
-	Email      string          `json:"email"`
+	FullName   string                `form:"full_name"`
+	Specialty  enums.Specialty       `form:"specialty"`
+	HospitalID string                `form:"hospital_id"`
+	Phone      string                `form:"phone"`
+	Email      string                `form:"email"`
+	AvatarFile *multipart.FileHeader `form:"avatar"`
 }
 
 // ---------------- Create Doctor ----------------
 // @Summary Create a new doctor
-// @Description Add a new doctor record
+// @Description Add a doctor with required info and optional avatar upload
 // @Tags Doctors
-// @Accept json
+// @Accept multipart/form-data
 // @Produce json
-// @Param doctor body createDoctorReq true "Doctor info"
-// @Success 201 {object} doctor.Doctor
-// @Failure 400 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Param user_id formData string true "User ID"
+// @Param full_name formData string true "Full Name"
+// @Param specialty formData string true "Specialty"
+// @Param hospital_id formData string true "Hospital ID"
+// @Param phone formData string false "Phone"
+// @Param email formData string false "Email"
+// @Param avatar formData file false "Avatar File"
+// @Success 201 {object} utils.ApiResponse
+// @Failure 400 {object} utils.ApiResponse
+// @Failure 500 {object} utils.ApiResponse
 // @Router /doctors [post]
 func (h *DoctorHandler) CreateDoctor(c *gin.Context) {
 	var req createDoctorReq
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
 		return
+	}
+
+	var avatarFile interface{}
+	if req.AvatarFile != nil {
+		avatarFile = req.AvatarFile // ép thẳng
 	}
 
 	d, err := h.service.CreateDoctor(
@@ -64,7 +78,7 @@ func (h *DoctorHandler) CreateDoctor(c *gin.Context) {
 		req.HospitalID,
 		req.Phone,
 		req.Email,
-		req.AvatarURL,
+		avatarFile,
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
@@ -113,23 +127,28 @@ func (h *DoctorHandler) GetDoctorByUserID(c *gin.Context) {
 }
 
 // ---------------- Update Doctor ----------------
-// @Summary Update doctor info
-// @Description Update doctor record by doctor ID
+// @Summary Update a doctor
+// @Description Update doctor info and avatar
 // @Tags Doctors
-// @Accept json
+// @Accept multipart/form-data
 // @Produce json
 // @Param doctor_id path string true "Doctor ID"
-// @Param doctor body updateDoctorReq true "Updated doctor info"
-// @Success 200 {object} doctor.Doctor
-// @Failure 400 {object} map[string]string
-// @Failure 404 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Param full_name formData string false "Full Name"
+// @Param specialty formData string false "Specialty"
+// @Param hospital_id formData string false "Hospital ID"
+// @Param phone formData string false "Phone"
+// @Param email formData string false "Email"
+// @Param avatar formData file false "Avatar File"
+// @Success 200 {object} utils.ApiResponse
+// @Failure 400 {object} utils.ApiResponse
+// @Failure 404 {object} utils.ApiResponse
+// @Failure 500 {object} utils.ApiResponse
 // @Router /doctors/{doctor_id} [put]
 func (h *DoctorHandler) UpdateDoctor(c *gin.Context) {
 	doctorID := c.Param("doctor_id")
 	var req updateDoctorReq
 
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
 		return
 	}
@@ -156,7 +175,12 @@ func (h *DoctorHandler) UpdateDoctor(c *gin.Context) {
 		d.Email = req.Email
 	}
 
-	if err := h.service.UpdateDoctor(d); err != nil {
+	var avatarFile interface{}
+	if req.AvatarFile != nil {
+		avatarFile = req.AvatarFile
+	}
+
+	if err := h.service.UpdateDoctor(d, avatarFile); err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return
 	}

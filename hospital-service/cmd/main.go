@@ -9,6 +9,7 @@ import (
 	patienthandler "hospital-service/internal/handlers/patienthandler"
 	patientrepo "hospital-service/internal/repositories/patientrepo"
 	patientservice "hospital-service/internal/services/patientservice"
+	"hospital-service/internal/storage"
 
 	doctorhandler "hospital-service/internal/handlers/doctorhandler"
 	doctorrepo "hospital-service/internal/repositories/doctorrepo"
@@ -40,13 +41,23 @@ func main() {
 	dRepo := doctorrepo.NewDoctorRepo(db)
 	hRepo := hospitalrepo.NewHospitalRepo(db)
 
+	s3Client, err := storage.NewS3Client(
+		cfg.S3Bucket,
+		cfg.S3Region,
+		cfg.AWSAccessKey,
+		cfg.AWSSecretKey,
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// Initialize services
-	pService := patientservice.NewPatientService(pRepo)
-	dService := doctorservice.NewDoctorService(dRepo)
-	hService := hospitalservice.NewHospitalService(hRepo)
+	pService := patientservice.NewPatientService(pRepo,s3Client)
+	dService := doctorservice.NewDoctorService(dRepo,s3Client)
+	hService := hospitalservice.NewHospitalService(hRepo,s3Client)
 
 	// Initialize handlers
-	pHandler := patienthandler.NewPatientHandler(cfg,pService)
+	pHandler := patienthandler.NewPatientHandler(cfg, pService)
 	dHandler := doctorhandler.NewDoctorHandler(cfg, dService)
 	hHandler := hospitalhandler.NewHospitalHandler(cfg, hService)
 

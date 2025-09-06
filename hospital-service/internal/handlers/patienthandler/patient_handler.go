@@ -42,23 +42,47 @@ type updatePatientReq struct {
 
 // ---------------- Create Patient ----------------
 // @Summary Create a new patient
-// @Description Add a new patient record
+// @Description Add a new patient record with optional avatar upload
 // @Tags Patients
-// @Accept json
+// @Accept multipart/form-data
 // @Produce json
-// @Param patient body createPatientReq true "Patient info"
+// @Param user_id formData string true "User ID"
+// @Param full_name formData string true "Full Name"
+// @Param dob formData string true "Date of birth (YYYY-MM-DD)"
+// @Param gender formData string true "Gender (male/female/other)"
+// @Param address formData string false "Address"
+// @Param phone formData string false "Phone"
+// @Param email formData string false "Email"
+// @Param avatar formData file false "Avatar file"
 // @Success 201 {object} patient.Patient
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /patients [post]
 func (h *PatientHandler) CreatePatient(c *gin.Context) {
-	var req createPatientReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
+	userID := c.PostForm("user_id")
+	fullName := c.PostForm("full_name")
+	dobStr := c.PostForm("dob")
+	gender := c.PostForm("gender")
+	address := c.PostForm("address")
+	phone := c.PostForm("phone")
+	email := c.PostForm("email")
+
+	// parse dob
+	dob, err := time.Parse("2006-01-02", dobStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "Invalid date format, must be YYYY-MM-DD"))
 		return
 	}
 
-	p, err := h.service.CreatePatient(req.UserID, req.FullName, req.DOB, enums.Gender(req.Gender), req.Address, req.Phone, req.Email, req.AvatarURL)
+	// lấy avatar file (nếu có)
+	var avatarFile interface{}
+	fileHeader, err := c.FormFile("avatar")
+	if err == nil { // có file
+		avatarFile = fileHeader
+	}
+
+	p, err := h.service.CreatePatient(userID, fullName, dob, enums.Gender(gender),
+		address, phone, email, avatarFile)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return
@@ -107,12 +131,18 @@ func (h *PatientHandler) GetPatientByID(c *gin.Context) {
 
 // ---------------- Update Patient ----------------
 // @Summary Update patient info
-// @Description Update patient record by patient ID
+// @Description Update patient record by patient ID (with optional new avatar)
 // @Tags Patients
-// @Accept json
+// @Accept multipart/form-data
 // @Produce json
 // @Param patient_id path string true "Patient ID"
-// @Param patient body updatePatientReq true "Updated patient info"
+// @Param full_name formData string false "Full Name"
+// @Param dob formData string false "Date of birth (YYYY-MM-DD)"
+// @Param gender formData string false "Gender (male/female/other)"
+// @Param address formData string false "Address"
+// @Param phone formData string false "Phone"
+// @Param email formData string false "Email"
+// @Param avatar formData file false "Avatar file"
 // @Success 200 {object} patient.Patient
 // @Failure 400 {object} map[string]string
 // @Failure 404 {object} map[string]string
@@ -120,11 +150,6 @@ func (h *PatientHandler) GetPatientByID(c *gin.Context) {
 // @Router /patients/{patient_id} [put]
 func (h *PatientHandler) UpdatePatient(c *gin.Context) {
 	patientID := c.Param("patient_id")
-	var req updatePatientReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
-		return
-	}
 
 	p, err := h.service.GetPatientByID(patientID)
 	if err != nil {
@@ -132,26 +157,38 @@ func (h *PatientHandler) UpdatePatient(c *gin.Context) {
 		return
 	}
 
-	if req.FullName != "" {
-		p.FullName = req.FullName
+	if fullName := c.PostForm("full_name"); fullName != "" {
+		p.FullName = fullName
 	}
-	if !req.DOB.IsZero() {
-		p.DOB = req.DOB
+	if dobStr := c.PostForm("dob"); dobStr != "" {
+		dob, err := time.Parse("2006-01-02", dobStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "Invalid date format"))
+			return
+		}
+		p.DOB = dob
 	}
-	if req.Gender != "" {
-		p.Gender = enums.Gender(req.Gender)
+	if gender := c.PostForm("gender"); gender != "" {
+		p.Gender = enums.Gender(gender)
 	}
-	if req.Address != "" {
-		p.Address = req.Address
+	if address := c.PostForm("address"); address != "" {
+		p.Address = address
 	}
-	if req.Phone != "" {
-		p.Phone = req.Phone
+	if phone := c.PostForm("phone"); phone != "" {
+		p.Phone = phone
 	}
-	if req.Email != "" {
-		p.Email = req.Email
+	if email := c.PostForm("email"); email != "" {
+		p.Email = email
 	}
 
-	if err := h.service.UpdatePatient(p); err != nil {
+	// lấy avatar file (nếu có)
+	var avatarFile interface{}
+	fileHeader, err := c.FormFile("avatar")
+	if err == nil {
+		avatarFile = fileHeader
+	}
+
+	if err := h.service.UpdatePatient(p, avatarFile); err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return
 	}

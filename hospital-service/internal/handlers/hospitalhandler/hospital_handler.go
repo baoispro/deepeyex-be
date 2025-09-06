@@ -4,6 +4,7 @@ import (
 	"hospital-service/internal/config"
 	"hospital-service/internal/services/hospitalservice"
 	"hospital-service/internal/utils"
+	"mime/multipart"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -23,40 +24,49 @@ func NewHospitalHandler(cfg config.Config, service *hospitalservice.HospitalServ
 // ----------- Request Structs -----------
 
 type createHospitalReq struct {
-	Name    string `json:"name" binding:"required"`
-	Address string `json:"address"`
-	Phone   string `json:"phone"`
-	Email   string `json:"email"`
-	LogoURL string `json:"logo_url"`
+	Name    string                `json:"name" binding:"required"`
+	Address string                `json:"address"`
+	Phone   string                `json:"phone"`
+	Email   string                `json:"email"`
+	Logo    *multipart.FileHeader `form:"logo"`
 }
 
 type updateHospitalReq struct {
-	Name    string `json:"name"`
-	Address string `json:"address"`
-	Phone   string `json:"phone"`
-	Email   string `json:"email"`
+	Name    string                `json:"name"`
+	Address string                `json:"address"`
+	Phone   string                `json:"phone"`
+	Email   string                `json:"email"`
+	Logo    *multipart.FileHeader `form:"logo"`
 }
 
 // ---------------- Create Hospital ----------------
 // @Summary Create a new hospital
-// @Description Add a new hospital record
+// @Description Add hospital info with optional logo upload
 // @Tags Hospitals
-// @Accept json
+// @Accept multipart/form-data
 // @Produce json
-// @Param hospital body createHospitalReq true "Hospital info"
-// @Success 201 {object} hospital.Hospital
-// @Failure 400 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Param name formData string true "Hospital Name"
+// @Param address formData string false "Address"
+// @Param phone formData string false "Phone"
+// @Param email formData string false "Email"
+// @Param logo formData file false "Hospital Logo"
+// @Success 201 {object} utils.ApiResponse
+// @Failure 400 {object} utils.ApiResponse
+// @Failure 500 {object} utils.ApiResponse
 // @Router /hospitals [post]
 func (h *HospitalHandler) CreateHospital(c *gin.Context) {
 	var req createHospitalReq
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
 		return
 	}
 
-	
-	hospital, err := h.service.CreateHospital(req.Name, req.Address, req.Phone, req.Email, req.LogoURL)
+	var logoFile interface{}
+	if req.Logo != nil {
+		logoFile = req.Logo
+	}
+
+	hospital, err := h.service.CreateHospital(req.Name, req.Address, req.Phone, req.Email, logoFile)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return
@@ -85,23 +95,27 @@ func (h *HospitalHandler) GetHospitalByID(c *gin.Context) {
 }
 
 // ---------------- Update Hospital ----------------
-// @Summary Update hospital info
-// @Description Update hospital record by hospital ID
+// @Summary Update a hospital
+// @Description Update hospital info and logo
 // @Tags Hospitals
-// @Accept json
+// @Accept multipart/form-data
 // @Produce json
 // @Param hospital_id path string true "Hospital ID"
-// @Param hospital body updateHospitalReq true "Updated hospital info"
-// @Success 200 {object} hospital.Hospital
-// @Failure 400 {object} map[string]string
-// @Failure 404 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Param name formData string false "Hospital Name"
+// @Param address formData string false "Address"
+// @Param phone formData string false "Phone"
+// @Param email formData string false "Email"
+// @Param logo formData file false "Hospital Logo"
+// @Success 200 {object} utils.ApiResponse
+// @Failure 400 {object} utils.ApiResponse
+// @Failure 404 {object} utils.ApiResponse
+// @Failure 500 {object} utils.ApiResponse
 // @Router /hospitals/{hospital_id} [put]
 func (h *HospitalHandler) UpdateHospital(c *gin.Context) {
 	hospitalID := c.Param("hospital_id")
 	var req updateHospitalReq
 
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
 		return
 	}
@@ -125,7 +139,12 @@ func (h *HospitalHandler) UpdateHospital(c *gin.Context) {
 		hospitalData.Email = req.Email
 	}
 
-	if err := h.service.UpdateHospital(hospitalData); err != nil {
+	var logoFile interface{}
+	if req.Logo != nil {
+		logoFile = req.Logo
+	}
+
+	if err := h.service.UpdateHospital(hospitalData, logoFile); err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return
 	}

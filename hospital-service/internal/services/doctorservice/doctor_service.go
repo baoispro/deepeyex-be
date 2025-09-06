@@ -4,20 +4,36 @@ import (
 	"hospital-service/internal/enums"
 	"hospital-service/internal/models/doctor"
 	"hospital-service/internal/repositories/doctorrepo"
+	"hospital-service/internal/storage"
+	"path/filepath"
 
 	"github.com/google/uuid"
 )
 
 type DoctorService struct {
 	doctorRepo *doctorrepo.DoctorRepo
+	storage    *storage.S3Client
 }
 
-func NewDoctorService(repo *doctorrepo.DoctorRepo) *DoctorService {
-	return &DoctorService{doctorRepo: repo}
+func NewDoctorService(repo *doctorrepo.DoctorRepo, storage *storage.S3Client) *DoctorService {
+	return &DoctorService{doctorRepo: repo, storage: storage}
 }
 
 // ---------------- CreateDoctor ----------------
-func (s *DoctorService) CreateDoctor(userID, fullName string, specialty enums.Specialty, hospitalID, phone, email, avatarURL string) (*doctor.Doctor, error) {
+func (s *DoctorService) CreateDoctor(userID, fullName string, specialty enums.Specialty,
+	hospitalID, phone, email string, avatarFile interface{}) (*doctor.Doctor, error) {
+
+	var avatarURL string
+	if avatarFile != nil {
+		fileHeader := avatarFile.(*storage.FileHeader)
+		key := "doctors/" + uuid.NewString() + filepath.Ext(fileHeader.Filename)
+		url, err := s.storage.UploadFile(fileHeader, key)
+		if err != nil {
+			return nil, err
+		}
+		avatarURL = url
+	}
+
 	d := &doctor.Doctor{
 		DoctorID:   generateDoctorID(),
 		UserID:     userID,
@@ -38,7 +54,18 @@ func (s *DoctorService) GetDoctorByID(id string) (*doctor.Doctor, error) {
 }
 
 // ---------------- UpdateDoctor ----------------
-func (s *DoctorService) UpdateDoctor(d *doctor.Doctor) error {
+func (s *DoctorService) UpdateDoctor(d *doctor.Doctor, avatarFile interface{}) error {
+	if avatarFile != nil {
+		fileHeader := avatarFile.(*storage.FileHeader)
+		key := "doctors/" + uuid.NewString() + filepath.Ext(fileHeader.Filename)
+
+		url, err := s.storage.UploadFile(fileHeader, key)
+		if err != nil {
+			return err
+		}
+		d.AvatarURL = url
+	}
+
 	return s.doctorRepo.Update(d)
 }
 

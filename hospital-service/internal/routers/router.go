@@ -1,11 +1,13 @@
 package routers
 
 import (
-	"github.com/gin-contrib/cors"
 	"hospital-service/internal/config"
 	"hospital-service/internal/handlers/doctorhandler"
 	"hospital-service/internal/handlers/hospitalhandler"
 	"hospital-service/internal/handlers/patienthandler"
+	"hospital-service/internal/middlewares"
+
+	"github.com/gin-contrib/cors"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -16,6 +18,7 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	r := gin.Default()
 
 	r.Use(cors.Default())
+	r.Use(middlewares.LimitRequestBody(5 << 20))
 
 	// ===== Patient routes =====
 	patient := r.Group("/patients")
