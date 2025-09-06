@@ -4,6 +4,7 @@ import (
 	"hospital-service/internal/config"
 	"hospital-service/internal/enums"
 	"hospital-service/internal/services/doctorservice"
+	"hospital-service/internal/utils"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -52,7 +53,7 @@ type updateDoctorReq struct {
 func (h *DoctorHandler) CreateDoctor(c *gin.Context) {
 	var req createDoctorReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
 		return
 	}
 
@@ -66,11 +67,11 @@ func (h *DoctorHandler) CreateDoctor(c *gin.Context) {
 		req.AvatarURL,
 	)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusCreated, d)
+	c.JSON(http.StatusCreated, utils.SuccessResponse(http.StatusCreated, "Doctor created successfully", d))
 }
 
 // ---------------- Get Doctor By ID ----------------
@@ -86,10 +87,10 @@ func (h *DoctorHandler) GetDoctorByID(c *gin.Context) {
 	doctorID := c.Param("doctor_id")
 	d, err := h.service.GetDoctorByID(doctorID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "doctor not found"})
+		c.JSON(http.StatusNotFound, utils.ErrorResponse(http.StatusNotFound, "Doctor not found"))
 		return
 	}
-	c.JSON(http.StatusOK, d)
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Doctor retrieved successfully", d))
 }
 
 // ---------------- Get Doctor By UserID ----------------
@@ -105,10 +106,10 @@ func (h *DoctorHandler) GetDoctorByUserID(c *gin.Context) {
 	userID := c.Param("user_id")
 	d, err := h.service.FindByUserID(userID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "doctor not found"})
+		c.JSON(http.StatusNotFound, utils.ErrorResponse(http.StatusNotFound, "Doctor not found"))
 		return
 	}
-	c.JSON(http.StatusOK, d)
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Doctor retrieved successfully", d))
 }
 
 // ---------------- Update Doctor ----------------
@@ -129,13 +130,13 @@ func (h *DoctorHandler) UpdateDoctor(c *gin.Context) {
 	var req updateDoctorReq
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
 		return
 	}
 
 	d, err := h.service.GetDoctorByID(doctorID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "doctor not found"})
+		c.JSON(http.StatusNotFound, utils.ErrorResponse(http.StatusNotFound, "Doctor not found"))
 		return
 	}
 
@@ -156,11 +157,11 @@ func (h *DoctorHandler) UpdateDoctor(c *gin.Context) {
 	}
 
 	if err := h.service.UpdateDoctor(d); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusOK, d)
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Doctor updated successfully", d))
 }
 
 // ---------------- Delete Doctor ----------------
@@ -175,10 +176,10 @@ func (h *DoctorHandler) UpdateDoctor(c *gin.Context) {
 func (h *DoctorHandler) DeleteDoctor(c *gin.Context) {
 	doctorID := c.Param("doctor_id")
 	if err := h.service.DeleteDoctor(doctorID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "doctor deleted"})
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Doctor deleted successfully", nil))
 }
 
 // ---------------- List Doctors ----------------
@@ -192,10 +193,10 @@ func (h *DoctorHandler) DeleteDoctor(c *gin.Context) {
 func (h *DoctorHandler) ListDoctors(c *gin.Context) {
 	doctors, err := h.service.ListDoctors()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return
 	}
-	c.JSON(http.StatusOK, doctors)
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Doctors retrieved successfully", doctors))
 }
 
 // ---------------- List Doctors by Hospital ID ----------------
@@ -212,9 +213,9 @@ func (h *DoctorHandler) ListDoctorsByHospitalID(c *gin.Context) {
 
 	doctors, err := h.service.FindByHospitalID(hospitalID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusOK, doctors)
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Doctors retrieved successfully", doctors))
 }

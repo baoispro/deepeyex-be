@@ -4,6 +4,7 @@ import (
 	"auth-service/internal/config"
 	"auth-service/internal/enums"
 	"auth-service/internal/services"
+	"auth-service/internal/utils"
 	"net/http"
 	"time"
 
@@ -70,14 +71,14 @@ func (h *AuthHandler) clearRefreshCookie(c *gin.Context) {
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req registerReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
 		return
 	}
 	if err := h.service.Register(req.Username, req.Password, req.Role); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest,  utils.ErrorResponse(http.StatusBadRequest, err.Error()))
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{"message": "user registered"})
+	c.JSON(http.StatusCreated, utils.SuccessResponse(http.StatusCreated, "User registered successfully", nil))
 }
 
 // Login
@@ -94,21 +95,21 @@ func (h *AuthHandler) Register(c *gin.Context) {
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req loginReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
+		c.JSON(http.StatusUnauthorized, utils.ErrorResponse(http.StatusUnauthorized, "invalid login payload"))
 		return
 	}
 	access, aExp, refresh, rExp, u, err := h.service.Login(req.Username, req.Password)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		c.JSON(http.StatusUnauthorized, utils.ErrorResponse(http.StatusUnauthorized, err.Error()))
 		return
 	}
 	h.setRefreshCookie(c, refresh, rExp)
-	c.JSON(http.StatusOK, tokenRes{
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Login successful", tokenRes{
 		AccessToken:  access,
 		AccessExpire: aExp,
 		UserID:       u.ID,
 		Role:         string(u.Role),
-	})
+	}))
 }
 
 // Login firebase
@@ -125,22 +126,22 @@ func (h *AuthHandler) Login(c *gin.Context) {
 func (h *AuthHandler) LoginFirebase(c *gin.Context) {
 	var req loginFirebaseReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid firebase payload"})
+		c.JSON(http.StatusUnauthorized, utils.ErrorResponse(http.StatusUnauthorized, "invalid firebase login payload"))
 		return
 	}
 
 	access, aExp, refresh, rExp, u, err := h.service.LoginFirebase(req.FirebaseUID, req.Email)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		c.JSON(http.StatusUnauthorized, utils.ErrorResponse(http.StatusUnauthorized, err.Error()))
 		return
 	}
 	h.setRefreshCookie(c, refresh, rExp)
-	c.JSON(http.StatusOK, tokenRes{
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Firebase login successful",tokenRes{
 		AccessToken:  access,
 		AccessExpire: aExp,
 		UserID:       u.ID,
 		Role:         string(u.Role),
-	})
+	}))
 }
 
 // Refresh
@@ -154,17 +155,17 @@ func (h *AuthHandler) LoginFirebase(c *gin.Context) {
 func (h *AuthHandler) Refresh(c *gin.Context) {
 	refreshCookie, err := c.Cookie(h.cfg.RefreshCookieName)
 	if err != nil || refreshCookie == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "missing refresh cookie"})
+		c.JSON(http.StatusUnauthorized, utils.ErrorResponse(http.StatusUnauthorized, "missing refresh token"))
 		return
 	}
 
 	access, aExp, newRefresh, newExp, err := h.service.Refresh(refreshCookie)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		c.JSON(http.StatusUnauthorized, utils.ErrorResponse(http.StatusUnauthorized, err.Error()))
 		return
 	}
 	h.setRefreshCookie(c, newRefresh, newExp)
-	c.JSON(http.StatusOK, tokenRes{AccessToken: access, AccessExpire: aExp})
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Token refreshed successfully", tokenRes{AccessToken: access, AccessExpire: aExp}))
 }
 
 // Logout
@@ -180,7 +181,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		h.service.Logout(refresh)
 	}
 	h.clearRefreshCookie(c)
-	c.JSON(http.StatusOK, gin.H{"message": "logged out"})
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Logged out successfully", nil))
 }
 
 // Me
@@ -195,5 +196,8 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 func (h *AuthHandler) Me(c *gin.Context) {
 	uid := c.GetString("uid")
 	role := c.GetString("role")
-	c.JSON(http.StatusOK, gin.H{"user_id": uid, "role": role})
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "User info retrieved successfully", map[string]string{
+		"user_id": uid,	
+		"role":    role,
+	}))
 }
