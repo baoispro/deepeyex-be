@@ -3,6 +3,7 @@ package hospitalhandler
 import (
 	"hospital-service/internal/config"
 	"hospital-service/internal/services/hospitalservice"
+	"hospital-service/internal/utils"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -50,18 +51,18 @@ type updateHospitalReq struct {
 func (h *HospitalHandler) CreateHospital(c *gin.Context) {
 	var req createHospitalReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
 		return
 	}
 
 	
-	created, err := h.service.CreateHospital(req.Name, req.Address, req.Phone, req.Email, req.LogoURL)
+	hospital, err := h.service.CreateHospital(req.Name, req.Address, req.Phone, req.Email, req.LogoURL)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusCreated, created)
+	c.JSON(http.StatusCreated, utils.SuccessResponse(http.StatusCreated, "Hospital created successfully", hospital))
 }
 
 // ---------------- Get Hospital By ID ----------------
@@ -77,10 +78,10 @@ func (h *HospitalHandler) GetHospitalByID(c *gin.Context) {
 	hospitalID := c.Param("hospital_id")
 	hospitalData, err := h.service.GetHospitalByID(hospitalID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "hospital not found"})
+		c.JSON(http.StatusNotFound, utils.ErrorResponse(http.StatusNotFound, "Hospital not found"))
 		return
 	}
-	c.JSON(http.StatusOK, hospitalData)
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Hospital retrieved successfully", hospitalData))
 }
 
 // ---------------- Update Hospital ----------------
@@ -101,13 +102,13 @@ func (h *HospitalHandler) UpdateHospital(c *gin.Context) {
 	var req updateHospitalReq
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
 		return
 	}
 
 	hospitalData, err := h.service.GetHospitalByID(hospitalID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "hospital not found"})
+		c.JSON(http.StatusNotFound, utils.ErrorResponse(http.StatusNotFound, "Hospital not found"))
 		return
 	}
 
@@ -125,11 +126,11 @@ func (h *HospitalHandler) UpdateHospital(c *gin.Context) {
 	}
 
 	if err := h.service.UpdateHospital(hospitalData); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusOK, hospitalData)
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Hospital updated successfully", hospitalData))
 }
 
 // ---------------- Delete Hospital ----------------
@@ -145,11 +146,11 @@ func (h *HospitalHandler) DeleteHospital(c *gin.Context) {
 	hospitalID := c.Param("hospital_id")
 
 	if err := h.service.DeleteHospital(hospitalID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "hospital deleted"})
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Hospital deleted successfully", nil))
 }
 
 // ---------------- List Hospitals ----------------
@@ -163,8 +164,8 @@ func (h *HospitalHandler) DeleteHospital(c *gin.Context) {
 func (h *HospitalHandler) ListHospitals(c *gin.Context) {
 	hospitals, err := h.service.ListHospitals()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return
 	}
-	c.JSON(http.StatusOK, hospitals)
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Hospitals retrieved successfully", hospitals))
 }
