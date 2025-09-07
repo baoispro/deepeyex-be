@@ -10,6 +10,31 @@ definitions:
     - Patient
     - Doctor
     - Admin
+  handlers.createUserReq:
+    properties:
+      email:
+        example: alice@example.com
+        type: string
+      firebase_uid:
+        description: optional
+        example: ""
+        type: string
+      password:
+        example: secret
+        type: string
+      role:
+        description: patient/doctor/admin
+        example: patient
+        type: string
+      username:
+        example: alice
+        type: string
+    required:
+    - email
+    - password
+    - role
+    - username
+    type: object
   handlers.loginFirebaseReq:
     properties:
       email:
@@ -60,6 +85,34 @@ definitions:
       user_id:
         type: string
     type: object
+  handlers.updateUserReq:
+    properties:
+      email:
+        example: alice@example.com
+        type: string
+      firebase_uid:
+        description: optional
+        example: ""
+        type: string
+      password:
+        example: newsecret
+        type: string
+      role:
+        description: patient/doctor/admin
+        example: patient
+        type: string
+      username:
+        example: alice
+        type: string
+    type: object
+  utils.APIResponse:
+    properties:
+      data: {}
+      message:
+        type: string
+      status:
+        type: integer
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -83,6 +136,98 @@ paths:
       summary: Get current user info
       tags:
       - Private
+  /private/users:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+      summary: List users
+      tags:
+      - Users
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: User data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.createUserReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+      summary: Create user
+      tags:
+      - Users
+  /private/users/{id}:
+    delete:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+      summary: Delete user
+      tags:
+      - Users
+    get:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+      summary: Get user
+      tags:
+      - Users
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: User updates
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.updateUserReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+      summary: Update user
+      tags:
+      - Users
   /public/login:
     post:
       consumes:

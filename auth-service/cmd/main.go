@@ -27,9 +27,12 @@ func main() {
 	userRepo := repositories.NewUserRepo(db)
 	tokenRepo := repositories.NewTokenRepo(db)
 	authService := services.NewAuthService(cfg, userRepo, tokenRepo)
+	userService := services.NewUserService(userRepo)
 	authHandler := handlers.NewAuthHandler(cfg, authService)
+	userHandler := handlers.NewUserHandler(userService)
 
-	r := routers.SetupRouter(&cfg, authHandler)
+
+	r := routers.SetupRouter(&cfg, authHandler, userHandler)
 	log.Printf("Auth service running on :%s", cfg.Port)
 	if err := r.Run(":" + cfg.Port); err != nil {
 		log.Fatal(err)
