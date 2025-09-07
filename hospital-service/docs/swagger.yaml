@@ -23,41 +23,6 @@ definitions:
       user_id:
         type: string
     type: object
-  doctorhandler.createDoctorReq:
-    properties:
-      avatar_url:
-        type: string
-      email:
-        type: string
-      full_name:
-        type: string
-      hospital_id:
-        type: string
-      phone:
-        type: string
-      specialty:
-        $ref: '#/definitions/enums.Specialty'
-      user_id:
-        type: string
-    required:
-    - full_name
-    - hospital_id
-    - specialty
-    - user_id
-    type: object
-  doctorhandler.updateDoctorReq:
-    properties:
-      email:
-        type: string
-      full_name:
-        type: string
-      hospital_id:
-        type: string
-      phone:
-        type: string
-      specialty:
-        $ref: '#/definitions/enums.Specialty'
-    type: object
   enums.Gender:
     enum:
     - male
@@ -103,32 +68,6 @@ definitions:
       updated_at:
         type: string
     type: object
-  hospitalhandler.createHospitalReq:
-    properties:
-      address:
-        type: string
-      email:
-        type: string
-      logo_url:
-        type: string
-      name:
-        type: string
-      phone:
-        type: string
-    required:
-    - name
-    type: object
-  hospitalhandler.updateHospitalReq:
-    properties:
-      address:
-        type: string
-      email:
-        type: string
-      name:
-        type: string
-      phone:
-        type: string
-    type: object
   patient.Patient:
     properties:
       address:
@@ -154,52 +93,13 @@ definitions:
       user_id:
         type: string
     type: object
-  patienthandler.createPatientReq:
+  utils.APIResponse:
     properties:
-      address:
+      data: {}
+      message:
         type: string
-      avatar_url:
-        type: string
-      dob:
-        type: string
-      email:
-        type: string
-      full_name:
-        type: string
-      gender:
-        enum:
-        - male
-        - female
-        - other
-        type: string
-      phone:
-        type: string
-      user_id:
-        type: string
-    required:
-    - dob
-    - full_name
-    - gender
-    - user_id
-    type: object
-  patienthandler.updatePatientReq:
-    properties:
-      address:
-        type: string
-      dob:
-        type: string
-      email:
-        type: string
-      full_name:
-        type: string
-      gender:
-        enum:
-        - male
-        - female
-        - other
-        type: string
-      phone:
-        type: string
+      status:
+        type: integer
     type: object
 host: localhost:8081
 info:
@@ -230,34 +130,56 @@ paths:
       - Doctors
     post:
       consumes:
-      - application/json
-      description: Add a new doctor record
+      - multipart/form-data
+      description: Add a doctor with required info and optional avatar upload
       parameters:
-      - description: Doctor info
-        in: body
-        name: doctor
+      - description: User ID
+        in: formData
+        name: user_id
         required: true
-        schema:
-          $ref: '#/definitions/doctorhandler.createDoctorReq'
+        type: string
+      - description: Full Name
+        in: formData
+        name: full_name
+        required: true
+        type: string
+      - description: Specialty
+        in: formData
+        name: specialty
+        required: true
+        type: string
+      - description: Hospital ID
+        in: formData
+        name: hospital_id
+        required: true
+        type: string
+      - description: Phone
+        in: formData
+        name: phone
+        type: string
+      - description: Email
+        in: formData
+        name: email
+        type: string
+      - description: Avatar File
+        in: formData
+        name: avatar
+        type: file
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/doctor.Doctor'
+            $ref: '#/definitions/utils.APIResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/utils.APIResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/utils.APIResponse'
       summary: Create a new doctor
       tags:
       - Doctors
@@ -314,46 +236,58 @@ paths:
       - Doctors
     put:
       consumes:
-      - application/json
-      description: Update doctor record by doctor ID
+      - multipart/form-data
+      description: Update doctor info and avatar
       parameters:
       - description: Doctor ID
         in: path
         name: doctor_id
         required: true
         type: string
-      - description: Updated doctor info
-        in: body
-        name: doctor
-        required: true
-        schema:
-          $ref: '#/definitions/doctorhandler.updateDoctorReq'
+      - description: Full Name
+        in: formData
+        name: full_name
+        type: string
+      - description: Specialty
+        in: formData
+        name: specialty
+        type: string
+      - description: Hospital ID
+        in: formData
+        name: hospital_id
+        type: string
+      - description: Phone
+        in: formData
+        name: phone
+        type: string
+      - description: Email
+        in: formData
+        name: email
+        type: string
+      - description: Avatar File
+        in: formData
+        name: avatar
+        type: file
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/doctor.Doctor'
+            $ref: '#/definitions/utils.APIResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/utils.APIResponse'
         "404":
           description: Not Found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/utils.APIResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Update doctor info
+            $ref: '#/definitions/utils.APIResponse'
+      summary: Update a doctor
       tags:
       - Doctors
   /doctors/hospital/{hospital_id}:
@@ -431,34 +365,45 @@ paths:
       - Hospitals
     post:
       consumes:
-      - application/json
-      description: Add a new hospital record
+      - multipart/form-data
+      description: Add hospital info with optional logo upload
       parameters:
-      - description: Hospital info
-        in: body
-        name: hospital
+      - description: Hospital Name
+        in: formData
+        name: name
         required: true
-        schema:
-          $ref: '#/definitions/hospitalhandler.createHospitalReq'
+        type: string
+      - description: Address
+        in: formData
+        name: address
+        type: string
+      - description: Phone
+        in: formData
+        name: phone
+        type: string
+      - description: Email
+        in: formData
+        name: email
+        type: string
+      - description: Hospital Logo
+        in: formData
+        name: logo
+        type: file
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/hospital.Hospital'
+            $ref: '#/definitions/utils.APIResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/utils.APIResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/utils.APIResponse'
       summary: Create a new hospital
       tags:
       - Hospitals
@@ -515,46 +460,54 @@ paths:
       - Hospitals
     put:
       consumes:
-      - application/json
-      description: Update hospital record by hospital ID
+      - multipart/form-data
+      description: Update hospital info and logo
       parameters:
       - description: Hospital ID
         in: path
         name: hospital_id
         required: true
         type: string
-      - description: Updated hospital info
-        in: body
-        name: hospital
-        required: true
-        schema:
-          $ref: '#/definitions/hospitalhandler.updateHospitalReq'
+      - description: Hospital Name
+        in: formData
+        name: name
+        type: string
+      - description: Address
+        in: formData
+        name: address
+        type: string
+      - description: Phone
+        in: formData
+        name: phone
+        type: string
+      - description: Email
+        in: formData
+        name: email
+        type: string
+      - description: Hospital Logo
+        in: formData
+        name: logo
+        type: file
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/hospital.Hospital'
+            $ref: '#/definitions/utils.APIResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/utils.APIResponse'
         "404":
           description: Not Found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/utils.APIResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Update hospital info
+            $ref: '#/definitions/utils.APIResponse'
+      summary: Update a hospital
       tags:
       - Hospitals
   /patients:
@@ -580,15 +533,45 @@ paths:
       - Patients
     post:
       consumes:
-      - application/json
-      description: Add a new patient record
+      - multipart/form-data
+      description: Add a new patient record with optional avatar upload
       parameters:
-      - description: Patient info
-        in: body
-        name: patient
+      - description: User ID
+        in: formData
+        name: user_id
         required: true
-        schema:
-          $ref: '#/definitions/patienthandler.createPatientReq'
+        type: string
+      - description: Full Name
+        in: formData
+        name: full_name
+        required: true
+        type: string
+      - description: Date of birth (YYYY-MM-DD)
+        in: formData
+        name: dob
+        required: true
+        type: string
+      - description: Gender (male/female/other)
+        in: formData
+        name: gender
+        required: true
+        type: string
+      - description: Address
+        in: formData
+        name: address
+        type: string
+      - description: Phone
+        in: formData
+        name: phone
+        type: string
+      - description: Email
+        in: formData
+        name: email
+        type: string
+      - description: Avatar file
+        in: formData
+        name: avatar
+        type: file
       produces:
       - application/json
       responses:
@@ -664,20 +647,42 @@ paths:
       - Patients
     put:
       consumes:
-      - application/json
-      description: Update patient record by patient ID
+      - multipart/form-data
+      description: Update patient record by patient ID (with optional new avatar)
       parameters:
       - description: Patient ID
         in: path
         name: patient_id
         required: true
         type: string
-      - description: Updated patient info
-        in: body
-        name: patient
-        required: true
-        schema:
-          $ref: '#/definitions/patienthandler.updatePatientReq'
+      - description: Full Name
+        in: formData
+        name: full_name
+        type: string
+      - description: Date of birth (YYYY-MM-DD)
+        in: formData
+        name: dob
+        type: string
+      - description: Gender (male/female/other)
+        in: formData
+        name: gender
+        type: string
+      - description: Address
+        in: formData
+        name: address
+        type: string
+      - description: Phone
+        in: formData
+        name: phone
+        type: string
+      - description: Email
+        in: formData
+        name: email
+        type: string
+      - description: Avatar file
+        in: formData
+        name: avatar
+        type: file
       produces:
       - application/json
       responses:

@@ -42,7 +42,7 @@ func (s *DoctorService) CreateDoctor(userID, fullName string, specialty enums.Sp
 		HospitalID: hospitalID,
 		Phone:      phone,
 		Email:      email,
-		AvatarURL:  avatarURL,
+		Image:  avatarURL,
 	}
 	err := s.doctorRepo.Create(d)
 	return d, err
@@ -63,7 +63,7 @@ func (s *DoctorService) UpdateDoctor(d *doctor.Doctor, avatarFile interface{}) e
 		if err != nil {
 			return err
 		}
-		d.AvatarURL = url
+		d.Image = url
 	}
 
 	return s.doctorRepo.Update(d)

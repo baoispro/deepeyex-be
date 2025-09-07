@@ -47,9 +47,9 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Add a new doctor record",
+                "description": "Add a doctor with required info and optional avatar upload",
                 "consumes": [
-                    "application/json"
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -60,38 +60,69 @@ const docTemplate = `{
                 "summary": "Create a new doctor",
                 "parameters": [
                     {
-                        "description": "Doctor info",
-                        "name": "doctor",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/doctorhandler.createDoctorReq"
-                        }
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "user_id",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Full Name",
+                        "name": "full_name",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Specialty",
+                        "name": "specialty",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Hospital ID",
+                        "name": "hospital_id",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Phone",
+                        "name": "phone",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Email",
+                        "name": "email",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Avatar File",
+                        "name": "avatar",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/doctor.Doctor"
+                            "$ref": "#/definitions/utils.APIResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/utils.APIResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/utils.APIResponse"
                         }
                     }
                 }
@@ -214,9 +245,9 @@ const docTemplate = `{
                 }
             },
             "put": {
-                "description": "Update doctor record by doctor ID",
+                "description": "Update doctor info and avatar",
                 "consumes": [
-                    "application/json"
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -224,7 +255,7 @@ const docTemplate = `{
                 "tags": [
                     "Doctors"
                 ],
-                "summary": "Update doctor info",
+                "summary": "Update a doctor",
                 "parameters": [
                     {
                         "type": "string",
@@ -234,47 +265,65 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Updated doctor info",
-                        "name": "doctor",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/doctorhandler.updateDoctorReq"
-                        }
+                        "type": "string",
+                        "description": "Full Name",
+                        "name": "full_name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Specialty",
+                        "name": "specialty",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Hospital ID",
+                        "name": "hospital_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Phone",
+                        "name": "phone",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Email",
+                        "name": "email",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Avatar File",
+                        "name": "avatar",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/doctor.Doctor"
+                            "$ref": "#/definitions/utils.APIResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/utils.APIResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/utils.APIResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/utils.APIResponse"
                         }
                     }
                 }
@@ -351,9 +400,9 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Add a new hospital record",
+                "description": "Add hospital info with optional logo upload",
                 "consumes": [
-                    "application/json"
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -364,38 +413,54 @@ const docTemplate = `{
                 "summary": "Create a new hospital",
                 "parameters": [
                     {
-                        "description": "Hospital info",
-                        "name": "hospital",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/hospitalhandler.createHospitalReq"
-                        }
+                        "type": "string",
+                        "description": "Hospital Name",
+                        "name": "name",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Address",
+                        "name": "address",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Phone",
+                        "name": "phone",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Email",
+                        "name": "email",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Hospital Logo",
+                        "name": "logo",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/hospital.Hospital"
+                            "$ref": "#/definitions/utils.APIResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/utils.APIResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/utils.APIResponse"
                         }
                     }
                 }
@@ -439,9 +504,9 @@ const docTemplate = `{
                 }
             },
             "put": {
-                "description": "Update hospital record by hospital ID",
+                "description": "Update hospital info and logo",
                 "consumes": [
-                    "application/json"
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -449,7 +514,7 @@ const docTemplate = `{
                 "tags": [
                     "Hospitals"
                 ],
-                "summary": "Update hospital info",
+                "summary": "Update a hospital",
                 "parameters": [
                     {
                         "type": "string",
@@ -459,47 +524,59 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Updated hospital info",
-                        "name": "hospital",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/hospitalhandler.updateHospitalReq"
-                        }
+                        "type": "string",
+                        "description": "Hospital Name",
+                        "name": "name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Address",
+                        "name": "address",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Phone",
+                        "name": "phone",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Email",
+                        "name": "email",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Hospital Logo",
+                        "name": "logo",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/hospital.Hospital"
+                            "$ref": "#/definitions/utils.APIResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/utils.APIResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/utils.APIResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/utils.APIResponse"
                         }
                     }
                 }
@@ -576,9 +653,9 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Add a new patient record",
+                "description": "Add a new patient record with optional avatar upload",
                 "consumes": [
-                    "application/json"
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -589,13 +666,56 @@ const docTemplate = `{
                 "summary": "Create a new patient",
                 "parameters": [
                     {
-                        "description": "Patient info",
-                        "name": "patient",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/patienthandler.createPatientReq"
-                        }
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "user_id",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Full Name",
+                        "name": "full_name",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Date of birth (YYYY-MM-DD)",
+                        "name": "dob",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Gender (male/female/other)",
+                        "name": "gender",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Address",
+                        "name": "address",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Phone",
+                        "name": "phone",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Email",
+                        "name": "email",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Avatar file",
+                        "name": "avatar",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
@@ -702,9 +822,9 @@ const docTemplate = `{
                 }
             },
             "put": {
-                "description": "Update patient record by patient ID",
+                "description": "Update patient record by patient ID (with optional new avatar)",
                 "consumes": [
-                    "application/json"
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -722,13 +842,46 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Updated patient info",
-                        "name": "patient",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/patienthandler.updatePatientReq"
-                        }
+                        "type": "string",
+                        "description": "Full Name",
+                        "name": "full_name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Date of birth (YYYY-MM-DD)",
+                        "name": "dob",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Gender (male/female/other)",
+                        "name": "gender",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Address",
+                        "name": "address",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Phone",
+                        "name": "phone",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Email",
+                        "name": "email",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Avatar file",
+                        "name": "avatar",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
@@ -844,58 +997,6 @@ const docTemplate = `{
                 }
             }
         },
-        "doctorhandler.createDoctorReq": {
-            "type": "object",
-            "required": [
-                "full_name",
-                "hospital_id",
-                "specialty",
-                "user_id"
-            ],
-            "properties": {
-                "avatar_url": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "full_name": {
-                    "type": "string"
-                },
-                "hospital_id": {
-                    "type": "string"
-                },
-                "phone": {
-                    "type": "string"
-                },
-                "specialty": {
-                    "$ref": "#/definitions/enums.Specialty"
-                },
-                "user_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "doctorhandler.updateDoctorReq": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "full_name": {
-                    "type": "string"
-                },
-                "hospital_id": {
-                    "type": "string"
-                },
-                "phone": {
-                    "type": "string"
-                },
-                "specialty": {
-                    "$ref": "#/definitions/enums.Specialty"
-                }
-            }
-        },
         "enums.Gender": {
             "type": "string",
             "enum": [
@@ -959,46 +1060,6 @@ const docTemplate = `{
                 }
             }
         },
-        "hospitalhandler.createHospitalReq": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "address": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "logo_url": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "phone": {
-                    "type": "string"
-                }
-            }
-        },
-        "hospitalhandler.updateHospitalReq": {
-            "type": "object",
-            "properties": {
-                "address": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "phone": {
-                    "type": "string"
-                }
-            }
-        },
         "patient.Patient": {
             "type": "object",
             "properties": {
@@ -1037,71 +1098,15 @@ const docTemplate = `{
                 }
             }
         },
-        "patienthandler.createPatientReq": {
-            "type": "object",
-            "required": [
-                "dob",
-                "full_name",
-                "gender",
-                "user_id"
-            ],
-            "properties": {
-                "address": {
-                    "type": "string"
-                },
-                "avatar_url": {
-                    "type": "string"
-                },
-                "dob": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "full_name": {
-                    "type": "string"
-                },
-                "gender": {
-                    "type": "string",
-                    "enum": [
-                        "male",
-                        "female",
-                        "other"
-                    ]
-                },
-                "phone": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "patienthandler.updatePatientReq": {
+        "utils.APIResponse": {
             "type": "object",
             "properties": {
-                "address": {
+                "data": {},
+                "message": {
                     "type": "string"
                 },
-                "dob": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "full_name": {
-                    "type": "string"
-                },
-                "gender": {
-                    "type": "string",
-                    "enum": [
-                        "male",
-                        "female",
-                        "other"
-                    ]
-                },
-                "phone": {
-                    "type": "string"
+                "status": {
+                    "type": "integer"
                 }
             }
         }

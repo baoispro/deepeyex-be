@@ -50,9 +50,9 @@ type updateHospitalReq struct {
 // @Param phone formData string false "Phone"
 // @Param email formData string false "Email"
 // @Param logo formData file false "Hospital Logo"
-// @Success 201 {object} utils.ApiResponse
-// @Failure 400 {object} utils.ApiResponse
-// @Failure 500 {object} utils.ApiResponse
+// @Success 201 {object} utils.APIResponse 
+// @Failure 400 {object} utils.APIResponse 
+// @Failure 500 {object} utils.APIResponse 
 // @Router /hospitals [post]
 func (h *HospitalHandler) CreateHospital(c *gin.Context) {
 	var req createHospitalReq
@@ -106,10 +106,10 @@ func (h *HospitalHandler) GetHospitalByID(c *gin.Context) {
 // @Param phone formData string false "Phone"
 // @Param email formData string false "Email"
 // @Param logo formData file false "Hospital Logo"
-// @Success 200 {object} utils.ApiResponse
-// @Failure 400 {object} utils.ApiResponse
-// @Failure 404 {object} utils.ApiResponse
-// @Failure 500 {object} utils.ApiResponse
+// @Success 200 {object} utils.APIResponse 
+// @Failure 400 {object} utils.APIResponse 
+// @Failure 404 {object} utils.APIResponse 
+// @Failure 500 {object} utils.APIResponse 
 // @Router /hospitals/{hospital_id} [put]
 func (h *HospitalHandler) UpdateHospital(c *gin.Context) {
 	hospitalID := c.Param("hospital_id")

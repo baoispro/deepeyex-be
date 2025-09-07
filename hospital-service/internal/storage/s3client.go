@@ -47,7 +47,6 @@ func (s *S3Client) UploadFile(fileHeader *multipart.FileHeader, key string) (str
 		Bucket:      aws.String(s.bucket),
 		Key:         aws.String(key),
 		Body:        file,
-		ACL:         "public-read", // nếu muốn file public
 		ContentType: aws.String(fileHeader.Header.Get("Content-Type")),
 	})
 	if err != nil {
