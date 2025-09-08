@@ -71,6 +71,7 @@ def load_state_and_labels(model_path: str):
         try:
             with open(CLASS_JSON, "r", encoding="utf-8") as f:
                 class_names = json.load(f)
+                class_names = {int(k): v for k, v in class_names.items()}
         except Exception:
             class_names = None
     if class_names is None and os.path.isdir(TRAIN_DATA_DIR):
