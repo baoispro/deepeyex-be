@@ -965,9 +965,6 @@ const docTemplate = `{
         "doctor.Doctor": {
             "type": "object",
             "properties": {
-                "avatar_url": {
-                    "type": "string"
-                },
                 "created_at": {
                     "type": "string"
                 },
@@ -981,6 +978,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "hospital_id": {
+                    "type": "string"
+                },
+                "image": {
                     "type": "string"
                 },
                 "phone": {
@@ -1046,7 +1046,7 @@ const docTemplate = `{
                 "hospital_id": {
                     "type": "string"
                 },
-                "logo_url": {
+                "image": {
                     "type": "string"
                 },
                 "name": {
@@ -1066,9 +1066,6 @@ const docTemplate = `{
                 "address": {
                     "type": "string"
                 },
-                "avatar_url": {
-                    "type": "string"
-                },
                 "created_at": {
                     "type": "string"
                 },
@@ -1083,6 +1080,9 @@ const docTemplate = `{
                 },
                 "gender": {
                     "$ref": "#/definitions/enums.Gender"
+                },
+                "image": {
+                    "type": "string"
                 },
                 "patient_id": {
                     "type": "string"

@@ -38,7 +38,7 @@ func (s *HospitalService) CreateHospital(name, address, phone, email string, log
 		Address:    address,
 		Phone:      phone,
 		Email:      email,
-		LogoURL:    logoURL,
+		Image:    logoURL,
 	}
 	err := s.hospitalRepo.Create(h)
 	return h, err
@@ -59,7 +59,7 @@ func (s *HospitalService) UpdateHospital(h *hospital.Hospital, logoFile interfac
 		if err != nil {
 			return err
 		}
-		h.LogoURL = url
+		h.Image = url
 	}
 
 	return s.hospitalRepo.Update(h)

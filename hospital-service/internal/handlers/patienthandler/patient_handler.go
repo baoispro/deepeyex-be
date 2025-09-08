@@ -20,26 +20,6 @@ func NewPatientHandler(cfg config.Config, service *patientservice.PatientService
 	return &PatientHandler{service: service, cfg: cfg}
 }
 
-type createPatientReq struct {
-	UserID    string    `json:"user_id" binding:"required"`
-	FullName  string    `json:"full_name" binding:"required"`
-	DOB       time.Time `json:"dob" binding:"required"`
-	Gender    string    `json:"gender" binding:"required,oneof=male female other"`
-	Address   string    `json:"address"`
-	Phone     string    `json:"phone"`
-	Email     string    `json:"email"`
-	AvatarURL string    `json:"avatar_url"`
-}
-
-type updatePatientReq struct {
-	FullName string    `json:"full_name"`
-	DOB      time.Time `json:"dob"`
-	Gender   string    `json:"gender" binding:"oneof=male female other"`
-	Address  string    `json:"address"`
-	Phone    string    `json:"phone"`
-	Email    string    `json:"email"`
-}
-
 // ---------------- Create Patient ----------------
 // @Summary Create a new patient
 // @Description Add a new patient record with optional avatar upload

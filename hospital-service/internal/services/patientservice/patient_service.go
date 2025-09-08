@@ -44,7 +44,7 @@ func (s *PatientService) CreatePatient(userID, fullName string, dob time.Time, g
 		Address:   address,
 		Phone:     phone,
 		Email:     email,
-		AvatarURL: avatarURL,
+		Image: avatarURL,
 	}
 	err := s.patientRepo.Create(p)
 	return p, err
@@ -70,7 +70,7 @@ func (s *PatientService) UpdatePatient(p *patient.Patient, avatarFile interface{
 		if err != nil {
 			return err
 		}
-		p.AvatarURL = url
+		p.Image = url
 	}
 
 	return s.patientRepo.Update(p)

@@ -958,9 +958,6 @@
         "doctor.Doctor": {
             "type": "object",
             "properties": {
-                "avatar_url": {
-                    "type": "string"
-                },
                 "created_at": {
                     "type": "string"
                 },
@@ -974,6 +971,9 @@
                     "type": "string"
                 },
                 "hospital_id": {
+                    "type": "string"
+                },
+                "image": {
                     "type": "string"
                 },
                 "phone": {
@@ -1039,7 +1039,7 @@
                 "hospital_id": {
                     "type": "string"
                 },
-                "logo_url": {
+                "image": {
                     "type": "string"
                 },
                 "name": {
@@ -1059,9 +1059,6 @@
                 "address": {
                     "type": "string"
                 },
-                "avatar_url": {
-                    "type": "string"
-                },
                 "created_at": {
                     "type": "string"
                 },
@@ -1076,6 +1073,9 @@
                 },
                 "gender": {
                     "$ref": "#/definitions/enums.Gender"
+                },
+                "image": {
+                    "type": "string"
                 },
                 "patient_id": {
                     "type": "string"
