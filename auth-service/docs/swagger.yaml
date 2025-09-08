@@ -1,15 +1,5 @@
 basePath: /
 definitions:
-  enums.Role:
-    enum:
-    - patient
-    - doctor
-    - admin
-    type: string
-    x-enum-varnames:
-    - Patient
-    - Doctor
-    - Admin
   handlers.createUserReq:
     properties:
       email:
@@ -59,19 +49,18 @@ definitions:
     type: object
   handlers.registerReq:
     properties:
+      email:
+        example: nguyena@gmail.com
+        type: string
       password:
         example: secret
         type: string
-      role:
-        allOf:
-        - $ref: '#/definitions/enums.Role'
-        example: patient
       username:
         example: alice
         type: string
     required:
+    - email
     - password
-    - role
     - username
     type: object
   handlers.tokenRes:

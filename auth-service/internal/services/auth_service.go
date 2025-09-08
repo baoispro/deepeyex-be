@@ -9,6 +9,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"regexp"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -28,12 +29,17 @@ func NewAuthService(cfg config.Config, ur *repositories.UserRepo, tr *repositori
 }
 
 // ---------------- Register ----------------
-func (s *AuthService) Register(username, password string, role enums.Role) error {
-	if role != enums.Patient && role != enums.Doctor && role != enums.Admin {
-		return errors.New("invalid role")
-	}
+func (s *AuthService) Register(username, email, password string) error {
 	if _, err := s.userRepo.FindByUsername(username); err == nil {
 		return errors.New("username already exists")
+	}
+
+	if _, err := s.userRepo.FindByEmail(email); err == nil {
+		return errors.New("email already exists")
+	}
+
+	if !isValidPassword(password) {
+		return errors.New("password must contain at least 1 uppercase, 1 lowercase, 1 digit, and 1 special character")
 	}
 
 	hashedPwd, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -41,7 +47,8 @@ func (s *AuthService) Register(username, password string, role enums.Role) error
 		ID:       uuid.NewString(),
 		Username: username,
 		Password: string(hashedPwd),
-		Role:     role,
+		Role:     enums.Patient,
+		Email:    email,
 	}
 	return s.userRepo.Create(u)
 }
@@ -156,7 +163,7 @@ func (s *AuthService) generateTokensKong(userID string, role string) (access str
 }
 
 func (s *AuthService) generateAccessTokenKong(userID string, role string) (string, time.Time, error) {
-	kongKey := s.cfg.KongKey    // load từ config.yml hoặc env
+	kongKey := s.cfg.KongKey // load từ config.yml hoặc env
 	kongSecret := s.cfg.KongSecret
 
 	aExp := time.Now().Add(time.Hour)
@@ -174,4 +181,18 @@ func (s *AuthService) generateAccessTokenKong(userID string, role string) (strin
 func hashToken(token string) string {
 	h := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(h[:])
+}
+
+func isValidPassword(pwd string) bool {
+	var (
+		hasUpper   = regexp.MustCompile(`[A-Z]`)
+		hasLower   = regexp.MustCompile(`[a-z]`)
+		hasNumber  = regexp.MustCompile(`[0-9]`)
+		hasSpecial = regexp.MustCompile(`[^A-Za-z0-9]`)
+	)
+
+	return hasUpper.MatchString(pwd) &&
+		hasLower.MatchString(pwd) &&
+		hasNumber.MatchString(pwd) &&
+		hasSpecial.MatchString(pwd)
 }

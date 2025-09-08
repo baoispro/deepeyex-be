@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"auth-service/internal/config"
-	"auth-service/internal/enums"
 	"auth-service/internal/services"
 	"auth-service/internal/utils"
 	"net/http"
@@ -21,9 +20,9 @@ func NewAuthHandler(cfg config.Config, service *services.AuthService) *AuthHandl
 }
 
 type registerReq struct {
-	Username string     `json:"username" example:"alice" binding:"required"`
-	Password string     `json:"password" example:"secret" binding:"required"`
-	Role     enums.Role `json:"role" example:"patient" binding:"required"`
+	Username string `json:"username" example:"alice" binding:"required"`
+	Password string `json:"password" example:"secret" binding:"required"`
+	Email    string `json:"email" example:"nguyena@gmail.com" binding:"required"`
 }
 type loginReq struct {
 	Username string `json:"username" example:"alice" binding:"required"`
@@ -74,8 +73,8 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
 		return
 	}
-	if err := h.service.Register(req.Username, req.Password, req.Role); err != nil {
-		c.JSON(http.StatusBadRequest,  utils.ErrorResponse(http.StatusBadRequest, err.Error()))
+	if err := h.service.Register(req.Username, req.Email, req.Password); err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
 		return
 	}
 	c.JSON(http.StatusCreated, utils.SuccessResponse(http.StatusCreated, "User registered successfully", nil))
@@ -136,7 +135,7 @@ func (h *AuthHandler) LoginFirebase(c *gin.Context) {
 		return
 	}
 	h.setRefreshCookie(c, refresh, rExp)
-	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Firebase login successful",tokenRes{
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Firebase login successful", tokenRes{
 		AccessToken:  access,
 		AccessExpire: aExp,
 		UserID:       u.ID,
@@ -197,7 +196,7 @@ func (h *AuthHandler) Me(c *gin.Context) {
 	uid := c.GetString("uid")
 	role := c.GetString("role")
 	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "User info retrieved successfully", map[string]string{
-		"user_id": uid,	
+		"user_id": uid,
 		"role":    role,
 	}))
 }

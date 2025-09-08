@@ -371,19 +371,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "enums.Role": {
-            "type": "string",
-            "enum": [
-                "patient",
-                "doctor",
-                "admin"
-            ],
-            "x-enum-varnames": [
-                "Patient",
-                "Doctor",
-                "Admin"
-            ]
-        },
         "handlers.createUserReq": {
             "type": "object",
             "required": [
@@ -452,22 +439,18 @@ const docTemplate = `{
         "handlers.registerReq": {
             "type": "object",
             "required": [
+                "email",
                 "password",
-                "role",
                 "username"
             ],
             "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "nguyena@gmail.com"
+                },
                 "password": {
                     "type": "string",
                     "example": "secret"
-                },
-                "role": {
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/enums.Role"
-                        }
-                    ],
-                    "example": "patient"
                 },
                 "username": {
                     "type": "string",
