@@ -4,6 +4,7 @@ import json
 from typing import List
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
 import torch
 import torch.nn as nn
@@ -107,7 +108,14 @@ except Exception as e:
 
 # -------- FastAPI app --------
 app = FastAPI(title="External Eye Disease Classifier")
-
+# Cấu hình CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],  # domain frontend
+    allow_credentials=True,
+    allow_methods=["*"],  # Cho phép tất cả các method: GET, POST, PUT, DELETE
+    allow_headers=["*"],  # Cho phép tất cả header
+)
 @app.get("/health")
 def health():
     return {"status": "ok", "device": str(DEVICE), "model_loaded": model is not None}
