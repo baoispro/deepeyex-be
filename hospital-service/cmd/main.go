@@ -27,6 +27,14 @@ import (
 	timeslotrepo "hospital-service/internal/repositories/appointmentrepo"
 	timeslotservice "hospital-service/internal/services/appointmentservice"
 
+	drughandler "hospital-service/internal/handlers/drughandler"
+	drugrepo "hospital-service/internal/repositories/drugrepo"
+	drugservice "hospital-service/internal/services/drugservice"
+
+	orderhandler "hospital-service/internal/handlers/orderhandler"
+	orderrepo "hospital-service/internal/repositories/orderrepo"
+	orderservice "hospital-service/internal/services/orderservice"
+
 	"hospital-service/internal/routers"
 )
 
@@ -50,7 +58,9 @@ func main() {
 	hRepo := hospitalrepo.NewHospitalRepo(db)
 	aRepo := appointmentrepo.NewAppointmentRepo(db)
 	tRepo := timeslotrepo.NewTimeSlotRepo(db)
-	
+	drugRepo := drugrepo.NewDrugRepo(db)
+	orderRepo := orderrepo.NewOrderRepo(db)
+
 	s3Client, err := storage.NewS3Client(
 		cfg.S3Bucket,
 		cfg.S3Region,
@@ -67,6 +77,8 @@ func main() {
 	hService := hospitalservice.NewHospitalService(hRepo,s3Client)
 	aService := appointmentservice.NewAppointmentService(aRepo)
 	tService := timeslotservice.NewTimeSlotService(tRepo)
+	drugService := drugservice.NewDrugService(drugRepo, s3Client)
+	orderService := orderservice.NewOrderService(orderRepo, drugRepo,s3Client )
 
 	// Initialize handlers
 	pHandler := patienthandler.NewPatientHandler(cfg, pService)
@@ -74,8 +86,11 @@ func main() {
 	hHandler := hospitalhandler.NewHospitalHandler(cfg, hService)
 	aHandler := appointmenthandler.NewAppointmentHandler(cfg, aService)
 	tHandler := timeslothandler.NewTimeSlotHandler(cfg, tService)
+	drugHandler := drughandler.NewDrugHandler(cfg, drugService)
+	orderHandler := orderhandler.NewOrderHandler(cfg, orderService)
+
 	// Setup router
-	r := routers.SetupRouter(&cfg, pHandler, dHandler, hHandler, aHandler, tHandler)
+	r := routers.SetupRouter(&cfg, pHandler, dHandler, hHandler, aHandler, tHandler, drugHandler, orderHandler)
 
 	log.Printf("Hospital service running on :%s", cfg.Port)
 	if err := r.Run(":" + cfg.Port); err != nil {

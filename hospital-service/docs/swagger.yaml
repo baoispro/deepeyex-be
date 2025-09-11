@@ -36,7 +36,9 @@ definitions:
       status:
         $ref: '#/definitions/enums.AppointmentStatus'
       timeSlot:
-        $ref: '#/definitions/appointment.TimeSlot'
+        allOf:
+        - $ref: '#/definitions/appointment.TimeSlot'
+        description: Quan hệ
       updated_at:
         type: string
     type: object
@@ -126,6 +128,29 @@ definitions:
       user_id:
         type: string
     type: object
+  drug.Drug:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      discount_percent:
+        type: number
+      drug_id:
+        type: string
+      image:
+        type: string
+      name:
+        type: string
+      price:
+        type: number
+      sold_quantity:
+        type: integer
+      stock_quantity:
+        type: integer
+      updated_at:
+        type: string
+    type: object
   enums.AppointmentStatus:
     enum:
     - PENDING
@@ -146,6 +171,18 @@ definitions:
     x-enum-varnames:
     - Male
     - Female
+  enums.OrderStatus:
+    enum:
+    - PENDING
+    - PAID
+    - CANCELED
+    - DELIVERED
+    type: string
+    x-enum-varnames:
+    - PENDING
+    - PAID
+    - CANCELED
+    - DELIVERED
   enums.Specialty:
     enum:
     - ophthalmology
@@ -182,6 +219,71 @@ definitions:
         type: string
       updated_at:
         type: string
+    type: object
+  order.Order:
+    properties:
+      created_at:
+        type: string
+      order_id:
+        type: string
+      order_items:
+        items:
+          $ref: '#/definitions/order.OrderItem'
+        type: array
+      patient:
+        $ref: '#/definitions/patient.Patient'
+      patient_id:
+        type: string
+      status:
+        $ref: '#/definitions/enums.OrderStatus'
+      total_amount:
+        type: number
+    type: object
+  order.OrderItem:
+    properties:
+      drug:
+        allOf:
+        - $ref: '#/definitions/drug.Drug'
+        description: <-- thêm references
+      drug_id:
+        type: string
+      order_id:
+        type: string
+      order_item_id:
+        type: string
+      price:
+        type: number
+      quantity:
+        type: integer
+    type: object
+  orderhandler.CreateOrderRequest:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/orderservice.OrderItemRequest'
+        type: array
+      patient_id:
+        type: string
+    required:
+    - items
+    - patient_id
+    type: object
+  orderhandler.UpdateOrderStatusRequest:
+    properties:
+      status:
+        $ref: '#/definitions/enums.OrderStatus'
+    required:
+    - status
+    type: object
+  orderservice.OrderItemRequest:
+    properties:
+      drug_id:
+        type: string
+      quantity:
+        type: integer
+    required:
+    - drug_id
+    - quantity
     type: object
   patient.Patient:
     properties:
@@ -687,6 +789,194 @@ paths:
       summary: Get doctor by user ID
       tags:
       - Doctors
+  /drugs:
+    get:
+      description: Retrieve all drugs
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/drug.Drug'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List all drugs
+      tags:
+      - Drugs
+    post:
+      consumes:
+      - multipart/form-data
+      description: Add a new drug record with optional image upload
+      parameters:
+      - description: Drug name
+        in: formData
+        name: name
+        required: true
+        type: string
+      - description: Description
+        in: formData
+        name: description
+        type: string
+      - description: Price
+        in: formData
+        name: price
+        required: true
+        type: number
+      - description: Stock quantity
+        in: formData
+        name: stock
+        required: true
+        type: integer
+      - description: Discount percent
+        in: formData
+        name: discount
+        type: number
+      - description: Drug image
+        in: formData
+        name: image
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/drug.Drug'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new drug
+      tags:
+      - Drugs
+  /drugs/{drug_id}:
+    delete:
+      description: Delete drug by ID
+      parameters:
+      - description: Drug ID
+        in: path
+        name: drug_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete drug
+      tags:
+      - Drugs
+    get:
+      description: Retrieve drug by drug ID
+      parameters:
+      - description: Drug ID
+        in: path
+        name: drug_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/drug.Drug'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get drug by ID
+      tags:
+      - Drugs
+    put:
+      consumes:
+      - multipart/form-data
+      description: Update drug record by ID (with optional image)
+      parameters:
+      - description: Drug ID
+        in: path
+        name: drug_id
+        required: true
+        type: string
+      - description: Drug name
+        in: formData
+        name: name
+        type: string
+      - description: Description
+        in: formData
+        name: description
+        type: string
+      - description: Price
+        in: formData
+        name: price
+        type: number
+      - description: Stock quantity
+        in: formData
+        name: stock
+        type: integer
+      - description: Discount percent
+        in: formData
+        name: discount
+        type: number
+      - description: Drug image
+        in: formData
+        name: image
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/drug.Drug'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update drug info
+      tags:
+      - Drugs
   /hospitals:
     get:
       description: Retrieve all hospitals
@@ -855,6 +1145,208 @@ paths:
       summary: Update a hospital
       tags:
       - Hospitals
+  /orders:
+    get:
+      description: Retrieve all orders in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/order.Order'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List all orders
+      tags:
+      - Orders
+    post:
+      consumes:
+      - application/json
+      description: Create an order for a patient with list of items
+      parameters:
+      - description: Order data
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/orderhandler.CreateOrderRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/order.Order'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new order
+      tags:
+      - Orders
+  /orders/{order_id}:
+    delete:
+      description: Remove an order by its ID
+      parameters:
+      - description: Order ID
+        in: path
+        name: order_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete an order
+      tags:
+      - Orders
+    get:
+      description: Retrieve an order by its ID
+      parameters:
+      - description: Order ID
+        in: path
+        name: order_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/order.Order'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get order by ID
+      tags:
+      - Orders
+  /orders/{order_id}/detail:
+    put:
+      consumes:
+      - application/json
+      description: Update order items or other details
+      parameters:
+      - description: Order ID
+        in: path
+        name: order_id
+        required: true
+        type: string
+      - description: Updated order data
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/order.Order'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update order details
+      tags:
+      - Orders
+  /orders/{order_id}/status:
+    put:
+      consumes:
+      - application/json
+      description: Update the status of an order (PENDING, PAID, CANCELED, DELIVERED)
+      parameters:
+      - description: Order ID
+        in: path
+        name: order_id
+        required: true
+        type: string
+      - description: New status
+        in: body
+        name: status
+        required: true
+        schema:
+          $ref: '#/definitions/orderhandler.UpdateOrderStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update order status
+      tags:
+      - Orders
+  /orders/patient/{patient_id}:
+    get:
+      description: Retrieve all orders of a specific patient
+      parameters:
+      - description: Patient ID
+        in: path
+        name: patient_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/order.Order'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get orders by patient ID
+      tags:
+      - Orders
   /patients:
     get:
       description: Retrieve all patients
