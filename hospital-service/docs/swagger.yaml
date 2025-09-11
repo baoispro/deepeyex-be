@@ -1,5 +1,108 @@
 basePath: /
 definitions:
+  appointment.Appointment:
+    properties:
+      appointment_code:
+        description: Mã lịch hẹn duy nhất
+        type: string
+      appointment_id:
+        type: string
+      checked_in_at:
+        description: Thời gian bệnh nhân check-in (nếu có)
+        type: string
+      created_at:
+        type: string
+      doctor_id:
+        description: ID bác sĩ
+        type: string
+      hospital_id:
+        description: ID bệnh viện
+        type: string
+      notes:
+        description: Ghi chú thêm từ bệnh nhân
+        type: string
+      patient:
+        $ref: '#/definitions/patient.Patient'
+      patient_id:
+        description: ID bệnh nhân
+        type: string
+      slot_id:
+        description: ID của khung giờ đã chọn
+        type: string
+      specialty:
+        allOf:
+        - $ref: '#/definitions/enums.Specialty'
+        description: Chuyên khoa
+      status:
+        $ref: '#/definitions/enums.AppointmentStatus'
+      timeSlot:
+        $ref: '#/definitions/appointment.TimeSlot'
+      updated_at:
+        type: string
+    type: object
+  appointment.TimeSlot:
+    properties:
+      capacity:
+        type: integer
+      created_at:
+        type: string
+      doctor:
+        $ref: '#/definitions/doctor.Doctor'
+      doctor_id:
+        type: string
+      end_time:
+        type: string
+      slot_id:
+        type: string
+      start_time:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  appointmenthandler.UpdateAppointmentStatusRequest:
+    properties:
+      status:
+        $ref: '#/definitions/enums.AppointmentStatus'
+    required:
+    - status
+    type: object
+  appointmenthandler.createAppointmentReq:
+    properties:
+      doctor_id:
+        type: string
+      hospital_id:
+        type: string
+      notes:
+        type: string
+      patient_id:
+        type: string
+      slot_id:
+        type: string
+      specialty:
+        $ref: '#/definitions/enums.Specialty'
+    required:
+    - doctor_id
+    - hospital_id
+    - patient_id
+    - slot_id
+    - specialty
+    type: object
+  appointmenthandler.createTimeSlotReq:
+    properties:
+      capacity:
+        type: integer
+      doctor_id:
+        type: string
+      end_time:
+        type: string
+      start_time:
+        type: string
+    required:
+    - capacity
+    - doctor_id
+    - end_time
+    - start_time
+    type: object
   doctor.Doctor:
     properties:
       created_at:
@@ -23,6 +126,18 @@ definitions:
       user_id:
         type: string
     type: object
+  enums.AppointmentStatus:
+    enum:
+    - PENDING
+    - CONFIRMED
+    - COMPLETED
+    - CANCELED
+    type: string
+    x-enum-varnames:
+    - Pending
+    - Confirmed
+    - Completed
+    - Canceled
   enums.Gender:
     enum:
     - male
@@ -107,6 +222,236 @@ info:
   title: Auth Service API
   version: "1.0"
 paths:
+  /appointments:
+    get:
+      description: Retrieve a list of all appointments in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/appointment.Appointment'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List all appointments
+      tags:
+      - Appointments
+    post:
+      consumes:
+      - application/json
+      description: Schedule a new appointment for a patient with a doctor
+      parameters:
+      - description: Appointment data
+        in: body
+        name: appointment
+        required: true
+        schema:
+          $ref: '#/definitions/appointmenthandler.createAppointmentReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/appointment.Appointment'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new appointment
+      tags:
+      - Appointments
+  /appointments/{appointment_id}:
+    delete:
+      description: Remove an appointment by its ID
+      parameters:
+      - description: Appointment ID
+        in: path
+        name: appointment_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete an appointment
+      tags:
+      - Appointments
+    get:
+      description: Retrieve an appointment record using its ID
+      parameters:
+      - description: Appointment ID
+        in: path
+        name: appointment_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/appointment.Appointment'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get appointment by ID
+      tags:
+      - Appointments
+  /appointments/{appointment_id}/detail:
+    put:
+      consumes:
+      - application/json
+      description: Update the details of an existing appointment (date, notes, etc.)
+      parameters:
+      - description: Appointment ID
+        in: path
+        name: appointment_id
+        required: true
+        type: string
+      - description: Updated appointment data
+        in: body
+        name: appointment
+        required: true
+        schema:
+          $ref: '#/definitions/appointment.Appointment'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update appointment details
+      tags:
+      - Appointments
+  /appointments/{appointment_id}/status:
+    put:
+      consumes:
+      - application/json
+      description: Update the status of an appointment (PENDING, CONFIRMED, COMPLETED,
+        CANCELED)
+      parameters:
+      - description: Appointment ID
+        in: path
+        name: appointment_id
+        required: true
+        type: string
+      - description: New status
+        in: body
+        name: status
+        required: true
+        schema:
+          $ref: '#/definitions/appointmenthandler.UpdateAppointmentStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update appointment status
+      tags:
+      - Appointments
+  /appointments/doctor/{doctor_id}:
+    get:
+      description: Retrieve all appointments assigned to a specific doctor
+      parameters:
+      - description: Doctor ID
+        in: path
+        name: doctor_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/appointment.Appointment'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get appointments by doctor ID
+      tags:
+      - Appointments
+  /appointments/patient/{patient_id}:
+    get:
+      description: Retrieve all appointments belonging to a specific patient
+      parameters:
+      - description: Patient ID
+        in: path
+        name: patient_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/appointment.Appointment'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get appointments by patient ID
+      tags:
+      - Appointments
   /doctors:
     get:
       description: Retrieve all doctors
@@ -736,4 +1081,170 @@ paths:
       summary: Get patient by user ID
       tags:
       - Patients
+  /timeslots:
+    get:
+      description: Retrieve all time slots
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/appointment.TimeSlot'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List all time slots
+      tags:
+      - TimeSlots
+    post:
+      consumes:
+      - application/json
+      description: Add a new time slot for a doctor
+      parameters:
+      - description: TimeSlot data
+        in: body
+        name: timeslot
+        required: true
+        schema:
+          $ref: '#/definitions/appointmenthandler.createTimeSlotReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/appointment.TimeSlot'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new time slot
+      tags:
+      - TimeSlots
+  /timeslots/{slot_id}:
+    delete:
+      description: Delete a time slot by slot_id
+      parameters:
+      - description: Slot ID
+        in: path
+        name: slot_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete time slot
+      tags:
+      - TimeSlots
+    get:
+      description: Retrieve time slot info by slot_id
+      parameters:
+      - description: Slot ID
+        in: path
+        name: slot_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/appointment.TimeSlot'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get time slot by ID
+      tags:
+      - TimeSlots
+    put:
+      consumes:
+      - application/json
+      description: Update existing time slot (start_time, end_time, capacity)
+      parameters:
+      - description: Slot ID
+        in: path
+        name: slot_id
+        required: true
+        type: string
+      - description: Updated TimeSlot data
+        in: body
+        name: timeslot
+        required: true
+        schema:
+          $ref: '#/definitions/appointment.TimeSlot'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update time slot
+      tags:
+      - TimeSlots
+  /timeslots/doctor/{doctor_id}:
+    get:
+      description: List all time slots of a doctor
+      parameters:
+      - description: Doctor ID
+        in: path
+        name: doctor_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/appointment.TimeSlot'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get time slots by doctor ID
+      tags:
+      - TimeSlots
 swagger: "2.0"

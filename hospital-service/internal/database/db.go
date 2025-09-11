@@ -2,6 +2,7 @@ package database
 
 import (
 	"hospital-service/internal/config"
+	"hospital-service/internal/models/appointment"
 	"hospital-service/internal/models/doctor"
 	"hospital-service/internal/models/hospital"
 	"hospital-service/internal/models/patient"
@@ -20,23 +21,27 @@ func Connect(cfg config.Config) *gorm.DB {
 }
 
 // AutoMigrate tự động tạo hoặc cập nhật bảng trong database
-// AutoMigrate tự động tạo hoặc cập nhật bảng trong database
 func AutoMigrate(db *gorm.DB) error {
-    // 1. Migrate bảng 'cha' (parent table) trước: Hospital
-    err := db.AutoMigrate(&hospital.Hospital{})
-    if err != nil {
+    // 1. Bảng Hospital (cha) trước
+    if err := db.AutoMigrate(&hospital.Hospital{}); err != nil {
         return err
     }
 
-    // 2. Migrate bảng 'con' (child table) sau: Doctor phụ thuộc vào Hospital
-    err = db.AutoMigrate(&doctor.Doctor{})
-    if err != nil {
+    // 2. Bảng Doctor, phụ thuộc Hospital
+    if err := db.AutoMigrate(&doctor.Doctor{}); err != nil {
         return err
     }
 
-    // 3. Migrate các bảng không có mối quan hệ phụ thuộc lẫn nhau
-    err = db.AutoMigrate(&patient.Patient{})
-    if err != nil {
+    // 3. Bảng Patient và TimeSlot không phụ thuộc bảng khác
+    if err := db.AutoMigrate(&patient.Patient{}); err != nil {
+        return err
+    }
+    if err := db.AutoMigrate(&appointment.TimeSlot{}); err != nil {
+        return err
+    }
+
+    // 4. Bảng Appointment, phụ thuộc Patient và TimeSlot
+    if err := db.AutoMigrate(&appointment.Appointment{}); err != nil {
         return err
     }
 

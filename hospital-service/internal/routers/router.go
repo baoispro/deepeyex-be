@@ -2,6 +2,7 @@ package routers
 
 import (
 	"hospital-service/internal/config"
+	"hospital-service/internal/handlers/appointmenthandler"
 	"hospital-service/internal/handlers/doctorhandler"
 	"hospital-service/internal/handlers/hospitalhandler"
 	"hospital-service/internal/handlers/patienthandler"
@@ -14,7 +15,7 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandler, doctorHandler *doctorhandler.DoctorHandler, hHandler *hospitalhandler.HospitalHandler) *gin.Engine {
+func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandler, doctorHandler *doctorhandler.DoctorHandler, hHandler *hospitalhandler.HospitalHandler, aHandler *appointmenthandler.AppointmentHandler, tHandler *appointmenthandler.TimeSlotHandler) *gin.Engine {
 	r := gin.Default()
 
 	r.Use(cors.Default())
@@ -51,6 +52,28 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 		hospital.GET("/:hospital_id", hHandler.GetHospitalByID)
 		hospital.PUT("/:hospital_id", hHandler.UpdateHospital)
 		hospital.DELETE("/:hospital_id", hHandler.DeleteHospital)
+	}
+
+	appointments := r.Group("/appointments")
+	{
+		appointments.POST("", aHandler.CreateAppointment)
+		appointments.GET("/:appointment_id", aHandler.GetAppointmentByID)
+		appointments.GET("/patient/:patient_id", aHandler.GetAppointmentsByPatient)
+		appointments.GET("/doctor/:doctor_id", aHandler.GetAppointmentsByDoctor)
+		appointments.PUT("/:appointment_id/status", aHandler.UpdateAppointmentStatus)
+		appointments.PUT("/:appointment_id/detail", aHandler.UpdateAppointmentDetail)
+		appointments.GET("", aHandler.ListAllAppointments)
+		appointments.DELETE("/:appointment_id", aHandler.DeleteAppointment)
+	}
+
+	timeSlot := r.Group("/timeslots")
+	{
+		timeSlot.POST("", tHandler.CreateTimeSlot)
+		timeSlot.GET("", tHandler.ListAllTimeSlots)
+		timeSlot.GET("/:slot_id", tHandler.GetTimeSlotByID)
+		timeSlot.GET("/doctor/:doctor_id", tHandler.GetTimeSlotsByDoctor)
+		timeSlot.PUT("/:slot_id", tHandler.UpdateTimeSlot)
+		timeSlot.DELETE("/:slot_id", tHandler.DeleteTimeSlot)
 	}
 
 	// Swagger

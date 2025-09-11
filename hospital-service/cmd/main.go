@@ -19,6 +19,14 @@ import (
 	hospitalrepo "hospital-service/internal/repositories/hospitalrepo"
 	hospitalservice "hospital-service/internal/services/hospitalservice"
 
+	appointmenthandler "hospital-service/internal/handlers/appointmenthandler"
+	appointmentrepo "hospital-service/internal/repositories/appointmentrepo"
+	appointmentservice "hospital-service/internal/services/appointmentservice"
+
+	timeslothandler "hospital-service/internal/handlers/appointmenthandler"
+	timeslotrepo "hospital-service/internal/repositories/appointmentrepo"
+	timeslotservice "hospital-service/internal/services/appointmentservice"
+
 	"hospital-service/internal/routers"
 )
 
@@ -40,7 +48,9 @@ func main() {
 	pRepo := patientrepo.NewPatientRepo(db)
 	dRepo := doctorrepo.NewDoctorRepo(db)
 	hRepo := hospitalrepo.NewHospitalRepo(db)
-
+	aRepo := appointmentrepo.NewAppointmentRepo(db)
+	tRepo := timeslotrepo.NewTimeSlotRepo(db)
+	
 	s3Client, err := storage.NewS3Client(
 		cfg.S3Bucket,
 		cfg.S3Region,
@@ -55,14 +65,17 @@ func main() {
 	pService := patientservice.NewPatientService(pRepo,s3Client)
 	dService := doctorservice.NewDoctorService(dRepo,s3Client)
 	hService := hospitalservice.NewHospitalService(hRepo,s3Client)
+	aService := appointmentservice.NewAppointmentService(aRepo)
+	tService := timeslotservice.NewTimeSlotService(tRepo)
 
 	// Initialize handlers
 	pHandler := patienthandler.NewPatientHandler(cfg, pService)
 	dHandler := doctorhandler.NewDoctorHandler(cfg, dService)
 	hHandler := hospitalhandler.NewHospitalHandler(cfg, hService)
-
+	aHandler := appointmenthandler.NewAppointmentHandler(cfg, aService)
+	tHandler := timeslothandler.NewTimeSlotHandler(cfg, tService)
 	// Setup router
-	r := routers.SetupRouter(&cfg, pHandler, dHandler, hHandler)
+	r := routers.SetupRouter(&cfg, pHandler, dHandler, hHandler, aHandler, tHandler)
 
 	log.Printf("Hospital service running on :%s", cfg.Port)
 	if err := r.Run(":" + cfg.Port); err != nil {
