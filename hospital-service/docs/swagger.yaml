@@ -105,6 +105,15 @@ definitions:
     - end_time
     - start_time
     type: object
+  appointmenthandler.updateTimeSlotReq:
+    properties:
+      capacity:
+        type: integer
+      end_time:
+        type: string
+      start_time:
+        type: string
+    type: object
   doctor.Doctor:
     properties:
       created_at:
@@ -1693,16 +1702,14 @@ paths:
         name: timeslot
         required: true
         schema:
-          $ref: '#/definitions/appointment.TimeSlot'
+          $ref: '#/definitions/appointmenthandler.updateTimeSlotReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/appointment.TimeSlot'
         "400":
           description: Bad Request
           schema:

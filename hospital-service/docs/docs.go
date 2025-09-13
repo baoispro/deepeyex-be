@@ -2081,7 +2081,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/appointment.TimeSlot"
+                            "$ref": "#/definitions/appointmenthandler.updateTimeSlotReq"
                         }
                     }
                 ],
@@ -2089,10 +2089,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/appointment.TimeSlot"
                         }
                     },
                     "400": {
@@ -2296,6 +2293,20 @@ const docTemplate = `{
                 },
                 "doctor_id": {
                     "type": "string"
+                },
+                "end_time": {
+                    "type": "string"
+                },
+                "start_time": {
+                    "type": "string"
+                }
+            }
+        },
+        "appointmenthandler.updateTimeSlotReq": {
+            "type": "object",
+            "properties": {
+                "capacity": {
+                    "type": "integer"
                 },
                 "end_time": {
                     "type": "string"
