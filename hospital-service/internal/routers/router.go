@@ -2,8 +2,11 @@ package routers
 
 import (
 	"hospital-service/internal/config"
+	"hospital-service/internal/handlers/appointmenthandler"
 	"hospital-service/internal/handlers/doctorhandler"
+	"hospital-service/internal/handlers/drughandler"
 	"hospital-service/internal/handlers/hospitalhandler"
+	"hospital-service/internal/handlers/orderhandler"
 	"hospital-service/internal/handlers/patienthandler"
 	"hospital-service/internal/middlewares"
 
@@ -14,7 +17,7 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandler, doctorHandler *doctorhandler.DoctorHandler, hHandler *hospitalhandler.HospitalHandler) *gin.Engine {
+func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandler, doctorHandler *doctorhandler.DoctorHandler, hHandler *hospitalhandler.HospitalHandler, aHandler *appointmenthandler.AppointmentHandler, tHandler *appointmenthandler.TimeSlotHandler, drugHandler *drughandler.DrugHandler, orderHandler *orderhandler.OrderHandler) *gin.Engine {
 	r := gin.Default()
 
 	r.Use(cors.Default())
@@ -52,6 +55,53 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 		hospital.PUT("/:hospital_id", hHandler.UpdateHospital)
 		hospital.DELETE("/:hospital_id", hHandler.DeleteHospital)
 	}
+
+	// ===== Appointments routes =====
+	appointments := r.Group("/appointments")
+	{
+		appointments.POST("", aHandler.CreateAppointment)
+		appointments.GET("/:appointment_id", aHandler.GetAppointmentByID)
+		appointments.GET("/patient/:patient_id", aHandler.GetAppointmentsByPatient)
+		appointments.GET("/doctor/:doctor_id", aHandler.GetAppointmentsByDoctor)
+		appointments.PUT("/:appointment_id/status", aHandler.UpdateAppointmentStatus)
+		appointments.PUT("/:appointment_id/detail", aHandler.UpdateAppointmentDetail)
+		appointments.GET("", aHandler.ListAllAppointments)
+		appointments.DELETE("/:appointment_id", aHandler.DeleteAppointment)
+	}
+
+	// ===== Timeslots routes =====
+	timeSlot := r.Group("/timeslots")
+	{
+		timeSlot.POST("", tHandler.CreateTimeSlot)
+		timeSlot.GET("", tHandler.ListAllTimeSlots)
+		timeSlot.GET("/:slot_id", tHandler.GetTimeSlotByID)
+		timeSlot.GET("/doctor/:doctor_id", tHandler.GetTimeSlotsByDoctor)
+		timeSlot.PUT("/:slot_id", tHandler.UpdateTimeSlot)
+		timeSlot.DELETE("/:slot_id", tHandler.DeleteTimeSlot)
+	}
+
+	// ===== Drug routes =====
+	drug := r.Group("/drugs")
+	{
+		drug.POST("", drugHandler.CreateDrug)               // Create
+		drug.GET("", drugHandler.ListDrugs)                 // List all
+		drug.GET("/:drug_id", drugHandler.GetDrugByID)      // Get by DrugID
+		drug.PUT("/:drug_id", drugHandler.UpdateDrug)       // Update
+		drug.DELETE("/:drug_id", drugHandler.DeleteDrug)    // Delete
+	}
+
+	// ===== Order routes =====
+	order := r.Group("/orders")
+	{
+		order.POST("", orderHandler.CreateOrder)                    // Create
+		order.GET("", orderHandler.ListAllOrders)                      // List all
+		order.GET("/:order_id", orderHandler.GetOrderByID)          // Get by OrderID
+		order.GET("/patient/:patient_id", orderHandler.GetOrdersByPatient) // Get orders by patient
+		order.PUT("/:order_id/status", orderHandler.UpdateOrderStatus)     // Update order status
+		order.PUT("/:order_id/detail", orderHandler.UpdateOrderDetail)     // Update order items/details
+		order.DELETE("/:order_id", orderHandler.DeleteOrder)        // Delete order
+	}
+
 
 	// Swagger
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
