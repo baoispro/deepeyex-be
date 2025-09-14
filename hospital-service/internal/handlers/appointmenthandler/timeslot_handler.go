@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"hospital-service/internal/config"
-	"hospital-service/internal/models/appointment"
 	"hospital-service/internal/services/appointmentservice"
 	"hospital-service/internal/utils"
 
@@ -23,6 +22,12 @@ type createTimeSlotReq struct {
     StartTime time.Time `json:"start_time" binding:"required"`
     EndTime   time.Time `json:"end_time" binding:"required"`
     Capacity  int       `json:"capacity" binding:"required"`
+}
+
+type updateTimeSlotReq struct {
+	StartTime *time.Time `json:"start_time,omitempty"`
+	EndTime   *time.Time `json:"end_time,omitempty"`
+	Capacity  *int       `json:"capacity,omitempty"`
 }
 
 func NewTimeSlotHandler(cfg config.Config, service *appointmentservice.TimeSlotService) *TimeSlotHandler {
@@ -106,23 +111,26 @@ func (h *TimeSlotHandler) GetTimeSlotsByDoctor(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param slot_id path string true "Slot ID"
-// @Param timeslot body appointment.TimeSlot true "Updated TimeSlot data"
-// @Success 200 {object} map[string]string
+// @Param timeslot body updateTimeSlotReq true "Updated TimeSlot data"
+// @Success 200 {object} appointment.TimeSlot
 // @Failure 400 {object} map[string]string
 // @Router /timeslots/{slot_id} [put]
 func (h *TimeSlotHandler) UpdateTimeSlot(c *gin.Context) {
-	id := c.Param("slot_id")
-	var updated appointment.TimeSlot
-	if err := c.ShouldBindJSON(&updated); err != nil {
+	slotID := c.Param("slot_id")
+	var req updateTimeSlotReq
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
 		return
 	}
-	updated.SlotID = id
-	if err := h.service.Update(&updated); err != nil {
+
+	// Gọi service Update
+	updatedSlot, err := h.service.Update(slotID, req.StartTime, req.EndTime, req.Capacity)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
 		return
 	}
-	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "time slot updated successfully", updated))
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Time slot updated successfully", updatedSlot))
 }
 
 // ---------------- Delete TimeSlot ----------------

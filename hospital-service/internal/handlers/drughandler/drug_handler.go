@@ -39,8 +39,8 @@ func (h *DrugHandler) CreateDrug(c *gin.Context) {
 	name := c.PostForm("name")
 	description := c.PostForm("description")
 	priceStr := c.PostForm("price")
-	stockStr := c.PostForm("stock")
-	discountStr := c.PostForm("discount")
+	stockStr := c.PostForm("stock_quantity")
+	discountStr := c.PostForm("discount_percent")
 
 	// Parse numeric fields
 	price, err := strconv.ParseFloat(priceStr, 64)
