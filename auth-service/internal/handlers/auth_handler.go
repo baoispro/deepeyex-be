@@ -74,11 +74,16 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
 		return
 	}
-	if err := h.service.Register(req.Username, req.Email, req.Password, req.FirebaseUID); err != nil {
+	user, err := h.service.Register(req.Username, req.Email, req.Password, req.FirebaseUID)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
 		return
 	}
-	c.JSON(http.StatusCreated, utils.SuccessResponse(http.StatusCreated, "User registered successfully", nil))
+	c.JSON(http.StatusCreated, utils.SuccessResponse(http.StatusCreated, "User registered successfully", gin.H{
+		"id":       user.ID,
+		"username": user.Username,
+		"email":    user.Email,
+	}))
 }
 
 // Login

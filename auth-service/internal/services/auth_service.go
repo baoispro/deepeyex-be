@@ -29,21 +29,21 @@ func NewAuthService(cfg config.Config, ur *repositories.UserRepo, tr *repositori
 }
 
 // ---------------- Register ----------------
-func (s *AuthService) Register(username, email, password, firebaseUID string) error {
+func (s *AuthService) Register(username, email, password, firebaseUID string) (*models.User, error) {
 	if _, err := s.userRepo.FindByUsername(username); err == nil {
-		return errors.New("username already exists")
+		return nil,errors.New("username already exists")
 	}
 
 	if _, err := s.userRepo.FindByEmail(email); err == nil {
-		return errors.New("email already exists")
+		return nil,errors.New("email already exists")
 	}
 
 	if len([]rune(password)) < 8 {
-		return errors.New("password must be at least 8 characters long")
+		return nil,errors.New("password must be at least 8 characters long")
 	}
 
 	if !isValidPassword(password) {
-		return errors.New("password must contain at least 1 uppercase, 1 lowercase, 1 digit, and 1 special character")
+		return nil,errors.New("password must contain at least 1 uppercase, 1 lowercase, 1 digit, and 1 special character")
 	}
 
 	hashedPwd, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -55,7 +55,12 @@ func (s *AuthService) Register(username, email, password, firebaseUID string) er
 		Email:       email,
 		FirebaseUID: firebaseUID,
 	}
-	return s.userRepo.Create(u)
+
+	if err := s.userRepo.Create(u); err != nil {
+		return nil, err
+	}
+
+	return u, nil
 }
 
 // ---------------- Login ----------------
