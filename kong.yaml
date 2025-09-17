@@ -1,0 +1,308 @@
+_format_version: "3.0"
+consumers:
+- custom_id: web-01
+  jwt_secrets:
+  - algorithm: HS256
+    key: tMK7AdrE6lHxsFU1Qk0EPczXYvRKLw4K
+    secret: Cdes9ghOllkzh0ZgmOvLdH97tdjImE42
+  username: web-client
+plugins:
+- config:
+    credentials: true
+    exposed_headers:
+    - Content-Length
+    headers:
+    - Origin
+    - Content-Type
+    - Authorization
+    max_age: 3600
+    methods:
+    - GET
+    - POST
+    - PUT
+    - DELETE
+    - OPTIONS
+    origins:
+    - http://localhost:3000
+    - http://localhost:5173
+    preflight_continue: false
+    private_network: false
+  enabled: true
+  name: cors
+  protocols:
+  - grpc
+  - grpcs
+  - http
+  - https
+- config:
+    anonymous: null
+    claims_to_verify:
+    - exp
+    - nbf
+    cookie_names: []
+    header_names:
+    - authorization
+    key_claim_name: iss
+    maximum_expiration: 3600
+    run_on_preflight: true
+    secret_is_base64: false
+    uri_param_names:
+    - jwt
+  enabled: false
+  name: jwt
+  protocols:
+  - grpc
+  - grpcs
+  - http
+  - https
+services:
+- connect_timeout: 60000
+  enabled: true
+  host: host.docker.internal
+  name: auth-service
+  port: 8080
+  protocol: http
+  read_timeout: 60000
+  retries: 5
+  routes:
+  - https_redirect_status_code: 426
+    methods:
+    - POST
+    - GET
+    - PUT
+    - DELETE
+    - OPTIONS
+    name: auth-private
+    path_handling: v0
+    paths:
+    - /private
+    plugins:
+    - config:
+        anonymous: null
+        claims_to_verify: null
+        cookie_names: []
+        header_names:
+        - authorization
+        key_claim_name: iss
+        maximum_expiration: 0
+        run_on_preflight: true
+        secret_is_base64: false
+        uri_param_names:
+        - jwt
+      enabled: true
+      name: jwt
+      protocols:
+      - grpc
+      - grpcs
+      - http
+      - https
+    preserve_host: false
+    protocols:
+    - http
+    - https
+    regex_priority: 0
+    request_buffering: true
+    response_buffering: true
+    strip_path: false
+  - https_redirect_status_code: 426
+    methods:
+    - POST
+    - OPTIONS
+    - GET
+    - PUT
+    - DELETE
+    name: auth-public
+    path_handling: v1
+    paths:
+    - /public
+    preserve_host: false
+    protocols:
+    - http
+    - https
+    regex_priority: 0
+    request_buffering: true
+    response_buffering: true
+    strip_path: false
+  write_timeout: 60000
+- connect_timeout: 60000
+  enabled: true
+  host: host.docker.internal
+  name: external-eye-service
+  plugins:
+  - config:
+      anonymous: null
+      claims_to_verify:
+      - exp
+      cookie_names: []
+      header_names:
+      - authorization
+      key_claim_name: iss
+      maximum_expiration: 0
+      run_on_preflight: true
+      secret_is_base64: false
+      uri_param_names:
+      - jwt
+    enabled: true
+    name: jwt
+    protocols:
+    - grpc
+    - grpcs
+    - http
+    - https
+  port: 8083
+  protocol: http
+  read_timeout: 60000
+  retries: 5
+  routes:
+  - https_redirect_status_code: 426
+    methods:
+    - POST
+    - GET
+    - PUT
+    - DELETE
+    - OPTIONS
+    name: external-eye-route
+    path_handling: v0
+    paths:
+    - /external-eye
+    preserve_host: false
+    protocols:
+    - http
+    - https
+    regex_priority: 0
+    request_buffering: true
+    response_buffering: true
+    strip_path: true
+  write_timeout: 60000
+- connect_timeout: 60000
+  enabled: true
+  host: host.docker.internal
+  name: hospital-service
+  plugins:
+  - config:
+      anonymous: null
+      claims_to_verify: null
+      cookie_names: []
+      header_names:
+      - authorization
+      key_claim_name: iss
+      maximum_expiration: 0
+      run_on_preflight: true
+      secret_is_base64: false
+      uri_param_names:
+      - jwt
+    enabled: false
+    name: jwt
+    protocols:
+    - grpc
+    - grpcs
+    - http
+    - https
+  port: 8081
+  protocol: http
+  read_timeout: 60000
+  retries: 5
+  routes:
+  - https_redirect_status_code: 426
+    methods:
+    - GET
+    - POST
+    - PUT
+    - DELETE
+    - OPTIONS
+    name: hospital-routes
+    path_handling: v0
+    paths:
+    - /hospital
+    plugins:
+    - config:
+        anonymous: null
+        claims_to_verify: null
+        cookie_names: []
+        header_names:
+        - authorization
+        key_claim_name: iss
+        maximum_expiration: 0
+        run_on_preflight: true
+        secret_is_base64: false
+        uri_param_names:
+        - jwt
+      enabled: true
+      name: jwt
+      protocols:
+      - grpc
+      - grpcs
+      - http
+      - https
+    preserve_host: false
+    protocols:
+    - http
+    - https
+    regex_priority: 0
+    request_buffering: true
+    response_buffering: true
+    strip_path: true
+  - https_redirect_status_code: 426
+    name: public-hospital-route
+    path_handling: v0
+    paths:
+    - /patients
+    preserve_host: false
+    protocols:
+    - http
+    - https
+    regex_priority: 0
+    request_buffering: true
+    response_buffering: true
+    strip_path: false
+  write_timeout: 60000
+- connect_timeout: 60000
+  enabled: true
+  host: host.docker.internal
+  name: retinal-service
+  plugins:
+  - config:
+      anonymous: null
+      claims_to_verify:
+      - exp
+      cookie_names: []
+      header_names:
+      - authorization
+      key_claim_name: iss
+      maximum_expiration: 0
+      run_on_preflight: true
+      secret_is_base64: false
+      uri_param_names:
+      - jwt
+    enabled: true
+    name: jwt
+    protocols:
+    - grpc
+    - grpcs
+    - http
+    - https
+  port: 8082
+  protocol: http
+  read_timeout: 60000
+  retries: 5
+  routes:
+  - https_redirect_status_code: 426
+    id: 792bb5c5-2a7d-41ad-8ecf-92989e985483
+    methods:
+    - POST
+    - PUT
+    - GET
+    - DELETE
+    - OPTIONS
+    path_handling: v0
+    paths:
+    - /retinal
+    preserve_host: false
+    protocols:
+    - http
+    - https
+    regex_priority: 0
+    request_buffering: true
+    response_buffering: true
+    strip_path: true
+  write_timeout: 60000
