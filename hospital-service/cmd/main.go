@@ -72,13 +72,13 @@ func main() {
 	}
 
 	// Initialize services
-	pService := patientservice.NewPatientService(pRepo,s3Client)
-	dService := doctorservice.NewDoctorService(dRepo,s3Client)
-	hService := hospitalservice.NewHospitalService(hRepo,s3Client)
+	pService := patientservice.NewPatientService(pRepo, s3Client)
+	dService := doctorservice.NewDoctorService(dRepo, s3Client)
+	hService := hospitalservice.NewHospitalService(hRepo, s3Client)
 	aService := appointmentservice.NewAppointmentService(aRepo)
 	tService := timeslotservice.NewTimeSlotService(tRepo)
 	drugService := drugservice.NewDrugService(drugRepo, s3Client)
-	orderService := orderservice.NewOrderService(orderRepo, drugRepo,s3Client )
+	orderService := orderservice.NewOrderService(orderRepo, drugRepo, s3Client)
 
 	// Initialize handlers
 	pHandler := patienthandler.NewPatientHandler(cfg, pService)

@@ -66,7 +66,6 @@ func (s *AppointmentService) Create(
 	return a, nil
 }
 
-
 // ---------------- GetByID ----------------
 // Lấy lịch khám theo appointment_id
 func (s *AppointmentService) GetByID(id string) (*appointment.Appointment, error) {
@@ -129,7 +128,6 @@ func (s *AppointmentService) ListAll() ([]appointment.Appointment, error) {
 func (s *AppointmentService) Delete(id string) error {
 	return s.repo.Delete(id)
 }
-
 
 // ---------------- Helper ----------------
 func generateAppointmentID() string {

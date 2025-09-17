@@ -21,10 +21,10 @@ type Config struct {
 	CookieDomain      string
 	CookieSecure      bool
 	CookieSameSite    string // lax/strict/none
-	S3Bucket string
-    S3Region string
-    AWSAccessKey string
-    AWSSecretKey string
+	S3Bucket          string
+	S3Region          string
+	AWSAccessKey      string
+	AWSSecretKey      string
 }
 
 func Load() Config {
@@ -41,10 +41,10 @@ func Load() Config {
 		CookieDomain:      getEnv("COOKIE_DOMAIN", "localhost"),
 		CookieSecure:      getEnvBool("COOKIE_SECURE", false),
 		CookieSameSite:    strings.ToLower(getEnv("COOKIE_SAMESITE", "strict")),
-		S3Bucket:   mustEnv("S3_BUCKET"),
-        S3Region:   mustEnv("S3_REGION"),
-        AWSAccessKey: mustEnv("AWS_ACCESS_KEY_ID"),
-        AWSSecretKey: mustEnv("AWS_SECRET_ACCESS_KEY"),
+		S3Bucket:          mustEnv("S3_BUCKET"),
+		S3Region:          mustEnv("S3_REGION"),
+		AWSAccessKey:      mustEnv("AWS_ACCESS_KEY_ID"),
+		AWSSecretKey:      mustEnv("AWS_SECRET_ACCESS_KEY"),
 	}
 }
 

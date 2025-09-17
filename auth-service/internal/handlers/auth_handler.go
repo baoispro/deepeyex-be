@@ -20,9 +20,10 @@ func NewAuthHandler(cfg config.Config, service *services.AuthService) *AuthHandl
 }
 
 type registerReq struct {
-	Username string `json:"username" example:"alice" binding:"required"`
-	Password string `json:"password" example:"secret" binding:"required"`
-	Email    string `json:"email" example:"nguyena@gmail.com" binding:"required"`
+	Username    string `json:"username" example:"alice" binding:"required"`
+	Password    string `json:"password" example:"secret" binding:"required"`
+	Email       string `json:"email" example:"nguyena@gmail.com" binding:"required"`
+	FirebaseUID string `json:"firebase_uid" example:"abc123xyz" binding:"required"`
 }
 type loginReq struct {
 	Username string `json:"username" example:"alice" binding:"required"`
@@ -73,7 +74,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
 		return
 	}
-	if err := h.service.Register(req.Username, req.Email, req.Password); err != nil {
+	if err := h.service.Register(req.Username, req.Email, req.Password, req.FirebaseUID); err != nil {
 		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
 		return
 	}
@@ -94,12 +95,12 @@ func (h *AuthHandler) Register(c *gin.Context) {
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req loginReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnauthorized, utils.ErrorResponse(http.StatusUnauthorized, "invalid login payload"))
+		c.JSON(http.StatusUnauthorized, utils.ErrorResponse(http.StatusUnauthorized, "Invalid username or password"))
 		return
 	}
 	access, aExp, refresh, rExp, u, err := h.service.Login(req.Username, req.Password)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, utils.ErrorResponse(http.StatusUnauthorized, err.Error()))
+		c.JSON(http.StatusUnauthorized, utils.ErrorResponse(http.StatusUnauthorized, "Invalid username or password"))
 		return
 	}
 	h.setRefreshCookie(c, refresh, rExp)

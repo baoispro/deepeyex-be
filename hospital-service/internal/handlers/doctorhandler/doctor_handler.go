@@ -55,9 +55,9 @@ type updateDoctorReq struct {
 // @Param phone formData string false "Phone"
 // @Param email formData string false "Email"
 // @Param avatar formData file false "Avatar File"
-// @Success 201 {object} utils.APIResponse 
-// @Failure 400 {object} utils.APIResponse 
-// @Failure 500 {object} utils.APIResponse 
+// @Success 201 {object} utils.APIResponse
+// @Failure 400 {object} utils.APIResponse
+// @Failure 500 {object} utils.APIResponse
 // @Router /doctors [post]
 func (h *DoctorHandler) CreateDoctor(c *gin.Context) {
 	var req createDoctorReq
@@ -139,10 +139,10 @@ func (h *DoctorHandler) GetDoctorByUserID(c *gin.Context) {
 // @Param phone formData string false "Phone"
 // @Param email formData string false "Email"
 // @Param avatar formData file false "Avatar File"
-// @Success 200 {object} utils.APIResponse 
-// @Failure 400 {object} utils.APIResponse 
-// @Failure 404 {object} utils.APIResponse 
-// @Failure 500 {object} utils.APIResponse 
+// @Success 200 {object} utils.APIResponse
+// @Failure 400 {object} utils.APIResponse
+// @Failure 404 {object} utils.APIResponse
+// @Failure 500 {object} utils.APIResponse
 // @Router /doctors/{doctor_id} [put]
 func (h *DoctorHandler) UpdateDoctor(c *gin.Context) {
 	doctorID := c.Param("doctor_id")

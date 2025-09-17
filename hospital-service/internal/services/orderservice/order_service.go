@@ -13,8 +13,8 @@ import (
 )
 
 type OrderService struct {
-	repo    *orderrepo.OrderRepo
-	storage *storage.S3Client
+	repo     *orderrepo.OrderRepo
+	storage  *storage.S3Client
 	drugRepo *drugrepo.DrugRepo // thêm này
 
 }
@@ -31,6 +31,7 @@ func NewOrderService(repo *orderrepo.OrderRepo, drugRepo *drugrepo.DrugRepo, sto
 		storage:  storage,
 	}
 }
+
 // ---------------- CreateOrder ----------------
 // func (s *OrderService) CreateOrder(patientID string, items []OrderItemRequest) (*order.Order, error) {
 // 	if patientID == "" || len(items) == 0 {
@@ -58,7 +59,6 @@ func NewOrderService(repo *orderrepo.OrderRepo, drugRepo *drugrepo.DrugRepo, sto
 // 		}
 // 		orderItems = append(orderItems, orderItem)
 
-		
 // 	}
 
 // 	o := &order.Order{
@@ -143,7 +143,6 @@ func (s *OrderService) CreateOrder(patientID string, items []OrderItemRequest) (
 	return o, nil
 }
 
-
 // ---------------- GetOrder ----------------
 func (s *OrderService) GetOrder(id string) (*order.Order, error) {
 	return s.repo.GetByID(id)
@@ -200,7 +199,6 @@ func (s *OrderService) UpdateOrderDetail(id string, updated *order.Order) error 
 
 	return s.repo.Update(o)
 }
-
 
 // ---------------- GetOrdersByPatientID ----------------
 func (s *OrderService) GetOrdersByPatientID(patientID string) ([]order.Order, error) {

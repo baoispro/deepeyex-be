@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService struct {
@@ -75,4 +76,27 @@ func (s *UserService) DeleteUser(id string) error {
 // List users
 func (s *UserService) ListUsers() ([]models.User, error) {
 	return s.userRepo.FindAll()
+}
+
+// Update password by email
+func (s *UserService) UpdatePassword(email, newPassword string) error {
+	u, err := s.userRepo.FindByEmail(email)
+	if err != nil {
+		return err
+	}
+
+	if len([]rune(newPassword)) < 8 {
+		return errors.New("password must be at least 8 characters long")
+	}
+
+	if !isValidPassword(newPassword) {
+		return errors.New("password must contain at least 1 uppercase, 1 lowercase, 1 digit, and 1 special character")
+	}
+
+	// hash password trước khi lưu
+	hashedPwd, _ := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	u.Password = string(hashedPwd)
+	u.UpdatedAt = time.Now()
+
+	return s.userRepo.Update(u)
 }

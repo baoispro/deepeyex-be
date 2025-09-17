@@ -42,7 +42,7 @@ func (s *DoctorService) CreateDoctor(userID, fullName string, specialty enums.Sp
 		HospitalID: hospitalID,
 		Phone:      phone,
 		Email:      email,
-		Image:  avatarURL,
+		Image:      avatarURL,
 	}
 	err := s.doctorRepo.Create(d)
 	return d, err

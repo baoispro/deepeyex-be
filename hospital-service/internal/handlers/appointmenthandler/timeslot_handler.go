@@ -18,10 +18,10 @@ type TimeSlotHandler struct {
 
 // Request struct chỉ chứa field client cần gửi
 type createTimeSlotReq struct {
-    DoctorID  string    `json:"doctor_id" binding:"required"`
-    StartTime time.Time `json:"start_time" binding:"required"`
-    EndTime   time.Time `json:"end_time" binding:"required"`
-    Capacity  int       `json:"capacity" binding:"required"`
+	DoctorID  string    `json:"doctor_id" binding:"required"`
+	StartTime time.Time `json:"start_time" binding:"required"`
+	EndTime   time.Time `json:"end_time" binding:"required"`
+	Capacity  int       `json:"capacity" binding:"required"`
 }
 
 type updateTimeSlotReq struct {
@@ -63,8 +63,6 @@ func (h *TimeSlotHandler) CreateTimeSlot(c *gin.Context) {
 	c.JSON(http.StatusCreated, utils.SuccessResponse(http.StatusCreated, "Time slot created successfully", slot))
 }
 
-
-
 // ---------------- Get TimeSlot By ID ----------------
 // @Summary Get time slot by ID
 // @Description Retrieve time slot info by slot_id
@@ -76,7 +74,7 @@ func (h *TimeSlotHandler) CreateTimeSlot(c *gin.Context) {
 // @Router /timeslots/{slot_id} [get]
 func (h *TimeSlotHandler) GetTimeSlotByID(c *gin.Context) {
 	id := c.Param("slot_id")
-	
+
 	slot, err := h.service.GetByID(id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, utils.ErrorResponse(http.StatusNotFound, "time slot not found"))
@@ -95,7 +93,7 @@ func (h *TimeSlotHandler) GetTimeSlotByID(c *gin.Context) {
 // @Failure 500 {object} map[string]string
 // @Router /timeslots/doctor/{doctor_id} [get]
 func (h *TimeSlotHandler) GetTimeSlotsByDoctor(c *gin.Context) {
-	doctorID:= c.Param("doctor_id")
+	doctorID := c.Param("doctor_id")
 	slots, err := h.service.GetByDoctorID(doctorID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))

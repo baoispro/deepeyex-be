@@ -44,7 +44,7 @@ func (s *PatientService) CreatePatient(userID, fullName string, dob time.Time, g
 		Address:   address,
 		Phone:     phone,
 		Email:     email,
-		Image: avatarURL,
+		Image:     avatarURL,
 	}
 	err := s.patientRepo.Create(p)
 	return p, err

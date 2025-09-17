@@ -37,7 +37,6 @@ func (r *OrderRepo) FindByPatientID(patientID string) ([]order.Order, error) {
 	return orders, nil
 }
 
-
 // ---------------- ListAll ----------------
 func (r *OrderRepo) ListAll() ([]order.Order, error) {
 	var orders []order.Order
@@ -56,7 +55,6 @@ func (r *OrderRepo) Update(o *order.Order) error {
 func (r *OrderRepo) Delete(id string) error {
 	return r.db.Delete(&order.Order{}, "order_id = ?", id).Error
 }
-
 
 func (r *OrderRepo) BeginTx() *gorm.DB {
 	return r.db.Begin()

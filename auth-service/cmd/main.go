@@ -31,7 +31,6 @@ func main() {
 	authHandler := handlers.NewAuthHandler(cfg, authService)
 	userHandler := handlers.NewUserHandler(userService)
 
-
 	r := routers.SetupRouter(&cfg, authHandler, userHandler)
 	log.Printf("Auth service running on :%s", cfg.Port)
 	if err := r.Run(":" + cfg.Port); err != nil {

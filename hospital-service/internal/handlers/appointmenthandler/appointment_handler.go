@@ -22,11 +22,11 @@ type UpdateAppointmentStatusRequest struct {
 }
 
 type createAppointmentReq struct {
-	PatientID  string `json:"patient_id" binding:"required"`
-	DoctorID   string `json:"doctor_id" binding:"required"`
-	HospitalID string `json:"hospital_id" binding:"required"`
-	SlotID     string `json:"slot_id" binding:"required"`
-	Notes      string `json:"notes,omitempty"`
+	PatientID  string          `json:"patient_id" binding:"required"`
+	DoctorID   string          `json:"doctor_id" binding:"required"`
+	HospitalID string          `json:"hospital_id" binding:"required"`
+	SlotID     string          `json:"slot_id" binding:"required"`
+	Notes      string          `json:"notes,omitempty"`
 	Specialty  enums.Specialty `json:"specialty" binding:"required"`
 }
 
@@ -61,7 +61,6 @@ func (h *AppointmentHandler) CreateAppointment(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, utils.SuccessResponse(http.StatusCreated, "Appointment created successfully", a))
 }
-
 
 // ---------------- Get Appointment By ID ----------------
 // @Summary Get appointment by ID

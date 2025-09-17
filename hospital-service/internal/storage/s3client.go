@@ -18,21 +18,21 @@ type S3Client struct {
 
 // NewS3Client khởi tạo S3Client từ config app
 func NewS3Client(bucket, region, accessKey, secretKey string) (*S3Client, error) {
-    cfg, err := config.LoadDefaultConfig(context.TODO(),
-        config.WithRegion(region),
-        config.WithCredentialsProvider(
-            credentials.NewStaticCredentialsProvider(accessKey, secretKey, ""),
-        ),
-    )
-    if err != nil {
-        return nil, err
-    }
+	cfg, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithRegion(region),
+		config.WithCredentialsProvider(
+			credentials.NewStaticCredentialsProvider(accessKey, secretKey, ""),
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
 
-    return &S3Client{
-        client: s3.NewFromConfig(cfg),
-        bucket: bucket,
-        region: region,
-    }, nil
+	return &S3Client{
+		client: s3.NewFromConfig(cfg),
+		bucket: bucket,
+		region: region,
+	}, nil
 }
 
 // UploadFile upload trực tiếp stream lên S3

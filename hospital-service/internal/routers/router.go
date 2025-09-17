@@ -83,25 +83,24 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	// ===== Drug routes =====
 	drug := r.Group("/drugs")
 	{
-		drug.POST("", drugHandler.CreateDrug)               // Create
-		drug.GET("", drugHandler.ListDrugs)                 // List all
-		drug.GET("/:drug_id", drugHandler.GetDrugByID)      // Get by DrugID
-		drug.PUT("/:drug_id", drugHandler.UpdateDrug)       // Update
-		drug.DELETE("/:drug_id", drugHandler.DeleteDrug)    // Delete
+		drug.POST("", drugHandler.CreateDrug)            // Create
+		drug.GET("", drugHandler.ListDrugs)              // List all
+		drug.GET("/:drug_id", drugHandler.GetDrugByID)   // Get by DrugID
+		drug.PUT("/:drug_id", drugHandler.UpdateDrug)    // Update
+		drug.DELETE("/:drug_id", drugHandler.DeleteDrug) // Delete
 	}
 
 	// ===== Order routes =====
 	order := r.Group("/orders")
 	{
-		order.POST("", orderHandler.CreateOrder)                    // Create
-		order.GET("", orderHandler.ListAllOrders)                      // List all
-		order.GET("/:order_id", orderHandler.GetOrderByID)          // Get by OrderID
+		order.POST("", orderHandler.CreateOrder)                           // Create
+		order.GET("", orderHandler.ListAllOrders)                          // List all
+		order.GET("/:order_id", orderHandler.GetOrderByID)                 // Get by OrderID
 		order.GET("/patient/:patient_id", orderHandler.GetOrdersByPatient) // Get orders by patient
 		order.PUT("/:order_id/status", orderHandler.UpdateOrderStatus)     // Update order status
 		order.PUT("/:order_id/detail", orderHandler.UpdateOrderDetail)     // Update order items/details
-		order.DELETE("/:order_id", orderHandler.DeleteOrder)        // Delete order
+		order.DELETE("/:order_id", orderHandler.DeleteOrder)               // Delete order
 	}
-
 
 	// Swagger
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

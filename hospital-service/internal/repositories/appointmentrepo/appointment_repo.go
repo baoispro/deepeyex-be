@@ -84,4 +84,3 @@ func (r *AppointmentRepo) ListAll() ([]appointment.Appointment, error) {
 	}
 	return appointments, nil
 }
-

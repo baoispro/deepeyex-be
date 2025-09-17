@@ -10,7 +10,7 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-func SetupRouter(cfg *config.Config, authHandler *handlers.AuthHandler, userHandler * handlers.UserHandler) *gin.Engine {
+func SetupRouter(cfg *config.Config, authHandler *handlers.AuthHandler, userHandler *handlers.UserHandler) *gin.Engine {
 	r := gin.Default()
 	r.Use(cors.Default())
 
@@ -22,6 +22,7 @@ func SetupRouter(cfg *config.Config, authHandler *handlers.AuthHandler, userHand
 		public.POST("/login/firebase", authHandler.LoginFirebase)
 		public.POST("/refresh", authHandler.Refresh)
 		public.POST("/logout", authHandler.Logout)
+		public.POST("/reset-password", userHandler.UpdatePasswordByEmail)
 	}
 
 	// ===== Protected routes (cần JWT) =====

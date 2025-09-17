@@ -24,8 +24,8 @@ type UpdateOrderStatusRequest struct {
 
 // Request struct để tạo order
 type CreateOrderRequest struct {
-	PatientID string           					`json:"patient_id" binding:"required"`
-	Items     []orderservice.OrderItemRequest 	`json:"items" binding:"required"`
+	PatientID string                          `json:"patient_id" binding:"required"`
+	Items     []orderservice.OrderItemRequest `json:"items" binding:"required"`
 }
 
 func NewOrderHandler(cfg config.Config, service *orderservice.OrderService) *OrderHandler {
@@ -106,7 +106,6 @@ func (h *OrderHandler) GetOrdersByPatient(c *gin.Context) {
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Orders retrieved successfully", orders))
 }
-
 
 // ---------------- Update Order Status ----------------
 // @Summary Update order status

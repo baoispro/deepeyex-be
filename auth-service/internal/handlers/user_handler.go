@@ -20,7 +20,7 @@ type createUserReq struct {
 	Username    string `json:"username" example:"alice" binding:"required"`
 	Email       string `json:"email" example:"alice@example.com" binding:"required,email"`
 	Password    string `json:"password" example:"secret" binding:"required"`
-	FirebaseUID string `json:"firebase_uid,omitempty" example:""` // optional
+	FirebaseUID string `json:"firebase_uid,omitempty" example:""`         // optional
 	Role        string `json:"role" example:"patient" binding:"required"` // patient/doctor/admin
 }
 
@@ -29,7 +29,7 @@ type updateUserReq struct {
 	Email       *string `json:"email,omitempty" example:"alice@example.com"`
 	Password    *string `json:"password,omitempty" example:"newsecret"`
 	FirebaseUID *string `json:"firebase_uid,omitempty" example:""` // optional
-	Role        *string `json:"role,omitempty" example:"patient"` // patient/doctor/admin
+	Role        *string `json:"role,omitempty" example:"patient"`  // patient/doctor/admin
 }
 
 // @Summary Create user
@@ -145,4 +145,32 @@ func (h *UserHandler) List(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Users retrieved", users))
+}
+
+// @Summary Update password by email
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param request body struct{Email string `json:"email" example:"alice@example.com"`; Password string `json:"password" example:"newsecret"`} true "Email and new password"
+// @Success 200 {object} utils.APIResponse
+// @Failure 400 {object} utils.APIResponse
+// @Failure 500 {object} utils.APIResponse
+// @Router /public/reset-password [post]
+func (h *UserHandler) UpdatePasswordByEmail(c *gin.Context) {
+	var req struct {
+		Email    string `json:"email" binding:"required,email" example:"alice@example.com"`
+		Password string `json:"password" binding:"required" example:"newsecret"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
+		return
+	}
+
+	if err := h.service.UpdatePassword(req.Email, req.Password); err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Password updated", nil))
 }

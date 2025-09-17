@@ -113,7 +113,6 @@ func (s *TimeSlotService) ListAll() ([]appointment.TimeSlot, error) {
 	return s.repo.ListAll()
 }
 
-
 // ---------------- Helper ----------------
 func generateSlotID() string {
 	return uuid.NewString()
