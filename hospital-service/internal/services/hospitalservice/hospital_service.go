@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/google/uuid"
+	"github.com/gosimple/slug"
 )
 
 type HospitalService struct {
@@ -19,7 +20,7 @@ func NewHospitalService(repo *hospitalrepo.HospitalRepo, storage *storage.S3Clie
 }
 
 // ---------------- CreateHospital ----------------
-func (s *HospitalService) CreateHospital(name, address, phone, email string, logoFile interface{}) (*hospital.Hospital, error) {
+func (s *HospitalService) CreateHospital(name, address, phone, email, urlMap string, logoFile interface{}) (*hospital.Hospital, error) {
 	var logoURL string
 	if logoFile != nil {
 		fileHeader := logoFile.(*storage.FileHeader)
@@ -39,6 +40,8 @@ func (s *HospitalService) CreateHospital(name, address, phone, email string, log
 		Phone:      phone,
 		Email:      email,
 		Image:      logoURL,
+		Slug:       slug.Make(name),
+		UrlMap:     urlMap,
 	}
 	err := s.hospitalRepo.Create(h)
 	return h, err
@@ -61,6 +64,8 @@ func (s *HospitalService) UpdateHospital(h *hospital.Hospital, logoFile interfac
 		}
 		h.Image = url
 	}
+
+	h.Slug = slug.Make(h.Name)
 
 	return s.hospitalRepo.Update(h)
 }

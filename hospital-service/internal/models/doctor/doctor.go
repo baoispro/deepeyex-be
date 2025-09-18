@@ -16,4 +16,5 @@ type Doctor struct {
 	HospitalID string          `json:"hospital_id" gorm:"type:uuid;not null"`
 	CreatedAt  time.Time       `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt  time.Time       `json:"updated_at" gorm:"autoUpdateTime"`
+	Slug       string          `json:"slug" gorm:"size:150;uniqueIndex"`
 }

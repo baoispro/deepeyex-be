@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/google/uuid"
+	"github.com/gosimple/slug"
 )
 
 type DoctorService struct {
@@ -43,6 +44,7 @@ func (s *DoctorService) CreateDoctor(userID, fullName string, specialty enums.Sp
 		Phone:      phone,
 		Email:      email,
 		Image:      avatarURL,
+		Slug:       slug.Make(fullName),
 	}
 	err := s.doctorRepo.Create(d)
 	return d, err
@@ -65,6 +67,8 @@ func (s *DoctorService) UpdateDoctor(d *doctor.Doctor, avatarFile interface{}) e
 		}
 		d.Image = url
 	}
+
+	d.Slug = slug.Make(d.FullName)
 
 	return s.doctorRepo.Update(d)
 }

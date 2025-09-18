@@ -29,6 +29,7 @@ type createHospitalReq struct {
 	Phone   string                `form:"phone"`
 	Email   string                `form:"email"`
 	Logo    *multipart.FileHeader `form:"logo"`
+	UrlMap  string                `form:"url_map"`
 }
 
 type updateHospitalReq struct {
@@ -37,6 +38,7 @@ type updateHospitalReq struct {
 	Phone   string                `form:"phone"`
 	Email   string                `form:"email"`
 	Logo    *multipart.FileHeader `form:"logo"`
+	UrlMap  string                `form:"url_map"`
 }
 
 // ---------------- Create Hospital ----------------
@@ -49,6 +51,7 @@ type updateHospitalReq struct {
 // @Param address formData string false "Address"
 // @Param phone formData string false "Phone"
 // @Param email formData string false "Email"
+// @Param url_map formData string false "Url Map"
 // @Param logo formData file false "Hospital Logo"
 // @Success 201 {object} utils.APIResponse
 // @Failure 400 {object} utils.APIResponse
@@ -66,7 +69,7 @@ func (h *HospitalHandler) CreateHospital(c *gin.Context) {
 		logoFile = req.Logo
 	}
 
-	hospital, err := h.service.CreateHospital(req.Name, req.Address, req.Phone, req.Email, logoFile)
+	hospital, err := h.service.CreateHospital(req.Name, req.Address, req.Phone, req.Email, req.UrlMap, logoFile)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return
@@ -105,6 +108,7 @@ func (h *HospitalHandler) GetHospitalByID(c *gin.Context) {
 // @Param address formData string false "Address"
 // @Param phone formData string false "Phone"
 // @Param email formData string false "Email"
+// @Param url_map formData string false "Url Map"
 // @Param logo formData file false "Hospital Logo"
 // @Success 200 {object} utils.APIResponse
 // @Failure 400 {object} utils.APIResponse
@@ -137,6 +141,9 @@ func (h *HospitalHandler) UpdateHospital(c *gin.Context) {
 	}
 	if req.Email != "" {
 		hospitalData.Email = req.Email
+	}
+	if req.UrlMap != "" {
+		hospitalData.UrlMap = req.UrlMap
 	}
 
 	var logoFile interface{}

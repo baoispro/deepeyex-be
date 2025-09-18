@@ -15,4 +15,6 @@ type Hospital struct {
 	CreatedAt  time.Time       `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt  time.Time       `json:"updated_at" gorm:"autoUpdateTime"`
 	Doctors    []doctor.Doctor `gorm:"foreignKey:HospitalID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	Slug       string          `json:"slug" gorm:"size:150;uniqueIndex"`
+	UrlMap     string          `json:"url_map"`
 }
