@@ -56,6 +56,8 @@ type updateHospitalReq struct {
 // @Param phone formData string false "Phone"
 // @Param email formData string false "Email"
 // @Param url_map formData string false "Url Map"
+// @Param ward formData string false "Ward"
+// @Param city formData string false "City"
 // @Param logo formData file false "Hospital Logo"
 // @Success 201 {object} utils.APIResponse
 // @Failure 400 {object} utils.APIResponse
@@ -113,6 +115,8 @@ func (h *HospitalHandler) GetHospitalByID(c *gin.Context) {
 // @Param phone formData string false "Phone"
 // @Param email formData string false "Email"
 // @Param url_map formData string false "Url Map"
+// @Param ward formData string false "Ward"
+// @Param city formData string false "City"
 // @Param logo formData file false "Hospital Logo"
 // @Success 200 {object} utils.APIResponse
 // @Failure 400 {object} utils.APIResponse

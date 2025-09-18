@@ -1043,6 +1043,14 @@ paths:
         in: formData
         name: url_map
         type: string
+      - description: Ward
+        in: formData
+        name: ward
+        type: string
+      - description: City
+        in: formData
+        name: city
+        type: string
       - description: Hospital Logo
         in: formData
         name: logo
@@ -1145,6 +1153,14 @@ paths:
       - description: Url Map
         in: formData
         name: url_map
+        type: string
+      - description: Ward
+        in: formData
+        name: ward
+        type: string
+      - description: City
+        in: formData
+        name: city
         type: string
       - description: Hospital Logo
         in: formData

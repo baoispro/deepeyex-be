@@ -1073,6 +1073,18 @@ const docTemplate = `{
                         "in": "formData"
                     },
                     {
+                        "type": "string",
+                        "description": "Ward",
+                        "name": "ward",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "City",
+                        "name": "city",
+                        "in": "formData"
+                    },
+                    {
                         "type": "file",
                         "description": "Hospital Logo",
                         "name": "logo",
@@ -1186,6 +1198,18 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Url Map",
                         "name": "url_map",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Ward",
+                        "name": "ward",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "City",
+                        "name": "city",
                         "in": "formData"
                     },
                     {
