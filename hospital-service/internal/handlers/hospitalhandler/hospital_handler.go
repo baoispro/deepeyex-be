@@ -30,8 +30,8 @@ type createHospitalReq struct {
 	Email   string                `form:"email"`
 	Logo    *multipart.FileHeader `form:"logo"`
 	UrlMap  string                `form:"url_map"`
-	ward    string                `form:"ward"`
-	city    string                `form:"city"`
+	Ward    string                `form:"ward"`
+	City    string                `form:"city"`
 }
 
 type updateHospitalReq struct {
@@ -41,8 +41,8 @@ type updateHospitalReq struct {
 	Email   string                `form:"email"`
 	Logo    *multipart.FileHeader `form:"logo"`
 	UrlMap  string                `form:"url_map"`
-	ward    string                `form:"ward"`
-	city    string                `form:"city"`
+	Ward    string                `form:"ward"`
+	City    string                `form:"city"`
 }
 
 // ---------------- Create Hospital ----------------
@@ -75,7 +75,7 @@ func (h *HospitalHandler) CreateHospital(c *gin.Context) {
 		logoFile = req.Logo
 	}
 
-	hospital, err := h.service.CreateHospital(req.Name, req.Address, req.Phone, req.Email, req.UrlMap, req.ward, req.city, logoFile)
+	hospital, err := h.service.CreateHospital(req.Name, req.Address, req.Phone, req.Email, req.UrlMap, req.Ward, req.City, logoFile)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return
