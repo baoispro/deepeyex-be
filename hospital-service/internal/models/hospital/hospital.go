@@ -17,4 +17,6 @@ type Hospital struct {
 	Doctors    []doctor.Doctor `gorm:"foreignKey:HospitalID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 	Slug       string          `json:"slug" gorm:"size:150;uniqueIndex"`
 	UrlMap     string          `json:"url_map"`
+	Ward		string 			`json:"ward" gorm:"size:100"`
+	City		string 			`json:"city" gorm:"size:100"`
 }
