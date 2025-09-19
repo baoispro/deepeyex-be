@@ -1067,6 +1067,24 @@ const docTemplate = `{
                         "in": "formData"
                     },
                     {
+                        "type": "string",
+                        "description": "Url Map",
+                        "name": "url_map",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Ward",
+                        "name": "ward",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "City",
+                        "name": "city",
+                        "in": "formData"
+                    },
+                    {
                         "type": "file",
                         "description": "Hospital Logo",
                         "name": "logo",
@@ -1174,6 +1192,24 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Email",
                         "name": "email",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Url Map",
+                        "name": "url_map",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Ward",
+                        "name": "ward",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "City",
+                        "name": "city",
                         "in": "formData"
                     },
                     {
@@ -2340,6 +2376,9 @@ const docTemplate = `{
                 "phone": {
                     "type": "string"
                 },
+                "slug": {
+                    "type": "string"
+                },
                 "specialty": {
                     "$ref": "#/definitions/enums.Specialty"
                 },
@@ -2450,6 +2489,9 @@ const docTemplate = `{
                 "address": {
                     "type": "string"
                 },
+                "city": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -2474,7 +2516,16 @@ const docTemplate = `{
                 "phone": {
                     "type": "string"
                 },
+                "slug": {
+                    "type": "string"
+                },
                 "updated_at": {
+                    "type": "string"
+                },
+                "url_map": {
+                    "type": "string"
+                },
+                "ward": {
                     "type": "string"
                 }
             }

@@ -20,7 +20,7 @@ func NewHospitalService(repo *hospitalrepo.HospitalRepo, storage *storage.S3Clie
 }
 
 // ---------------- CreateHospital ----------------
-func (s *HospitalService) CreateHospital(name, address, phone, email, urlMap string, logoFile interface{}) (*hospital.Hospital, error) {
+func (s *HospitalService) CreateHospital(name, address, phone, email, urlMap, ward, city string, logoFile interface{}) (*hospital.Hospital, error) {
 	var logoURL string
 	if logoFile != nil {
 		fileHeader := logoFile.(*storage.FileHeader)
@@ -42,6 +42,8 @@ func (s *HospitalService) CreateHospital(name, address, phone, email, urlMap str
 		Image:      logoURL,
 		Slug:       slug.Make(name),
 		UrlMap:     urlMap,
+		Ward:     ward,
+		City:     city,
 	}
 	err := s.hospitalRepo.Create(h)
 	return h, err

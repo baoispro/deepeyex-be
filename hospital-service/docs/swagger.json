@@ -1060,6 +1060,24 @@
                         "in": "formData"
                     },
                     {
+                        "type": "string",
+                        "description": "Url Map",
+                        "name": "url_map",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Ward",
+                        "name": "ward",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "City",
+                        "name": "city",
+                        "in": "formData"
+                    },
+                    {
                         "type": "file",
                         "description": "Hospital Logo",
                         "name": "logo",
@@ -1167,6 +1185,24 @@
                         "type": "string",
                         "description": "Email",
                         "name": "email",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Url Map",
+                        "name": "url_map",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Ward",
+                        "name": "ward",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "City",
+                        "name": "city",
                         "in": "formData"
                     },
                     {
@@ -2333,6 +2369,9 @@
                 "phone": {
                     "type": "string"
                 },
+                "slug": {
+                    "type": "string"
+                },
                 "specialty": {
                     "$ref": "#/definitions/enums.Specialty"
                 },
@@ -2443,6 +2482,9 @@
                 "address": {
                     "type": "string"
                 },
+                "city": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -2467,7 +2509,16 @@
                 "phone": {
                     "type": "string"
                 },
+                "slug": {
+                    "type": "string"
+                },
                 "updated_at": {
+                    "type": "string"
+                },
+                "url_map": {
+                    "type": "string"
+                },
+                "ward": {
                     "type": "string"
                 }
             }

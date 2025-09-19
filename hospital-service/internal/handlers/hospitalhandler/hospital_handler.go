@@ -30,6 +30,8 @@ type createHospitalReq struct {
 	Email   string                `form:"email"`
 	Logo    *multipart.FileHeader `form:"logo"`
 	UrlMap  string                `form:"url_map"`
+	Ward    string                `form:"ward"`
+	City    string                `form:"city"`
 }
 
 type updateHospitalReq struct {
@@ -39,6 +41,8 @@ type updateHospitalReq struct {
 	Email   string                `form:"email"`
 	Logo    *multipart.FileHeader `form:"logo"`
 	UrlMap  string                `form:"url_map"`
+	Ward    string                `form:"ward"`
+	City    string                `form:"city"`
 }
 
 // ---------------- Create Hospital ----------------
@@ -52,6 +56,8 @@ type updateHospitalReq struct {
 // @Param phone formData string false "Phone"
 // @Param email formData string false "Email"
 // @Param url_map formData string false "Url Map"
+// @Param ward formData string false "Ward"
+// @Param city formData string false "City"
 // @Param logo formData file false "Hospital Logo"
 // @Success 201 {object} utils.APIResponse
 // @Failure 400 {object} utils.APIResponse
@@ -69,7 +75,7 @@ func (h *HospitalHandler) CreateHospital(c *gin.Context) {
 		logoFile = req.Logo
 	}
 
-	hospital, err := h.service.CreateHospital(req.Name, req.Address, req.Phone, req.Email, req.UrlMap, logoFile)
+	hospital, err := h.service.CreateHospital(req.Name, req.Address, req.Phone, req.Email, req.UrlMap, req.Ward, req.City, logoFile)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return
@@ -109,6 +115,8 @@ func (h *HospitalHandler) GetHospitalByID(c *gin.Context) {
 // @Param phone formData string false "Phone"
 // @Param email formData string false "Email"
 // @Param url_map formData string false "Url Map"
+// @Param ward formData string false "Ward"
+// @Param city formData string false "City"
 // @Param logo formData file false "Hospital Logo"
 // @Success 200 {object} utils.APIResponse
 // @Failure 400 {object} utils.APIResponse
