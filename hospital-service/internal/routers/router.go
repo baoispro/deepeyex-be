@@ -54,6 +54,11 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 		hospital.GET("/:hospital_id", hHandler.GetHospitalByID)
 		hospital.PUT("/:hospital_id", hHandler.UpdateHospital)
 		hospital.DELETE("/:hospital_id", hHandler.DeleteHospital)
+		hospital.GET("/cities", hHandler.ListCities)              
+		hospital.GET("/wards/:city", hHandler.ListWardsByCity) 
+		hospital.GET("/search/address", hHandler.SearchByAddress)
+		hospital.GET("/filter", hHandler.ListByCityAndWard)
+		hospital.POST("/nearby", hHandler.FindNearbyHospitals)
 	}
 
 	// ===== Appointments routes =====

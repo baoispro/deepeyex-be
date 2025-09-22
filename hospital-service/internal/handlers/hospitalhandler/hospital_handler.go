@@ -24,25 +24,36 @@ func NewHospitalHandler(cfg config.Config, service *hospitalservice.HospitalServ
 // ----------- Request Structs -----------
 
 type createHospitalReq struct {
-	Name    string                `form:"name" binding:"required"`
-	Address string                `form:"address"`
-	Phone   string                `form:"phone"`
-	Email   string                `form:"email"`
-	Logo    *multipart.FileHeader `form:"logo"`
-	UrlMap  string                `form:"url_map"`
-	Ward    string                `form:"ward"`
-	City    string                `form:"city"`
+	Name      string                `form:"name" binding:"required"`
+	Address   string                `form:"address"`
+	Phone     string                `form:"phone"`
+	Email     string                `form:"email"`
+	Logo      *multipart.FileHeader `form:"logo"`
+	UrlMap    string                `form:"url_map"`
+	Ward      string                `form:"ward"`
+	City      string                `form:"city"`
+	Latitude  float64               `form:"latitude" binding:"required"`
+	Longitude float64               `form:"longitude" binding:"required"`
 }
 
 type updateHospitalReq struct {
-	Name    string                `form:"name"`
-	Address string                `form:"address"`
-	Phone   string                `form:"phone"`
-	Email   string                `form:"email"`
-	Logo    *multipart.FileHeader `form:"logo"`
-	UrlMap  string                `form:"url_map"`
-	Ward    string                `form:"ward"`
-	City    string                `form:"city"`
+	Name      string                `form:"name"`
+	Address   string                `form:"address"`
+	Phone     string                `form:"phone"`
+	Email     string                `form:"email"`
+	Logo      *multipart.FileHeader `form:"logo"`
+	UrlMap    string                `form:"url_map"`
+	Ward      string                `form:"ward"`
+	City      string                `form:"city"`
+	Latitude  *float64              `form:"latitude"`
+	Longitude *float64              `form:"longitude"`
+}
+
+// ----------- Request Structs -----------
+type nearbyHospitalReq struct {
+	Latitude  float64 `json:"latitude" binding:"required"`
+	Longitude float64 `json:"longitude" binding:"required"`
+	RadiusKm  float64 `json:"radius_km" binding:"required"`
 }
 
 // ---------------- Create Hospital ----------------
@@ -59,6 +70,8 @@ type updateHospitalReq struct {
 // @Param ward formData string false "Ward"
 // @Param city formData string false "City"
 // @Param logo formData file false "Hospital Logo"
+// @Param latitude formData number true "Latitude"
+// @Param longitude formData number true "Longitude"
 // @Success 201 {object} utils.APIResponse
 // @Failure 400 {object} utils.APIResponse
 // @Failure 500 {object} utils.APIResponse
@@ -75,7 +88,7 @@ func (h *HospitalHandler) CreateHospital(c *gin.Context) {
 		logoFile = req.Logo
 	}
 
-	hospital, err := h.service.CreateHospital(req.Name, req.Address, req.Phone, req.Email, req.UrlMap, req.Ward, req.City, logoFile)
+	hospital, err := h.service.CreateHospital(req.Name, req.Address, req.Phone, req.Email, req.UrlMap, req.Ward, req.City, logoFile, req.Latitude, req.Longitude)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return
@@ -118,6 +131,8 @@ func (h *HospitalHandler) GetHospitalByID(c *gin.Context) {
 // @Param ward formData string false "Ward"
 // @Param city formData string false "City"
 // @Param logo formData file false "Hospital Logo"
+// @Param latitude formData number false "Latitude"
+// @Param longitude formData number false "Longitude"
 // @Success 200 {object} utils.APIResponse
 // @Failure 400 {object} utils.APIResponse
 // @Failure 404 {object} utils.APIResponse
@@ -152,6 +167,20 @@ func (h *HospitalHandler) UpdateHospital(c *gin.Context) {
 	}
 	if req.UrlMap != "" {
 		hospitalData.UrlMap = req.UrlMap
+	}
+
+	if req.Ward != "" {
+		hospitalData.Ward = req.Ward
+	}
+	if req.City != "" {
+		hospitalData.City = req.City
+	}
+
+	if req.Latitude != nil {
+		hospitalData.Latitude = *req.Latitude
+	}
+	if req.Longitude != nil {
+		hospitalData.Longitude = *req.Longitude
 	}
 
 	var logoFile interface{}
@@ -202,4 +231,120 @@ func (h *HospitalHandler) ListHospitals(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Hospitals retrieved successfully", hospitals))
+}
+
+// ---------------- List Cities ----------------
+// @Summary List all cities
+// @Description Retrieve all distinct cities that have hospitals
+// @Tags Hospitals
+// @Produce json
+// @Success 200 {array} string
+// @Failure 500 {object} utils.APIResponse
+// @Router /hospitals/cities [get]
+func (h *HospitalHandler) ListCities(c *gin.Context) {
+	cities, err := h.service.ListCities()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
+		return
+	}
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Cities retrieved successfully", cities))
+}
+
+// ---------------- List Wards By City ----------------
+// @Summary List wards by city
+// @Description Retrieve all distinct wards for a given city
+// @Tags Hospitals
+// @Produce json
+// @Param city query string true "City name"
+// @Success 200 {array} string
+// @Failure 400 {object} utils.APIResponse
+// @Failure 500 {object} utils.APIResponse
+// @Router /hospitals/wards [get]
+func (h *HospitalHandler) ListWardsByCity(c *gin.Context) {
+	city := c.Query("city")
+	if city == "" {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "City parameter is required"))
+		return
+	}
+
+	wards, err := h.service.ListWardsByCity(city)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
+		return
+	}
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Wards retrieved successfully", wards))
+}
+
+// ---------------- Search By Address ----------------
+// @Summary Search hospitals by address
+// @Description Search hospitals by keyword in address, ward, or city
+// @Tags Hospitals
+// @Produce json
+// @Param keyword query string true "Search keyword"
+// @Success 200 {array} hospital.Hospital
+// @Failure 400 {object} utils.APIResponse
+// @Failure 500 {object} utils.APIResponse
+// @Router /hospitals/search [get]
+func (h *HospitalHandler) SearchByAddress(c *gin.Context) {
+	keyword := c.Query("keyword")
+	if keyword == "" {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "Keyword parameter is required"))
+		return
+	}
+
+	results, err := h.service.SearchByAddress(keyword)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
+		return
+	}
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Hospitals retrieved successfully", results))
+}
+
+// ---------------- List By City And Ward ----------------
+// @Summary List hospitals by city and ward
+// @Description Retrieve hospitals filtered by city and ward (both optional, can filter by either or both)
+// @Tags Hospitals
+// @Produce json
+// @Param city query string false "City name"
+// @Param ward query string false "Ward name"
+// @Success 200 {array} hospital.Hospital
+// @Failure 500 {object} utils.APIResponse
+// @Router /hospitals/filter [get]
+func (h *HospitalHandler) ListByCityAndWard(c *gin.Context) {
+	city := c.Query("city")
+	ward := c.Query("ward")
+
+	results, err := h.service.ListByCityAndWard(city, ward)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
+		return
+	}
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Hospitals retrieved successfully", results))
+}
+
+// ---------------- Find Nearby Hospitals ----------------
+// @Summary Find nearby hospitals
+// @Description Find hospitals within a radius (km) from given coordinates
+// @Tags Hospitals
+// @Accept json
+// @Produce json
+// @Param request body nearbyHospitalReq true "Latitude, Longitude and Radius (km)"
+// @Success 200 {array} hospital.Hospital
+// @Failure 400 {object} utils.APIResponse
+// @Failure 500 {object} utils.APIResponse
+// @Router /hospitals/nearby [post]
+func (h *HospitalHandler) FindNearbyHospitals(c *gin.Context) {
+	var req nearbyHospitalReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
+		return
+	}
+
+	results, err := h.service.FindNearbyHospitals(req.Latitude, req.Longitude, req.RadiusKm)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Nearby hospitals retrieved successfully", results))
 }

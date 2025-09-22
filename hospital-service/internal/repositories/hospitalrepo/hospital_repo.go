@@ -47,3 +47,68 @@ func (r *HospitalRepo) List() ([]hospital.Hospital, error) {
 	err := r.db.Find(&hospitals).Error
 	return hospitals, err
 }
+
+// ---------------- ListCities ----------------
+func (r *HospitalRepo) ListCities() ([]string, error) {
+	var cities []string
+	err := r.db.Model(&hospital.Hospital{}).
+		Distinct().
+		Pluck("city", &cities).Error
+	return cities, err
+}
+
+// ---------------- ListWardsByCity ----------------
+func (r *HospitalRepo) ListWardsByCity(city string) ([]string, error) {
+	var wards []string
+	err := r.db.Model(&hospital.Hospital{}).
+		Where("city = ?", city).
+		Distinct().
+		Pluck("ward", &wards).Error
+	return wards, err
+}
+
+// ---------------- SearchByAddress ----------------
+func (r *HospitalRepo) SearchByAddress(keyword string) ([]hospital.Hospital, error) {
+	var hospitals []hospital.Hospital
+	likeQuery := "%" + keyword + "%"
+	err := r.db.Where("address ILIKE ? OR ward ILIKE ? OR city ILIKE ?", likeQuery, likeQuery, likeQuery).
+		Find(&hospitals).Error
+	return hospitals, err
+}
+
+// ---------------- ListByCityAndWard ----------------
+func (r *HospitalRepo) ListByCityAndWard(city, ward string) ([]hospital.Hospital, error) {
+	var hospitals []hospital.Hospital
+	query := r.db.Model(&hospital.Hospital{})
+	if city != "" {
+		query = query.Where("city = ?", city)
+	}
+	if ward != "" {
+		query = query.Where("ward = ?", ward)
+	}
+	err := query.Find(&hospitals).Error
+	return hospitals, err
+}
+
+// ---------------- FindNearby ----------------
+// Tìm bệnh viện gần tọa độ (lat, lng) trong bán kính (km)
+func (r *HospitalRepo) FindNearby(lat, lng, radiusKm float64) ([]hospital.Hospital, error) {
+	var hospitals []hospital.Hospital
+
+	// Công thức Haversine (Postgres/MySQL đều hỗ trợ)
+	// 6371 là bán kính trái đất (km)
+	err := r.db.Raw(`
+		SELECT *, (
+			6371 * acos(
+				cos(radians(?)) * cos(radians(latitude)) *
+				cos(radians(longitude) - radians(?)) +
+				sin(radians(?)) * sin(radians(latitude))
+			)
+		) AS distance
+		FROM hospitals
+		HAVING distance <= ?
+		ORDER BY distance ASC
+	`, lat, lng, lat, radiusKm).Scan(&hospitals).Error
+
+	return hospitals, err
+}

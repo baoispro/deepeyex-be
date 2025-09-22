@@ -20,7 +20,7 @@ func NewHospitalService(repo *hospitalrepo.HospitalRepo, storage *storage.S3Clie
 }
 
 // ---------------- CreateHospital ----------------
-func (s *HospitalService) CreateHospital(name, address, phone, email, urlMap, ward, city string, logoFile interface{}) (*hospital.Hospital, error) {
+func (s *HospitalService) CreateHospital(name, address, phone, email, urlMap, ward, city string, logoFile interface{}, latitude, longitude float64) (*hospital.Hospital, error) {
 	var logoURL string
 	if logoFile != nil {
 		fileHeader := logoFile.(*storage.FileHeader)
@@ -42,8 +42,10 @@ func (s *HospitalService) CreateHospital(name, address, phone, email, urlMap, wa
 		Image:      logoURL,
 		Slug:       slug.Make(name),
 		UrlMap:     urlMap,
-		Ward:     ward,
-		City:     city,
+		Ward:       ward,
+		City:       city,
+		Latitude:   latitude,
+		Longitude:  longitude,
 	}
 	err := s.hospitalRepo.Create(h)
 	return h, err
@@ -80,6 +82,31 @@ func (s *HospitalService) DeleteHospital(id string) error {
 // ---------------- ListHospitals ----------------
 func (s *HospitalService) ListHospitals() ([]hospital.Hospital, error) {
 	return s.hospitalRepo.List()
+}
+
+// ---------------- ListCities ----------------
+func (s *HospitalService) ListCities() ([]string, error) {
+	return s.hospitalRepo.ListCities()
+}
+
+// ---------------- ListWardsByCity ----------------
+func (s *HospitalService) ListWardsByCity(city string) ([]string, error) {
+	return s.hospitalRepo.ListWardsByCity(city)
+}
+
+// ---------------- SearchByAddress ----------------
+func (s *HospitalService) SearchByAddress(keyword string) ([]hospital.Hospital, error) {
+	return s.hospitalRepo.SearchByAddress(keyword)
+}
+
+// ---------------- ListByCityAndWard ----------------
+func (s *HospitalService) ListByCityAndWard(city, ward string) ([]hospital.Hospital, error) {
+	return s.hospitalRepo.ListByCityAndWard(city, ward)
+}
+
+// ---------------- FindNearbyHospitals ----------------
+func (s *HospitalService) FindNearbyHospitals(lat, lng, radiusKm float64) ([]hospital.Hospital, error) {
+	return s.hospitalRepo.FindNearby(lat, lng, radiusKm)
 }
 
 // ---------------- Helper ----------------

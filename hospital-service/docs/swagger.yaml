@@ -226,6 +226,10 @@ definitions:
         type: string
       image:
         type: string
+      latitude:
+        type: number
+      longitude:
+        type: number
       name:
         type: string
       phone:
@@ -238,6 +242,19 @@ definitions:
         type: string
       ward:
         type: string
+    type: object
+  hospitalhandler.nearbyHospitalReq:
+    properties:
+      latitude:
+        type: number
+      longitude:
+        type: number
+      radius_km:
+        type: number
+    required:
+    - latitude
+    - longitude
+    - radius_km
     type: object
   order.Order:
     properties:
@@ -1055,6 +1072,16 @@ paths:
         in: formData
         name: logo
         type: file
+      - description: Latitude
+        in: formData
+        name: latitude
+        required: true
+        type: number
+      - description: Longitude
+        in: formData
+        name: longitude
+        required: true
+        type: number
       produces:
       - application/json
       responses:
@@ -1166,6 +1193,14 @@ paths:
         in: formData
         name: logo
         type: file
+      - description: Latitude
+        in: formData
+        name: latitude
+        type: number
+      - description: Longitude
+        in: formData
+        name: longitude
+        type: number
       produces:
       - application/json
       responses:
@@ -1186,6 +1221,144 @@ paths:
           schema:
             $ref: '#/definitions/utils.APIResponse'
       summary: Update a hospital
+      tags:
+      - Hospitals
+  /hospitals/cities:
+    get:
+      description: Retrieve all distinct cities that have hospitals
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: string
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+      summary: List all cities
+      tags:
+      - Hospitals
+  /hospitals/filter:
+    get:
+      description: Retrieve hospitals filtered by city and ward (both optional, can
+        filter by either or both)
+      parameters:
+      - description: City name
+        in: query
+        name: city
+        type: string
+      - description: Ward name
+        in: query
+        name: ward
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/hospital.Hospital'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+      summary: List hospitals by city and ward
+      tags:
+      - Hospitals
+  /hospitals/nearby:
+    post:
+      consumes:
+      - application/json
+      description: Find hospitals within a radius (km) from given coordinates
+      parameters:
+      - description: Latitude, Longitude and Radius (km)
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/hospitalhandler.nearbyHospitalReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/hospital.Hospital'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+      summary: Find nearby hospitals
+      tags:
+      - Hospitals
+  /hospitals/search:
+    get:
+      description: Search hospitals by keyword in address, ward, or city
+      parameters:
+      - description: Search keyword
+        in: query
+        name: keyword
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/hospital.Hospital'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+      summary: Search hospitals by address
+      tags:
+      - Hospitals
+  /hospitals/wards:
+    get:
+      description: Retrieve all distinct wards for a given city
+      parameters:
+      - description: City name
+        in: query
+        name: city
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: string
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+      summary: List wards by city
       tags:
       - Hospitals
   /orders:
