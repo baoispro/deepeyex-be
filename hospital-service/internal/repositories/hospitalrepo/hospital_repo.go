@@ -98,17 +98,20 @@ func (r *HospitalRepo) FindNearby(lat, lng, radiusKm float64) ([]hospital.Hospit
 	// Công thức Haversine (Postgres/MySQL đều hỗ trợ)
 	// 6371 là bán kính trái đất (km)
 	err := r.db.Raw(`
-		SELECT *, (
-			6371 * acos(
-				cos(radians(?)) * cos(radians(latitude)) *
-				cos(radians(longitude) - radians(?)) +
-				sin(radians(?)) * sin(radians(latitude))
-			)
-		) AS distance
-		FROM hospitals
-		HAVING distance <= ?
-		ORDER BY distance ASC
-	`, lat, lng, lat, radiusKm).Scan(&hospitals).Error
+  SELECT *
+  FROM (
+    SELECT *, (
+      6371 * acos(
+        cos(radians(?)) * cos(radians(latitude)) *
+        cos(radians(longitude) - radians(?)) +
+        sin(radians(?)) * sin(radians(latitude))
+      )
+    ) AS distance
+    FROM hospitals
+  ) AS sub
+  WHERE distance <= ?
+  ORDER BY distance ASC
+`, lat, lng, lat, radiusKm).Scan(&hospitals).Error
 
 	return hospitals, err
 }
