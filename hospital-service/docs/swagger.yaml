@@ -256,6 +256,246 @@ definitions:
     - longitude
     - radius_km
     type: object
+  medicalrecord.AIDiagnosis:
+    properties:
+      confidence:
+        type: number
+      created_at:
+        type: string
+      disease_code:
+        type: string
+      id:
+        type: string
+      recommended_plans:
+        items:
+          $ref: '#/definitions/medicalrecord.AIRecommendedPlan'
+        type: array
+      record_id:
+        type: string
+    type: object
+  medicalrecord.AIRecommendedPlan:
+    properties:
+      ai_diagnosis_id:
+        type: string
+      dosage:
+        type: string
+      drug_name:
+        type: string
+      duration_days:
+        type: integer
+      frequency:
+        type: string
+      id:
+        type: string
+    type: object
+  medicalrecord.AddRecommendedPlanRequest:
+    properties:
+      description:
+        description: Ghi chú thêm, có thể bỏ trống
+        type: string
+      dosage:
+        description: Liều lượng
+        type: string
+      drug_name:
+        description: Tên thuốc
+        type: string
+      duration_days:
+        description: Số ngày dùng
+        type: integer
+      frequency:
+        description: Số lần dùng
+        type: string
+    required:
+    - dosage
+    - drug_name
+    - duration_days
+    - frequency
+    type: object
+  medicalrecord.Attachment:
+    properties:
+      created_at:
+        type: string
+      file_type:
+        type: string
+      file_url:
+        type: string
+      id:
+        type: string
+      record_id:
+        type: string
+    type: object
+  medicalrecord.FollowUp:
+    properties:
+      created_at:
+        type: string
+      follow_up_id:
+        type: string
+      next_appointment:
+        type: string
+      notes:
+        type: string
+      record_id:
+        type: string
+    type: object
+  medicalrecord.InitRecordAndDiagnosisRequest:
+    properties:
+      confidence:
+        example: 0.89
+        type: number
+      diagnosis:
+        example: AI preliminary diagnosis
+        type: string
+      disease_code:
+        example: D001
+        type: string
+      patient_id:
+        example: abc123
+        type: string
+    required:
+    - confidence
+    - disease_code
+    - patient_id
+    type: object
+  medicalrecord.InitRecordAndDiagnosisResponse:
+    properties:
+      ai_diagnosis:
+        $ref: '#/definitions/medicalrecord.AIDiagnosis'
+      created_at:
+        type: string
+      patient_id:
+        type: string
+      record_id:
+        type: string
+    type: object
+  medicalrecord.MedicalRecord:
+    properties:
+      ai_diagnoses:
+        items:
+          $ref: '#/definitions/medicalrecord.AIDiagnosis'
+        type: array
+      appointment_id:
+        type: string
+      attachments:
+        items:
+          $ref: '#/definitions/medicalrecord.Attachment'
+        type: array
+      created_by:
+        description: '"AI" | "DOCTOR"'
+        type: string
+      createdAt:
+        type: string
+      diagnosis:
+        type: string
+      doctor_id:
+        type: string
+      follow_ups:
+        items:
+          $ref: '#/definitions/medicalrecord.FollowUp'
+        type: array
+      patient_id:
+        type: string
+      record_id:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  medicalrecord.Prescription:
+    properties:
+      approved_at:
+        type: string
+      approved_by:
+        type: string
+      createdAt:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/medicalrecord.PrescriptionItem'
+        type: array
+      prescription_id:
+        type: string
+      record_id:
+        type: string
+      status:
+        description: PENDING, APPROVED, REJECTED
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  medicalrecord.PrescriptionItem:
+    properties:
+      dosage:
+        type: string
+      drug_name:
+        type: string
+      duration_days:
+        type: integer
+      frequency:
+        type: string
+      prescription_id:
+        type: string
+      prescription_item_id:
+        type: string
+    type: object
+  medicalrecordhandler.CreateAIDiagnosisRequest:
+    properties:
+      confidence:
+        type: number
+      disease_code:
+        type: string
+    required:
+    - confidence
+    - disease_code
+    type: object
+  medicalrecordhandler.CreateMedicalRecordRequest:
+    properties:
+      appointment_id:
+        description: Optional
+        type: string
+      created_by:
+        description: '"DOCTOR" | "SYSTEM" | "AI"'
+        type: string
+      diagnosis:
+        type: string
+      doctor_id:
+        type: string
+      patient_id:
+        type: string
+    required:
+    - created_by
+    - diagnosis
+    - doctor_id
+    - patient_id
+    type: object
+  medicalrecordhandler.UpdateFollowUpRequest:
+    properties:
+      next_appointment:
+        type: string
+      notes:
+        type: string
+    type: object
+  medicalrecordhandler.createPrescriptionReq:
+    properties:
+      approved_at:
+        type: string
+      approved_by:
+        type: string
+      record_id:
+        type: string
+      status:
+        type: string
+    required:
+    - record_id
+    - status
+    type: object
+  medicalrecordhandler.updatePrescriptionReq:
+    properties:
+      approved_at:
+        type: string
+      approved_by:
+        type: string
+      status:
+        type: string
+    type: object
   order.Order:
     properties:
       created_at:
@@ -590,6 +830,94 @@ paths:
       summary: Get appointments by patient ID
       tags:
       - Appointments
+  /attachments:
+    post:
+      consumes:
+      - application/json
+      description: Upload attachment cho một medical record
+      parameters:
+      - description: Attachment Data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/medicalrecord.Attachment'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Thêm file đính kèm vào medical record
+      tags:
+      - Attachments
+  /attachments/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Xóa attachment theo ID
+      parameters:
+      - description: Attachment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Xóa một file đính kèm
+      tags:
+      - Attachments
+  /attachments/{record_id}/medical_records:
+    get:
+      consumes:
+      - application/json
+      description: Trả về danh sách các attachment theo record_id
+      parameters:
+      - description: Record ID
+        in: path
+        name: record_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/medicalrecord.Attachment'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Lấy danh sách file đính kèm của một record
+      tags:
+      - Attachments
   /doctors:
     get:
       description: Retrieve all doctors
@@ -1013,6 +1341,131 @@ paths:
       summary: Update drug info
       tags:
       - Drugs
+  /followups/{follow_up_id}:
+    delete:
+      consumes:
+      - application/json
+      description: Xóa follow-up theo ID
+      parameters:
+      - description: FollowUp ID
+        in: path
+        name: follow_up_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Xóa lịch tái khám
+      tags:
+      - FollowUps
+    put:
+      consumes:
+      - application/json
+      description: Cập nhật notes hoặc next appointment
+      parameters:
+      - description: FollowUp ID
+        in: path
+        name: follow_up_id
+        required: true
+        type: string
+      - description: Update Data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/medicalrecordhandler.UpdateFollowUpRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Cập nhật lịch tái khám
+      tags:
+      - FollowUps
+  /followups/{record_id}/medical_records:
+    get:
+      consumes:
+      - application/json
+      description: Trả về tất cả follow-up của medical record
+      parameters:
+      - description: Medical Record ID
+        in: path
+        name: record_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Lấy danh sách lịch tái khám
+      tags:
+      - FollowUps
+    post:
+      consumes:
+      - application/json
+      description: Thêm follow-up cho medical record
+      parameters:
+      - description: Medical Record ID
+        in: path
+        name: record_id
+        required: true
+        type: string
+      - description: FollowUp Data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/medicalrecordhandler.UpdateFollowUpRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Tạo lịch tái khám
+      tags:
+      - FollowUps
   /hospitals:
     get:
       description: Retrieve all hospitals
@@ -1361,6 +1814,439 @@ paths:
       summary: List wards by city
       tags:
       - Hospitals
+  /medical_records:
+    get:
+      description: Retrieve all medical records (optionally filtered by patient or
+        doctor)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/medicalrecord.MedicalRecord'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List all medical records
+      tags:
+      - MedicalRecords
+    post:
+      consumes:
+      - application/json
+      description: Create a medical record for a patient with optional appointment
+        and doctor.
+      parameters:
+      - description: Medical Record Payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/medicalrecordhandler.CreateMedicalRecordRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/medicalrecord.MedicalRecord'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create a new medical record
+      tags:
+      - MedicalRecords
+  /medical_records/{record_id}:
+    delete:
+      description: Delete a medical record by ID
+      parameters:
+      - description: MedicalRecord ID
+        in: path
+        name: record_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete medical record
+      tags:
+      - MedicalRecords
+    get:
+      description: Retrieve a medical record by record ID, including AI diagnoses
+        and recommended plans
+      parameters:
+      - description: MedicalRecord ID
+        in: path
+        name: record_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/medicalrecord.MedicalRecord'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get medical record by ID
+      tags:
+      - MedicalRecords
+    put:
+      consumes:
+      - application/json
+      description: Update an existing medical record, including diagnosis and recommended
+        plan
+      parameters:
+      - description: MedicalRecord ID
+        in: path
+        name: record_id
+        required: true
+        type: string
+      - description: Updated MedicalRecord payload
+        in: body
+        name: medical_record
+        required: true
+        schema:
+          $ref: '#/definitions/medicalrecord.MedicalRecord'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/medicalrecord.MedicalRecord'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update medical record
+      tags:
+      - MedicalRecords
+  /medical_records/{record_id}/ai_diagnoses:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of AI diagnoses for a specific medical record
+      parameters:
+      - description: Medical Record ID
+        in: path
+        name: record_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/medicalrecord.AIDiagnosis'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List AI Diagnoses by Record ID
+      tags:
+      - AI_Diagnoses
+    post:
+      consumes:
+      - application/json
+      description: Add a new AI diagnosis to a specific medical record
+      parameters:
+      - description: Medical Record ID
+        in: path
+        name: record_id
+        required: true
+        type: string
+      - description: AI Diagnosis payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/medicalrecordhandler.CreateAIDiagnosisRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/medicalrecord.AIDiagnosis'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Add AI Diagnosis to Medical Record
+      tags:
+      - AI_Diagnoses
+  /medical_records/ai_diagnoses/{diagnosis_id}/recommended_plans:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of recommended treatment plans for a specific AI Diagnosis
+      parameters:
+      - description: AI Diagnosis ID
+        in: path
+        name: diagnosis_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/medicalrecord.AIRecommendedPlan'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List AI Recommended Plans
+      tags:
+      - AI_RecommendedPlans
+    post:
+      consumes:
+      - application/json
+      description: Add a new recommended treatment plan to an AI Diagnosis
+      parameters:
+      - description: AI Diagnosis ID
+        in: path
+        name: diagnosis_id
+        required: true
+        type: string
+      - description: Recommended Plan payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/medicalrecord.AddRecommendedPlanRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/medicalrecord.AIRecommendedPlan'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Add a Recommended Plan
+      tags:
+      - AI_RecommendedPlans
+  /medical_records/ai_diagnoses/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a specific AI diagnosis by its ID
+      parameters:
+      - description: AI Diagnosis ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete AI Diagnosis by ID
+      tags:
+      - AI_Diagnoses
+    get:
+      consumes:
+      - application/json
+      description: Get the details of a specific AI diagnosis by its ID
+      parameters:
+      - description: AI Diagnosis ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/medicalrecord.AIDiagnosis'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get AI Diagnosis by ID
+      tags:
+      - AI_Diagnoses
+  /medical_records/ai_recommended_plans/{plan_id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a recommended treatment plan by its ID
+      parameters:
+      - description: Recommended Plan ID
+        in: path
+        name: plan_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete a Recommended Plan
+      tags:
+      - AI_RecommendedPlans
+  /medical_records/init:
+    post:
+      consumes:
+      - application/json
+      description: Create a new medical record and attach an AI diagnosis in a single
+        request
+      parameters:
+      - description: Medical record and AI Diagnosis payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/medicalrecord.InitRecordAndDiagnosisRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/medicalrecord.InitRecordAndDiagnosisResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Init Medical Record and AI Diagnosis
+      tags:
+      - MedicalRecords
   /orders:
     get:
       description: Retrieve all orders in the system
@@ -1789,6 +2675,303 @@ paths:
       summary: Get patient by user ID
       tags:
       - Patients
+  /prescription_items:
+    post:
+      consumes:
+      - application/json
+      description: Add a new prescription item to an existing prescription
+      parameters:
+      - description: Prescription Item payload
+        in: body
+        name: prescription_item
+        required: true
+        schema:
+          $ref: '#/definitions/medicalrecord.PrescriptionItem'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/medicalrecord.PrescriptionItem'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a prescription item
+      tags:
+      - PrescriptionItems
+  /prescription_items/{item_id}:
+    delete:
+      description: Remove a specific prescription item by ID
+      parameters:
+      - description: Prescription Item ID
+        in: path
+        name: item_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete a prescription item
+      tags:
+      - PrescriptionItems
+    put:
+      consumes:
+      - application/json
+      description: Update details of a specific prescription item
+      parameters:
+      - description: Prescription Item ID
+        in: path
+        name: item_id
+        required: true
+        type: string
+      - description: Prescription Item payload
+        in: body
+        name: prescription_item
+        required: true
+        schema:
+          $ref: '#/definitions/medicalrecord.PrescriptionItem'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/medicalrecord.PrescriptionItem'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update a prescription item
+      tags:
+      - PrescriptionItems
+  /prescriptions:
+    post:
+      consumes:
+      - application/json
+      description: Create a prescription linked to a medical record
+      parameters:
+      - description: Prescription payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/medicalrecordhandler.createPrescriptionReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/medicalrecord.Prescription'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new prescription
+      tags:
+      - Prescriptions
+  /prescriptions/{prescription_id}:
+    delete:
+      description: Delete a prescription by ID
+      parameters:
+      - description: Prescription ID
+        in: path
+        name: prescription_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete prescription
+      tags:
+      - Prescriptions
+    get:
+      description: Retrieve a prescription by its ID
+      parameters:
+      - description: Prescription ID
+        in: path
+        name: prescription_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/medicalrecord.Prescription'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get prescription by ID
+      tags:
+      - Prescriptions
+    put:
+      consumes:
+      - application/json
+      description: Update an existing prescription
+      parameters:
+      - description: Prescription ID
+        in: path
+        name: prescription_id
+        required: true
+        type: string
+      - description: Updated fields
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/medicalrecordhandler.updatePrescriptionReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/medicalrecord.Prescription'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update prescription
+      tags:
+      - Prescriptions
+  /prescriptions/{prescription_id}/approve:
+    put:
+      description: Doctor approves a prescription
+      parameters:
+      - description: Prescription ID
+        in: path
+        name: prescription_id
+        required: true
+        type: string
+      - description: Doctor ID
+        in: query
+        name: doctor_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/medicalrecord.Prescription'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Approve a prescription
+      tags:
+      - Prescriptions
+  /prescriptions/medical_records/{record_id}:
+    get:
+      description: Retrieve all prescriptions for a given medical record ID
+      parameters:
+      - description: Medical Record ID
+        in: path
+        name: record_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/medicalrecord.Prescription'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List prescriptions for a medical record
+      tags:
+      - Prescriptions
   /timeslots:
     get:
       description: Retrieve all time slots
