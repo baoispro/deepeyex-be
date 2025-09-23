@@ -126,6 +126,25 @@ func (h *DoctorHandler) GetDoctorByUserID(c *gin.Context) {
 	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Doctor retrieved successfully", d))
 }
 
+// ---------------- Get Doctor By Slug ----------------
+// @Summary Get doctor by slug
+// @Description Retrieve doctor record using slug
+// @Tags Doctors
+// @Produce json
+// @Param slug path string true "Doctor Slug"
+// @Success 200 {object} doctor.Doctor
+// @Failure 404 {object} map[string]string
+// @Router /doctors/slug/{slug} [get]
+func (h *DoctorHandler) GetDoctorBySlug(c *gin.Context) {
+	slug := c.Param("slug")
+	d, err := h.service.FindBySlug(slug)
+	if err != nil {
+		c.JSON(http.StatusNotFound, utils.ErrorResponse(http.StatusNotFound, "Doctor not found"))
+		return
+	}
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Doctor retrieved successfully", d))
+}
+
 // ---------------- Update Doctor ----------------
 // @Summary Update a doctor
 // @Description Update doctor info and avatar

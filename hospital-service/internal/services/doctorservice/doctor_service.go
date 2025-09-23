@@ -93,6 +93,11 @@ func (s *DoctorService) FindByUserID(userID string) (*doctor.Doctor, error) {
 	return s.doctorRepo.FindByUserID(userID)
 }
 
+// ---------------- GetHospitalBySlug ----------------
+func (s *DoctorService) FindBySlug(slug string) (*doctor.Doctor, error) {
+	return s.doctorRepo.FindBySlug(slug)
+}
+
 // ---------------- Helper ----------------
 func generateDoctorID() string {
 	return uuid.NewString()

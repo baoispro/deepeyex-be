@@ -40,6 +40,7 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 		doctor.POST("", doctorHandler.CreateDoctor)                                 // Create
 		doctor.GET("", doctorHandler.ListDoctors)                                   // List all
 		doctor.GET("/user/:user_id", doctorHandler.GetDoctorByUserID)               // Get by UserID
+		doctor.GET("/slug/:slug", doctorHandler.GetDoctorBySlug)   
 		doctor.GET("/hospital/:hospital_id", doctorHandler.ListDoctorsByHospitalID) // List doctors by hospital_id
 		doctor.GET("/:doctor_id", doctorHandler.GetDoctorByID)                      // Get by DoctorID
 		doctor.PUT("/:doctor_id", doctorHandler.UpdateDoctor)                       // Update

@@ -64,3 +64,11 @@ func (r *DoctorRepo) FindByHospitalID(hospitalID string) ([]doctor.Doctor, error
 	}
 	return doctors, nil
 }
+
+func (r *DoctorRepo) FindBySlug(slug string) (*doctor.Doctor, error) {
+	var d doctor.Doctor
+	if err := r.db.Where("slug = ?", slug).First(&d).Error; err != nil {
+		return nil, err
+	}
+	return &d, nil
+}
