@@ -1292,6 +1292,41 @@ const docTemplate = `{
                 }
             }
         },
+        "/hospitals/slug/{slug}": {
+            "get": {
+                "description": "Retrieve hospital record using hospital slug",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hospitals"
+                ],
+                "summary": "Get hospital by slug",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Hospital Slug",
+                        "name": "slug",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/utils.APIResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/utils.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/hospitals/wards": {
             "get": {
                 "description": "Retrieve all distinct wards for a given city",

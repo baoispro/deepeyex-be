@@ -115,3 +115,15 @@ func (r *HospitalRepo) FindNearby(lat, lng, radiusKm float64) ([]hospital.Hospit
 
 	return hospitals, err
 }
+
+// FindBySlug tìm hospital theo slug
+func (r *HospitalRepo) FindBySlug(slug string) (*hospital.Hospital, error) {
+	var h hospital.Hospital
+	err := r.db.
+		Preload("Doctors").
+		First(&h, "slug = ?", slug).Error
+	if err != nil {
+		return nil, err
+	}
+	return &h, nil
+}

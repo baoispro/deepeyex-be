@@ -109,6 +109,11 @@ func (s *HospitalService) FindNearbyHospitals(lat, lng, radiusKm float64) ([]hos
 	return s.hospitalRepo.FindNearby(lat, lng, radiusKm)
 }
 
+// ---------------- GetHospitalBySlug ----------------
+func (s *HospitalService) GetHospitalBySlug(slug string) (*hospital.Hospital, error) {
+	return s.hospitalRepo.FindBySlug(slug)
+}
+
 // ---------------- Helper ----------------
 func generateHospitalID() string {
 	return uuid.NewString()

@@ -1332,6 +1332,29 @@ paths:
       summary: Search hospitals by address
       tags:
       - Hospitals
+  /hospitals/slug/{slug}:
+    get:
+      description: Retrieve hospital record using hospital slug
+      parameters:
+      - description: Hospital Slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+      summary: Get hospital by slug
+      tags:
+      - Hospitals
   /hospitals/wards:
     get:
       description: Retrieve all distinct wards for a given city

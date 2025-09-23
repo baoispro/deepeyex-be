@@ -348,3 +348,22 @@ func (h *HospitalHandler) FindNearbyHospitals(c *gin.Context) {
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Nearby hospitals retrieved successfully", results))
 }
+
+// ---------------- Get Hospital By Slug ----------------
+// @Summary Get hospital by slug
+// @Description Retrieve hospital record using hospital slug
+// @Tags Hospitals
+// @Produce json
+// @Param slug path string true "Hospital Slug"
+// @Success 200 {object} utils.APIResponse
+// @Failure 404 {object} utils.APIResponse
+// @Router /hospitals/slug/{slug} [get]
+func (h *HospitalHandler) GetHospitalBySlug(c *gin.Context) {
+	slug := c.Param("slug")
+	hospitalData, err := h.service.GetHospitalBySlug(slug)
+	if err != nil {
+		c.JSON(http.StatusNotFound, utils.ErrorResponse(http.StatusNotFound, "Hospital not found"))
+		return
+	}
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Hospital retrieved successfully", hospitalData))
+}

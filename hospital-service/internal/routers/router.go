@@ -49,6 +49,7 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	// ===== Hospital routes =====
 	hospital := r.Group("/hospitals")
 	{
+		hospital.GET("/slug/:slug", hHandler.GetHospitalBySlug)
 		hospital.GET("/cities", hHandler.ListCities)
 		hospital.GET("/wards", hHandler.ListWardsByCity)
 		hospital.GET("/search/address", hHandler.SearchByAddress)
