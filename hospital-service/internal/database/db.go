@@ -6,6 +6,7 @@ import (
 	"hospital-service/internal/models/doctor"
 	"hospital-service/internal/models/drug"
 	"hospital-service/internal/models/hospital"
+	"hospital-service/internal/models/medicalrecord"
 	"hospital-service/internal/models/order"
 	"hospital-service/internal/models/patient"
 	"log"
@@ -76,6 +77,34 @@ func AutoMigrate(db *gorm.DB) error {
 	if err := db.AutoMigrate(&order.Order{}, &order.OrderItem{}); err != nil {
 		return err
 	}
+
+		// --- 7. MedicalRecord + AI_Diagnoses + AI_RecommendedPlan ---
+	if err := db.AutoMigrate(
+		&medicalrecord.MedicalRecord{},
+		&medicalrecord.AIDiagnosis{},
+		&medicalrecord.AIRecommendedPlan{},
+	); err != nil {
+		return err
+	}
+
+	// --- 8. Prescription + PrescriptionItem ---
+	if err := db.AutoMigrate(
+		&medicalrecord.Prescription{},
+		&medicalrecord.PrescriptionItem{},
+	); err != nil {
+		return err
+	}
+
+	// --- 9. Attachments ---
+	if err := db.AutoMigrate(&medicalrecord.Attachment{}); err != nil {
+		return err
+	}
+
+	// --- 10. FollowUps ---
+	if err := db.AutoMigrate(&medicalrecord.FollowUp{}); err != nil {
+		return err
+	}
+
 
 	return nil
 }

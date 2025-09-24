@@ -35,6 +35,33 @@ import (
 	orderrepo "hospital-service/internal/repositories/orderrepo"
 	orderservice "hospital-service/internal/services/orderservice"
 
+	// MedicalRecord
+	medicalrecordhandler "hospital-service/internal/handlers/medicalrecordhandler"
+	medicalrecordrepo "hospital-service/internal/repositories/medicalrecordrepo"
+	medicalrecordservice "hospital-service/internal/services/medicalrecordservice"
+
+	// Prescription
+	prescriptionhandler "hospital-service/internal/handlers/medicalrecordhandler"
+	prescriptionrepo "hospital-service/internal/repositories/medicalrecordrepo" // cùng repo với prescription
+	prescriptionservice "hospital-service/internal/services/medicalrecordservice"
+
+	// PrescriptionItem
+	prescriptionitemhandler "hospital-service/internal/handlers/medicalrecordhandler"
+	prescriptionitemrepo "hospital-service/internal/repositories/medicalrecordrepo" // cùng repo với prescription
+	prescriptionitemservice "hospital-service/internal/services/medicalrecordservice"
+
+	// Attachment
+	attachmenthandler "hospital-service/internal/handlers/medicalrecordhandler"
+	attachmentrepo "hospital-service/internal/repositories/medicalrecordrepo"
+	attachmentservice "hospital-service/internal/services/medicalrecordservice"
+
+	// FollowUp
+	followuphandler "hospital-service/internal/handlers/medicalrecordhandler"
+	followuprepo "hospital-service/internal/repositories/medicalrecordrepo"
+	followupservice "hospital-service/internal/services/medicalrecordservice"
+
+	// AuditTrail
+
 	"hospital-service/internal/routers"
 )
 
@@ -60,6 +87,11 @@ func main() {
 	tRepo := timeslotrepo.NewTimeSlotRepo(db)
 	drugRepo := drugrepo.NewDrugRepo(db)
 	orderRepo := orderrepo.NewOrderRepo(db)
+	medicalRecordRepo := medicalrecordrepo.NewMedicalRecordRepository(db)
+	prescriptionRepo := prescriptionrepo.NewPrescriptionRepository(db)
+	attachmentRepo := attachmentrepo.NewAttachmentRepository(db)
+	followUpRepo := followuprepo.NewFollowUpRepository(db)
+	prescriptionitemrepo := prescriptionitemrepo.NewPrescriptionItemRepository(db)
 
 	s3Client, err := storage.NewS3Client(
 		cfg.S3Bucket,
@@ -80,6 +112,12 @@ func main() {
 	drugService := drugservice.NewDrugService(drugRepo, s3Client)
 	orderService := orderservice.NewOrderService(orderRepo, drugRepo, s3Client)
 
+	medicalRecordService := medicalrecordservice.NewMedicalRecordService(medicalRecordRepo)
+	prescriptionService := prescriptionservice.NewPrescriptionService(prescriptionRepo)
+	attachmentService := attachmentservice.NewAttachmentService(attachmentRepo)
+	followUpService := followupservice.NewFollowUpService(followUpRepo)
+	prescriptionItemService := prescriptionitemservice.NewPrescriptionItemService(prescriptionitemrepo)
+
 	// Initialize handlers
 	pHandler := patienthandler.NewPatientHandler(cfg, pService)
 	dHandler := doctorhandler.NewDoctorHandler(cfg, dService)
@@ -88,9 +126,14 @@ func main() {
 	tHandler := timeslothandler.NewTimeSlotHandler(cfg, tService)
 	drugHandler := drughandler.NewDrugHandler(cfg, drugService)
 	orderHandler := orderhandler.NewOrderHandler(cfg, orderService)
+	medicalRecordHandler := medicalrecordhandler.NewMedicalRecordHandler(cfg, medicalRecordService)
+	prHandler := prescriptionhandler.NewPrescriptionHandler(cfg, prescriptionService)
+	attachmentHandler := attachmenthandler.NewAttachmentHandler(cfg, attachmentService)
+	followUpHandler := followuphandler.NewFollowUpHandler(cfg, followUpService)
+	prescriptionItemHander := prescriptionitemhandler.NewPrescriptionItemHandler(cfg, prescriptionItemService)
 
 	// Setup router
-	r := routers.SetupRouter(&cfg, pHandler, dHandler, hHandler, aHandler, tHandler, drugHandler, orderHandler)
+	r := routers.SetupRouter(&cfg, pHandler, dHandler, hHandler, aHandler, tHandler, drugHandler, orderHandler, medicalRecordHandler, prHandler, attachmentHandler, followUpHandler, prescriptionItemHander)
 
 	log.Printf("Hospital service running on :%s", cfg.Port)
 	if err := r.Run(":" + cfg.Port); err != nil {
