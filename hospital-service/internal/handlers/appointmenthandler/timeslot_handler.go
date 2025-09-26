@@ -165,3 +165,71 @@ func (h *TimeSlotHandler) ListAllTimeSlots(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "time slots retrieved successfully", slots))
 }
+
+// ---------------- Get TimeSlots By Doctor and Date ----------------
+// @Summary Get time slots by doctor and specific date
+// @Description Retrieve all time slots of a doctor on a given date
+// @Tags TimeSlots
+// @Produce json
+// @Param doctor_id path string true "Doctor ID"
+// @Param date query string true "Date in format YYYY-MM-DD"
+// @Success 200 {array} appointment.TimeSlot
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /timeslots/doctor/{doctor_id}/date [get]
+func (h *TimeSlotHandler) GetTimeSlotsByDoctorAndDate(c *gin.Context) {
+	doctorID := c.Param("doctor_id")
+	dateStr := c.Query("date") // YYYY-MM-DD
+	if dateStr == "" {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "date is required"))
+		return
+	}
+
+	date, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "invalid date format, expected YYYY-MM-DD"))
+		return
+	}
+
+	slots, err := h.service.GetByDoctorAndDate(doctorID, date)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "time slots retrieved successfully", slots))
+}
+
+// ---------------- Get TimeSlots By Doctor and Month ----------------
+// @Summary Get time slots by doctor and month
+// @Description Retrieve all time slots of a doctor in a given month
+// @Tags TimeSlots
+// @Produce json
+// @Param doctor_id path string true "Doctor ID"
+// @Param month query string true "Month in format YYYY-MM (e.g., 2025-09)"
+// @Success 200 {array} appointment.TimeSlot
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /timeslots/doctor/{doctor_id}/month [get]
+func (h *TimeSlotHandler) GetTimeSlotsByDoctorAndMonth(c *gin.Context) {
+	doctorID := c.Param("doctor_id")
+	monthStr := c.Query("month") // YYYY-MM
+	if monthStr == "" {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "month is required"))
+		return
+	}
+
+	date, err := time.Parse("2006-01", monthStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "invalid month format, expected YYYY-MM"))
+		return
+	}
+
+	slots, err := h.service.GetByDoctorAndMonth(doctorID, date)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "time slots retrieved successfully", slots))
+}

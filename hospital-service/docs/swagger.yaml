@@ -1128,6 +1128,31 @@ paths:
       summary: List doctors by hospital ID
       tags:
       - Doctors
+  /doctors/slug/{slug}:
+    get:
+      description: Retrieve doctor record using slug
+      parameters:
+      - description: Doctor Slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/doctor.Doctor'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get doctor by slug
+      tags:
+      - Doctors
   /doctors/user/{user_id}:
     get:
       description: Retrieve doctor record using user ID
@@ -3157,6 +3182,82 @@ paths:
               type: string
             type: object
       summary: Get time slots by doctor ID
+      tags:
+      - TimeSlots
+  /timeslots/doctor/{doctor_id}/date:
+    get:
+      description: Retrieve all time slots of a doctor on a given date
+      parameters:
+      - description: Doctor ID
+        in: path
+        name: doctor_id
+        required: true
+        type: string
+      - description: Date in format YYYY-MM-DD
+        in: query
+        name: date
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/appointment.TimeSlot'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get time slots by doctor and specific date
+      tags:
+      - TimeSlots
+  /timeslots/doctor/{doctor_id}/month:
+    get:
+      description: Retrieve all time slots of a doctor in a given month
+      parameters:
+      - description: Doctor ID
+        in: path
+        name: doctor_id
+        required: true
+        type: string
+      - description: Month in format YYYY-MM (e.g., 2025-09)
+        in: query
+        name: month
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/appointment.TimeSlot'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get time slots by doctor and month
       tags:
       - TimeSlots
 swagger: "2.0"

@@ -19,7 +19,7 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandler, doctorHandler *doctorhandler.DoctorHandler, hHandler *hospitalhandler.HospitalHandler, aHandler *appointmenthandler.AppointmentHandler, tHandler *appointmenthandler.TimeSlotHandler, drugHandler *drughandler.DrugHandler, orderHandler *orderhandler.OrderHandler,medicalRecordHandler *medicalrecordhandler.MedicalRecordHandler,
+func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandler, doctorHandler *doctorhandler.DoctorHandler, hHandler *hospitalhandler.HospitalHandler, aHandler *appointmenthandler.AppointmentHandler, tHandler *appointmenthandler.TimeSlotHandler, drugHandler *drughandler.DrugHandler, orderHandler *orderhandler.OrderHandler, medicalRecordHandler *medicalrecordhandler.MedicalRecordHandler,
 	prescriptionHandler *medicalrecordhandler.PrescriptionHandler,
 	attachmentHandler *medicalrecordhandler.AttachmentHandler,
 	followUpHandler *medicalrecordhandler.FollowUpHandler,
@@ -44,10 +44,10 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	// ===== Doctor routes =====
 	doctor := r.Group("/doctors")
 	{
-		doctor.POST("", doctorHandler.CreateDoctor)                                 // Create
-		doctor.GET("", doctorHandler.ListDoctors)                                   // List all
-		doctor.GET("/user/:user_id", doctorHandler.GetDoctorByUserID)               // Get by UserID
-		doctor.GET("/slug/:slug", doctorHandler.GetDoctorBySlug)   
+		doctor.POST("", doctorHandler.CreateDoctor)                   // Create
+		doctor.GET("", doctorHandler.ListDoctors)                     // List all
+		doctor.GET("/user/:user_id", doctorHandler.GetDoctorByUserID) // Get by UserID
+		doctor.GET("/slug/:slug", doctorHandler.GetDoctorBySlug)
 		doctor.GET("/hospital/:hospital_id", doctorHandler.ListDoctorsByHospitalID) // List doctors by hospital_id
 		doctor.GET("/:doctor_id", doctorHandler.GetDoctorByID)                      // Get by DoctorID
 		doctor.PUT("/:doctor_id", doctorHandler.UpdateDoctor)                       // Update
@@ -90,6 +90,8 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 		timeSlot.GET("", tHandler.ListAllTimeSlots)
 		timeSlot.GET("/:slot_id", tHandler.GetTimeSlotByID)
 		timeSlot.GET("/doctor/:doctor_id", tHandler.GetTimeSlotsByDoctor)
+		timeSlot.GET("/doctor/:doctor_id/date", tHandler.GetTimeSlotsByDoctorAndDate)
+		timeSlot.GET("/doctor/:doctor_id/month", tHandler.GetTimeSlotsByDoctorAndMonth)
 		timeSlot.PUT("/:slot_id", tHandler.UpdateTimeSlot)
 		timeSlot.DELETE("/:slot_id", tHandler.DeleteTimeSlot)
 	}
@@ -116,14 +118,14 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 		order.DELETE("/:order_id", orderHandler.DeleteOrder)               // Delete order
 	}
 
-		// ===== MedicalRecord routes =====
+	// ===== MedicalRecord routes =====
 	medical := r.Group("/medical_records")
 	{
-		medical.POST("", medicalRecordHandler.CreateMedicalRecord)           // Create
-		medical.GET("", medicalRecordHandler.ListMedicalRecords)             // List all
-		medical.GET("/:record_id", medicalRecordHandler.GetMedicalRecord)    // Get by ID
+		medical.POST("", medicalRecordHandler.CreateMedicalRecord)                    // Create
+		medical.GET("", medicalRecordHandler.ListMedicalRecords)                      // List all
+		medical.GET("/:record_id", medicalRecordHandler.GetMedicalRecord)             // Get by ID
 		medical.GET("/:record_id/ai_diagnoses", medicalRecordHandler.ListAIDiagnoses) // List AI Diagnoses by MedicalRecord ID
-		medical.PUT("/:record_id", medicalRecordHandler.UpdateMedicalRecord) // Update
+		medical.PUT("/:record_id", medicalRecordHandler.UpdateMedicalRecord)          // Update
 		medical.DELETE("/:record_id", medicalRecordHandler.DeleteMedicalRecord)
 		medical.POST("/init", medicalRecordHandler.InitMedicalRecordAndDiagnosis)
 		medical.POST("/:record_id/ai_diagnoses", medicalRecordHandler.AddAIDiagnosis)
@@ -145,7 +147,7 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 		prescription.PUT("/:prescription_id/approve", prescriptionHandler.ApprovePrescription)
 		prescription.DELETE("/:prescription_id", prescriptionHandler.DeletePrescription)
 	}
-	
+
 	// ===== Attachment routes =====
 	attachment := r.Group("/attachments")
 	{
@@ -162,8 +164,6 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 		followup.PUT("/:follow_up_id", followUpHandler.UpdateFollowUp)
 		followup.DELETE("/:follow_up_id", followUpHandler.DeleteFollowUp)
 	}
-
-	
 
 	// Swagger
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

@@ -113,6 +113,14 @@ func (s *TimeSlotService) ListAll() ([]appointment.TimeSlot, error) {
 	return s.repo.ListAll()
 }
 
+func (s *TimeSlotService) GetByDoctorAndDate(doctorID string, date time.Time) ([]appointment.TimeSlot, error) {
+	return s.repo.FindByDoctorAndDate(doctorID, date)
+}
+
+func (s *TimeSlotService) GetByDoctorAndMonth(doctorID string, date time.Time) ([]appointment.TimeSlot, error) {
+	return s.repo.FindByDoctorAndMonth(doctorID, date)
+}
+
 // ---------------- Helper ----------------
 func generateSlotID() string {
 	return uuid.NewString()

@@ -59,3 +59,32 @@ func (r *TimeSlotRepo) CountOverlapping(doctorID string, startTime, endTime time
 		Count(&count).Error
 	return count, err
 }
+
+func (r *TimeSlotRepo) FindByDoctorAndDate(doctorID string, date time.Time) ([]appointment.TimeSlot, error) {
+	startOfDay := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
+	endOfDay := startOfDay.Add(24 * time.Hour)
+
+	var slots []appointment.TimeSlot
+	if err := r.db.Where("doctor_id = ? AND start_time >= ? AND start_time < ?", doctorID, startOfDay, endOfDay).
+		Order("start_time asc").
+		Find(&slots).Error; err != nil {
+		return nil, err
+	}
+	return slots, nil
+}
+
+func (r *TimeSlotRepo) FindByDoctorAndMonth(doctorID string, date time.Time) ([]appointment.TimeSlot, error) {
+	// Lấy ngày đầu tháng
+	startOfMonth := time.Date(date.Year(), date.Month(), 1, 0, 0, 0, 0, date.Location())
+
+	// Lấy ngày đầu của tháng sau
+	nextMonth := startOfMonth.AddDate(0, 1, 0)
+
+	var slots []appointment.TimeSlot
+	if err := r.db.Where("doctor_id = ? AND start_time >= ? AND start_time < ?", doctorID, startOfMonth, nextMonth).
+		Order("start_time asc").
+		Find(&slots).Error; err != nil {
+		return nil, err
+	}
+	return slots, nil
+}
