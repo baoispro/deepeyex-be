@@ -9,6 +9,7 @@ import (
 	"hospital-service/internal/models/medicalrecord"
 	"hospital-service/internal/models/order"
 	"hospital-service/internal/models/patient"
+	"hospital-service/internal/models/service"
 	"log"
 
 	"gorm.io/driver/postgres"
@@ -97,6 +98,12 @@ func AutoMigrate(db *gorm.DB) error {
 	if err := db.AutoMigrate(&medicalrecord.FollowUp{}); err != nil {
 		return err
 	}
+
+	if err := db.AutoMigrate(
+    &service.Service{},       // Cha
+	); err != nil {
+			return err
+		}
 
 	return nil
 }
