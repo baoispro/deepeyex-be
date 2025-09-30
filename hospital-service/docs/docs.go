@@ -887,6 +887,54 @@ const docTemplate = `{
                 }
             }
         },
+        "/doctors/{doctor_id}/services": {
+            "get": {
+                "description": "Retrieve all services for a specific doctor",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Services"
+                ],
+                "summary": "List services by doctor ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Doctor ID",
+                        "name": "doctor_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/drugs": {
             "get": {
                 "description": "Retrieve all drugs",
