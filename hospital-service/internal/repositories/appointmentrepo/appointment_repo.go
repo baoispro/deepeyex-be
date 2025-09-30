@@ -10,6 +10,10 @@ type AppointmentRepo struct {
 	db *gorm.DB
 }
 
+func (r *AppointmentRepo) DB() *gorm.DB {
+	return r.db
+}
+
 func NewAppointmentRepo(db *gorm.DB) *AppointmentRepo {
 	return &AppointmentRepo{db: db}
 }

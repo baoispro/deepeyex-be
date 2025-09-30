@@ -3,6 +3,7 @@ package routers
 import (
 	"hospital-service/internal/config"
 	"hospital-service/internal/handlers/appointmenthandler"
+	"hospital-service/internal/handlers/bookinghandler"
 	"hospital-service/internal/handlers/doctorhandler"
 	"hospital-service/internal/handlers/drughandler"
 	"hospital-service/internal/handlers/hospitalhandler"
@@ -26,6 +27,7 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	followUpHandler *medicalrecordhandler.FollowUpHandler,
 	prescriptionItemHandler *medicalrecordhandler.PrescriptionItemHandler,
 	serviceHandler *servicehandler.ServiceHandler,
+	bookingHandler *bookinghandler.BookingHandler,
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -75,7 +77,6 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	// ===== Appointments routes =====
 	appointments := r.Group("/appointments")
 	{
-		appointments.POST("", aHandler.CreateAppointment)
 		appointments.GET("/:appointment_id", aHandler.GetAppointmentByID)
 		appointments.GET("/patient/:patient_id", aHandler.GetAppointmentsByPatient)
 		appointments.GET("/doctor/:doctor_id", aHandler.GetAppointmentsByDoctor)
@@ -111,13 +112,12 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	// ===== Order routes =====
 	order := r.Group("/orders")
 	{
-		order.POST("", orderHandler.CreateOrder)                           // Create
 		order.GET("", orderHandler.ListAllOrders)                          // List all
 		order.GET("/:order_id", orderHandler.GetOrderByID)                 // Get by OrderID
 		order.GET("/patient/:patient_id", orderHandler.GetOrdersByPatient) // Get orders by patient
 		order.PUT("/:order_id/status", orderHandler.UpdateOrderStatus)     // Update order status
-		order.PUT("/:order_id/detail", orderHandler.UpdateOrderDetail)     // Update order items/details
-		order.DELETE("/:order_id", orderHandler.DeleteOrder)               // Delete order
+		order.PUT("/:order_id/appointment", orderHandler.UpdateOrderAppointment)
+		order.DELETE("/:order_id", orderHandler.DeleteOrder) // Delete order
 	}
 
 	// ===== MedicalRecord routes =====
@@ -171,6 +171,10 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	service := r.Group("/doctors/:doctor_id/services")
 	{
 		service.GET("", serviceHandler.ListServicesByDoctorID) // List services by Doctor ID
+	// ===== Booking routes =====
+	booking := r.Group("/bookings")
+	{
+		booking.POST("", bookingHandler.CreateBooking)
 	}
 
 	// Swagger

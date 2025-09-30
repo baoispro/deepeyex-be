@@ -20,8 +20,9 @@ type OrderService struct {
 }
 
 type OrderItemRequest struct {
-	DrugID   string `json:"drug_id" binding:"required"`
+	DrugID   string `json:"drug_id"`
 	Quantity int    `json:"quantity" binding:"required"`
+	Service  string `json:"service"`
 }
 
 func NewOrderService(repo *orderrepo.OrderRepo, drugRepo *drugrepo.DrugRepo, storage *storage.S3Client) *OrderService {
@@ -32,52 +33,13 @@ func NewOrderService(repo *orderrepo.OrderRepo, drugRepo *drugrepo.DrugRepo, sto
 	}
 }
 
-// ---------------- CreateOrder ----------------
-// func (s *OrderService) CreateOrder(patientID string, items []OrderItemRequest) (*order.Order, error) {
-// 	if patientID == "" || len(items) == 0 {
-// 		return nil, errors.New("invalid order data")
-// 	}
-
-// 	var orderItems []order.OrderItem
-// 	total := 0.0
-
-// 	for _, it := range items {
-// 		// Lấy thông tin drug từ DB
-// 		d, err := s.drugRepo.GetByID(it.DrugID)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-
-// 		price := float64(it.Quantity) * d.Price * (1 - d.DiscountPercent/100)
-// 		total += price
-
-// 		orderItem := order.OrderItem{
-// 			OrderItemID: uuid.NewString(),
-// 			DrugID:      it.DrugID,
-// 			Quantity:    it.Quantity,
-// 			Price:       price,
-// 		}
-// 		orderItems = append(orderItems, orderItem)
-
-// 	}
-
-// 	o := &order.Order{
-// 		OrderID:     generateOrderID(),
-// 		PatientID:   patientID,
-// 		CreatedAt:   time.Now(),
-// 		Status:      enums.PENDING,
-// 		TotalAmount: total,
-// 		OrderItems:  orderItems,
-// 	}
-
-// 	if err := s.repo.Create(o); err != nil {
-// 		return nil, err
-// 	}
-
-// 	return o, nil
-// }
-
-func (s *OrderService) CreateOrder(patientID string, items []OrderItemRequest) (*order.Order, error) {
+func (s *OrderService) CreateOrder(
+	patientID string,
+	appointmentID string,
+	bookUserID string,
+	status enums.OrderStatus,
+	items []OrderItemRequest,
+) (*order.Order, error) {
 	if patientID == "" || len(items) == 0 {
 		return nil, errors.New("invalid order data")
 	}
@@ -106,7 +68,10 @@ func (s *OrderService) CreateOrder(patientID string, items []OrderItemRequest) (
 		// Tạo order item
 		orderItem := order.OrderItem{
 			OrderItemID: uuid.NewString(),
+			OrderID:     "", // sẽ được gán sau khi tạo Order
 			DrugID:      it.DrugID,
+			DrugName:    d.Name,  // populate tên thuốc
+			Service:     it.Service,
 			Quantity:    it.Quantity,
 			Price:       price,
 		}
@@ -121,14 +86,17 @@ func (s *OrderService) CreateOrder(patientID string, items []OrderItemRequest) (
 
 	// Tạo đơn hàng
 	o := &order.Order{
-		OrderID:     generateOrderID(),
-		PatientID:   patientID,
-		CreatedAt:   time.Now(),
-		Status:      enums.PENDING,
-		TotalAmount: total,
-		OrderItems:  orderItems,
+		OrderID:       generateOrderID(),
+		PatientID:     patientID,
+		AppointmentID: appointmentID,
+		BookUserId:    bookUserID,
+		CreatedAt:     time.Now(),
+		Status:        status,
+		TotalAmount:   total,
+		OrderItems:    orderItems,
 	}
 
+	// Lưu Order (bao gồm OrderItems)
 	if err := tx.Create(o).Error; err != nil {
 		tx.Rollback()
 		return nil, err
@@ -163,6 +131,19 @@ func (s *OrderService) UpdateOrderStatus(id string, status enums.OrderStatus) er
 	return s.repo.Update(o)
 }
 
+// ---------------- UpdateOrderAppointment ----------------
+func (s *OrderService) UpdateOrderAppointment(id string, appointmentID string) error {
+	o, err := s.repo.GetByID(id)
+	if err != nil {
+		return err
+	}
+
+	// cập nhật appointment_id
+	o.AppointmentID = appointmentID
+
+	return s.repo.Update(o)
+}
+
 // ---------------- DeleteOrder ----------------
 func (s *OrderService) DeleteOrder(id string) error {
 	return s.repo.Delete(id)
@@ -171,33 +152,6 @@ func (s *OrderService) DeleteOrder(id string) error {
 // ---------------- Helper ----------------
 func generateOrderID() string {
 	return uuid.NewString()
-}
-
-// ---------------- Update Order Detail ----------------
-func (s *OrderService) UpdateOrderDetail(id string, updated *order.Order) error {
-	o, err := s.repo.GetByID(id)
-	if err != nil {
-		return err
-	}
-
-	if len(updated.OrderItems) > 0 {
-		total := 0.0
-		for i := range updated.OrderItems {
-			if updated.OrderItems[i].OrderItemID == "" {
-				updated.OrderItems[i].OrderItemID = uuid.NewString()
-			}
-			updated.OrderItems[i].Price = updated.OrderItems[i].Price * float64(updated.OrderItems[i].Quantity)
-			total += updated.OrderItems[i].Price
-		}
-		o.OrderItems = updated.OrderItems
-		o.TotalAmount = total
-	}
-
-	if updated.Status != "" {
-		o.Status = updated.Status
-	}
-
-	return s.repo.Update(o)
 }
 
 // ---------------- GetOrdersByPatientID ----------------

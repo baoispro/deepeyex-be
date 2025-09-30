@@ -11,59 +11,74 @@ import (
 	"hospital-service/internal/repositories/appointmentrepo"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type AppointmentService struct {
-	repo *appointmentrepo.AppointmentRepo
+	repo         *appointmentrepo.AppointmentRepo
+	timeSlotRepo *appointmentrepo.TimeSlotRepo
 }
 
-func NewAppointmentService(repo *appointmentrepo.AppointmentRepo) *AppointmentService {
-	return &AppointmentService{repo: repo}
+func NewAppointmentService(repo *appointmentrepo.AppointmentRepo, timeSlotRepo *appointmentrepo.TimeSlotRepo) *AppointmentService {
+	return &AppointmentService{repo: repo, timeSlotRepo: timeSlotRepo}
 }
 
-// ---------------- Create ----------------
 func (s *AppointmentService) Create(
-	patientID, doctorID, hospitalID, slotID string,
-	notes string,
-	specialty enums.Specialty,
+	patientID, doctorID, hospitalID, bookUserID string,
+	slotIDs []string, notes string,
 ) (*appointment.Appointment, error) {
 
-	// Kiểm tra các field bắt buộc
-	if patientID == "" || doctorID == "" || hospitalID == "" || slotID == "" {
-		return nil, errors.New("missing required fields: patient_id, doctor_id, hospital_id, slot_id")
+	if patientID == "" || doctorID == "" || hospitalID == "" || bookUserID == "" || len(slotIDs) == 0 {
+		return nil, errors.New("missing required fields")
 	}
 
-	existingAppointments, err := s.repo.FindByDoctorID(doctorID)
+	slots, err := s.timeSlotRepo.FindByIDs(slotIDs)
 	if err != nil {
-		return nil, fmt.Errorf("failed to check doctor's appointments: %v", err)
+		return nil, err
+	}
+	if len(slots) != len(slotIDs) {
+		return nil, errors.New("some slots not found")
 	}
 
-	for _, a := range existingAppointments {
-		if a.SlotID == slotID && a.Status != enums.Canceled {
-			return nil, fmt.Errorf("doctor already has an appointment in this time slot")
+	var a *appointment.Appointment
+
+	// Transaction bắt đầu
+	err = s.repo.DB().Transaction(func(tx *gorm.DB) error {
+		a = &appointment.Appointment{
+			AppointmentID: generateAppointmentID(),
+			PatientID:     patientID,
+			DoctorID:      doctorID,
+			HospitalID:    hospitalID,
+			BookUserId:    bookUserID,
+			Notes:         &notes,
+			CreatedAt:     time.Now(),
+			UpdatedAt:     time.Now(),
+			Status:        enums.Pending,
 		}
-	}
+		a.AppointmentCode = fmt.Sprintf("APPT-%d-%04d", time.Now().UnixNano(), rand.Intn(10000))
 
-	a := &appointment.Appointment{
-		AppointmentID: generateAppointmentID(),
-		PatientID:     patientID,
-		DoctorID:      doctorID,
-		HospitalID:    hospitalID,
-		SlotID:        slotID,
-		Notes:         &notes,
-		Specialty:     specialty,
-		CreatedAt:     time.Now(),
-		UpdatedAt:     time.Now(),
-		Status:        enums.Pending,
-	}
+		if err := tx.Create(a).Error; err != nil {
+			return err
+		}
 
-	a.AppointmentCode = fmt.Sprintf("APPT-%d-%04d", time.Now().UnixNano(), rand.Intn(10000))
+		// Gán appointment cho các slot
+		for _, slot := range slots {
+			if slot.AppointmentID != nil {
+				return fmt.Errorf("slot %s is already booked", slot.SlotID)
+			}
+			slot.AppointmentID = &a.AppointmentID
+			if err := tx.Save(&slot).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 
-	if err := s.repo.Create(a); err != nil {
+	if err != nil {
 		return nil, err
 	}
 
-	return a, nil
+	return s.repo.GetByID(a.AppointmentID)
 }
 
 // ---------------- GetByID ----------------
@@ -103,11 +118,6 @@ func (s *AppointmentService) UpdateDetail(id string, updatedData *appointment.Ap
 	a, err := s.repo.GetByID(id)
 	if err != nil {
 		return fmt.Errorf("appointment not found: %v", err)
-	}
-
-	// Chỉ cập nhật các trường cho phép
-	if updatedData.SlotID != "" {
-		a.SlotID = updatedData.SlotID
 	}
 	if updatedData.Notes != nil {
 		a.Notes = updatedData.Notes
