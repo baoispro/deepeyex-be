@@ -171,14 +171,15 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	service := r.Group("/doctors/:doctor_id/services")
 	{
 		service.GET("", serviceHandler.ListServicesByDoctorID) // List services by Doctor ID
-	// ===== Booking routes =====
-	booking := r.Group("/bookings")
-	{
-		booking.POST("", bookingHandler.CreateBooking)
+		// ===== Booking routes =====
+		booking := r.Group("/bookings")
+		{
+			booking.POST("", bookingHandler.CreateBooking)
+		}
+
+		// Swagger
+		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+		return r
 	}
-
-	// Swagger
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-
-	return r
 }
