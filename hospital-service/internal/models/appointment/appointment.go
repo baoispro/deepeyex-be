@@ -24,7 +24,7 @@ type Appointment struct {
 	BookUserId      string                  `gorm:"not null;size:36" json:"book_user_id"`
 
 	// Quan hệ
-	TimeSlots []TimeSlot        `gorm:"foreignKey:AppointmentID;references:AppointmentID" json:"time_slots,omitempty"`
+    TimeSlots []TimeSlot        `json:"time_slots,omitempty"`
 	Patient  patient.Patient   `gorm:"foreignKey:PatientID;references:PatientID" json:"patient"`
 	Hospital hospital.Hospital `gorm:"foreignKey:HospitalID;references:HospitalID" json:"hospital,omitempty"`
 	Doctor   doctor.Doctor     `gorm:"foreignKey:DoctorID;references:DoctorID" json:"doctor,omitempty"`
