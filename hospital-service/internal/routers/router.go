@@ -171,6 +171,7 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	service := r.Group("/doctors/:doctor_id/services")
 	{
 		service.GET("", serviceHandler.ListServicesByDoctorID) // List services by Doctor ID
+	}
 	// ===== Booking routes =====
 	booking := r.Group("/bookings")
 	{
