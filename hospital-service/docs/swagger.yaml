@@ -1101,6 +1101,38 @@ paths:
       summary: Update a doctor
       tags:
       - Doctors
+  /doctors/{doctor_id}/services:
+    get:
+      description: Retrieve all services for a specific doctor
+      parameters:
+      - description: Doctor ID
+        in: path
+        name: doctor_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List services by doctor ID
+      tags:
+      - Services
   /doctors/hospital/{hospital_id}:
     get:
       description: Retrieve doctors for a specific hospital

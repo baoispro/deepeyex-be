@@ -10,6 +10,7 @@ import (
 	"hospital-service/internal/handlers/medicalrecordhandler"
 	"hospital-service/internal/handlers/orderhandler"
 	"hospital-service/internal/handlers/patienthandler"
+	"hospital-service/internal/handlers/servicehandler"
 
 	"hospital-service/internal/middlewares"
 
@@ -25,6 +26,7 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	attachmentHandler *medicalrecordhandler.AttachmentHandler,
 	followUpHandler *medicalrecordhandler.FollowUpHandler,
 	prescriptionItemHandler *medicalrecordhandler.PrescriptionItemHandler,
+	serviceHandler *servicehandler.ServiceHandler,
 	bookingHandler *bookinghandler.BookingHandler,
 ) *gin.Engine {
 	r := gin.Default()
@@ -165,6 +167,10 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 		followup.DELETE("/:follow_up_id", followUpHandler.DeleteFollowUp)
 	}
 
+	// ===== Service routes =====
+	service := r.Group("/doctors/:doctor_id/services")
+	{
+		service.GET("", serviceHandler.ListServicesByDoctorID) // List services by Doctor ID
 	// ===== Booking routes =====
 	booking := r.Group("/bookings")
 	{
