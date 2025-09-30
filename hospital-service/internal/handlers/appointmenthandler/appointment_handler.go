@@ -22,44 +22,16 @@ type UpdateAppointmentStatusRequest struct {
 }
 
 type createAppointmentReq struct {
-	PatientID  string          `json:"patient_id" binding:"required"`
-	DoctorID   string          `json:"doctor_id" binding:"required"`
-	HospitalID string          `json:"hospital_id" binding:"required"`
-	SlotID     string          `json:"slot_id" binding:"required"`
-	Notes      string          `json:"notes,omitempty"`
-	Specialty  enums.Specialty `json:"specialty" binding:"required"`
+	PatientID  string `json:"patient_id" binding:"required"`
+	DoctorID   string `json:"doctor_id" binding:"required"`
+	HospitalID string `json:"hospital_id" binding:"required"`
+	SlotID     string `json:"slot_id" binding:"required"`
+	BookUserID string `json:"book_user_id" binding:"required"`
+	Notes      string `json:"notes,omitempty"`
 }
 
 func NewAppointmentHandler(cfg config.Config, service *appointmentservice.AppointmentService) *AppointmentHandler {
 	return &AppointmentHandler{service: service}
-}
-
-// ---------------- Create Appointment ----------------
-// @Summary Create a new appointment
-// @Description Schedule a new appointment for a patient with a doctor
-// @Tags Appointments
-// @Accept json
-// @Produce json
-// @Param appointment body createAppointmentReq true "Appointment data"
-// @Success 201 {object} appointment.Appointment
-// @Failure 400 {object} map[string]string
-// @Failure 500 {object} map[string]string
-// @Router /appointments [post]
-func (h *AppointmentHandler) CreateAppointment(c *gin.Context) {
-	var req createAppointmentReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
-		return
-	}
-
-	// Gọi service để tạo appointment, backend tự set ID, CreatedAt, UpdatedAt, AppointmentCode, Status
-	a, err := h.service.Create(req.PatientID, req.DoctorID, req.HospitalID, req.SlotID, req.Notes, req.Specialty)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
-		return
-	}
-
-	c.JSON(http.StatusCreated, utils.SuccessResponse(http.StatusCreated, "Appointment created successfully", a))
 }
 
 // ---------------- Get Appointment By ID ----------------

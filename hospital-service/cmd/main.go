@@ -6,8 +6,10 @@ import (
 	_ "hospital-service/docs"
 	"hospital-service/internal/config"
 	"hospital-service/internal/database"
+	"hospital-service/internal/handlers/bookinghandler"
 	patienthandler "hospital-service/internal/handlers/patienthandler"
 	patientrepo "hospital-service/internal/repositories/patientrepo"
+	"hospital-service/internal/services/bookingservice"
 	patientservice "hospital-service/internal/services/patientservice"
 	"hospital-service/internal/storage"
 
@@ -107,7 +109,7 @@ func main() {
 	pService := patientservice.NewPatientService(pRepo, s3Client)
 	dService := doctorservice.NewDoctorService(dRepo, s3Client)
 	hService := hospitalservice.NewHospitalService(hRepo, s3Client)
-	aService := appointmentservice.NewAppointmentService(aRepo)
+	aService := appointmentservice.NewAppointmentService(aRepo, tRepo)
 	tService := timeslotservice.NewTimeSlotService(tRepo)
 	drugService := drugservice.NewDrugService(drugRepo, s3Client)
 	orderService := orderservice.NewOrderService(orderRepo, drugRepo, s3Client)
@@ -117,6 +119,7 @@ func main() {
 	attachmentService := attachmentservice.NewAttachmentService(attachmentRepo)
 	followUpService := followupservice.NewFollowUpService(followUpRepo)
 	prescriptionItemService := prescriptionitemservice.NewPrescriptionItemService(prescriptionitemrepo)
+	bookingService := bookingservice.NewBookingService(aService, orderService)
 
 	// Initialize handlers
 	pHandler := patienthandler.NewPatientHandler(cfg, pService)
@@ -131,9 +134,10 @@ func main() {
 	attachmentHandler := attachmenthandler.NewAttachmentHandler(cfg, attachmentService)
 	followUpHandler := followuphandler.NewFollowUpHandler(cfg, followUpService)
 	prescriptionItemHander := prescriptionitemhandler.NewPrescriptionItemHandler(cfg, prescriptionItemService)
+	bookingHandler := bookinghandler.NewBookingHandler(bookingService)
 
 	// Setup router
-	r := routers.SetupRouter(&cfg, pHandler, dHandler, hHandler, aHandler, tHandler, drugHandler, orderHandler, medicalRecordHandler, prHandler, attachmentHandler, followUpHandler, prescriptionItemHander)
+	r := routers.SetupRouter(&cfg, pHandler, dHandler, hHandler, aHandler, tHandler, drugHandler, orderHandler, medicalRecordHandler, prHandler, attachmentHandler, followUpHandler, prescriptionItemHander, bookingHandler)
 
 	log.Printf("Hospital service running on :%s", cfg.Port)
 	if err := r.Run(":" + cfg.Port); err != nil {

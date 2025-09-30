@@ -88,3 +88,11 @@ func (r *TimeSlotRepo) FindByDoctorAndMonth(doctorID string, date time.Time) ([]
 	}
 	return slots, nil
 }
+
+func (r *TimeSlotRepo) FindByIDs(ids []string) ([]appointment.TimeSlot, error) {
+	var slots []appointment.TimeSlot
+	if err := r.db.Where("slot_id IN ?", ids).Find(&slots).Error; err != nil {
+		return nil, err
+	}
+	return slots, nil
+}

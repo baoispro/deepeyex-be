@@ -7,7 +7,7 @@ import (
 
 type Patient struct {
 	PatientID string       `json:"patient_id" gorm:"primaryKey"`
-	UserID    string       `json:"user_id" gorm:"size:36;not null"`
+	UserID    string       `json:"user_id" gorm:"size:36"`
 	FullName  string       `json:"full_name" gorm:"size:100;not null"`
 	DOB       time.Time    `json:"dob"`
 	Gender    enums.Gender `json:"gender" gorm:"size:10;not null"`

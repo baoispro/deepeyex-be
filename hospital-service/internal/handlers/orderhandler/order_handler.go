@@ -5,7 +5,6 @@ import (
 
 	"hospital-service/internal/config"
 	"hospital-service/internal/enums"
-	"hospital-service/internal/models/order"
 	"hospital-service/internal/services/orderservice"
 	"hospital-service/internal/utils"
 
@@ -28,41 +27,12 @@ type CreateOrderRequest struct {
 	Items     []orderservice.OrderItemRequest `json:"items" binding:"required"`
 }
 
-func NewOrderHandler(cfg config.Config, service *orderservice.OrderService) *OrderHandler {
-	return &OrderHandler{service: service, cfg: cfg}
+type UpdateOrderAppointmentRequest struct {
+	AppointmentID string `json:"appointment_id" binding:"required"`
 }
 
-// ---------------- Create Order ----------------
-// @Summary Create a new order
-// @Description Create an order for a patient with list of items
-// @Tags Orders
-// @Accept json
-// @Produce json
-// @Param order body CreateOrderRequest true "Order data"
-// @Success 201 {object} order.Order
-// @Failure 400 {object} map[string]string
-// @Failure 500 {object} map[string]string
-// @Router /orders [post]
-func (h *OrderHandler) CreateOrder(c *gin.Context) {
-	var req CreateOrderRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
-		return
-	}
-
-	if req.PatientID == "" || len(req.Items) == 0 {
-		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "invalid order data"))
-		return
-	}
-
-	// Gọi service tạo order
-	o, err := h.service.CreateOrder(req.PatientID, req.Items)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
-		return
-	}
-
-	c.JSON(http.StatusCreated, utils.SuccessResponse(http.StatusCreated, "Order created successfully", o))
+func NewOrderHandler(cfg config.Config, service *orderservice.OrderService) *OrderHandler {
+	return &OrderHandler{service: service, cfg: cfg}
 }
 
 // ---------------- Get Order By ID ----------------
@@ -135,32 +105,38 @@ func (h *OrderHandler) UpdateOrderStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Order status updated successfully", nil))
 }
 
-// ---------------- Update Order Detail ----------------
-// @Summary Update order details
-// @Description Update order items or other details
+// ---------------- Update Order Appointment ----------------
+// @Summary Update order appointment
+// @Description Update the appointment ID of an order (change linked appointment)
 // @Tags Orders
 // @Accept json
 // @Produce json
 // @Param order_id path string true "Order ID"
-// @Param order body order.Order true "Updated order data"
+// @Param appointment body UpdateOrderAppointmentRequest true "New appointment ID"
 // @Success 200 {object} map[string]string
 // @Failure 400 {object} map[string]string
-// @Router /orders/{order_id}/detail [put]
-func (h *OrderHandler) UpdateOrderDetail(c *gin.Context) {
+// @Failure 404 {object} map[string]string
+// @Router /orders/{order_id}/appointment [put]
+func (h *OrderHandler) UpdateOrderAppointment(c *gin.Context) {
 	id := c.Param("order_id")
 
-	var updated order.Order
-	if err := c.ShouldBindJSON(&updated); err != nil {
+	var req UpdateOrderAppointmentRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
 		return
 	}
 
-	if err := h.service.UpdateOrderDetail(id, &updated); err != nil {
-		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
+	if req.AppointmentID == "" {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "appointment_id is required"))
 		return
 	}
 
-	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Order details updated successfully", nil))
+	if err := h.service.UpdateOrderAppointment(id, req.AppointmentID); err != nil {
+		c.JSON(http.StatusNotFound, utils.ErrorResponse(http.StatusNotFound, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Order appointment updated successfully", nil))
 }
 
 // ---------------- List All Orders ----------------

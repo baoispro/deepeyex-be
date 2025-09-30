@@ -26,7 +26,7 @@ func NewPatientHandler(cfg config.Config, service *patientservice.PatientService
 // @Tags Patients
 // @Accept multipart/form-data
 // @Produce json
-// @Param user_id formData string true "User ID"
+// @Param user_id formData string false "User ID"
 // @Param full_name formData string true "Full Name"
 // @Param dob formData string true "Date of birth (YYYY-MM-DD)"
 // @Param gender formData string true "Gender (male/female/other)"
