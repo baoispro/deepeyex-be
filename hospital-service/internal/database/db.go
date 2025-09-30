@@ -45,40 +45,34 @@ func AutoMigrate(db *gorm.DB) error {
 		return err
 	}
 
-	// 1. Bảng Hospital (cha) trước
 	if err := db.AutoMigrate(&hospital.Hospital{}); err != nil {
 		return err
 	}
 
-	// 2. Bảng Doctor, phụ thuộc Hospital
 	if err := db.AutoMigrate(&doctor.Doctor{}); err != nil {
 		return err
 	}
 
-	// 3. Bảng Patient và TimeSlot không phụ thuộc bảng khác
 	if err := db.AutoMigrate(&patient.Patient{}); err != nil {
 		return err
 	}
-	if err := db.AutoMigrate(&appointment.TimeSlot{}); err != nil {
-		return err
-	}
 
-	// 4. Bảng Appointment, phụ thuộc Patient và TimeSlot
 	if err := db.AutoMigrate(&appointment.Appointment{}); err != nil {
 		return err
 	}
 
-	// 5. Bảng Drug
+	if err := db.AutoMigrate(&appointment.TimeSlot{}); err != nil {
+		return err
+	}
+
 	if err := db.AutoMigrate(&drug.Drug{}); err != nil {
 		return err
 	}
 
-	// 6. Bảng Order và OrderItem
 	if err := db.AutoMigrate(&order.Order{}, &order.OrderItem{}); err != nil {
 		return err
 	}
 
-		// --- 7. MedicalRecord + AI_Diagnoses + AI_RecommendedPlan ---
 	if err := db.AutoMigrate(
 		&medicalrecord.MedicalRecord{},
 		&medicalrecord.AIDiagnosis{},
@@ -87,7 +81,6 @@ func AutoMigrate(db *gorm.DB) error {
 		return err
 	}
 
-	// --- 8. Prescription + PrescriptionItem ---
 	if err := db.AutoMigrate(
 		&medicalrecord.Prescription{},
 		&medicalrecord.PrescriptionItem{},
@@ -104,7 +97,6 @@ func AutoMigrate(db *gorm.DB) error {
 	if err := db.AutoMigrate(&medicalrecord.FollowUp{}); err != nil {
 		return err
 	}
-
 
 	return nil
 }
