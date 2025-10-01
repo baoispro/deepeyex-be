@@ -13,8 +13,8 @@ type TimeSlot struct {
 	Capacity      int          `gorm:"not null;default:1" json:"capacity"`
 	CreatedAt     time.Time    `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt     time.Time    `gorm:"autoUpdateTime" json:"updated_at"`
-	AppointmentID *string      `gorm:"column:appointment_id;size:36;index" json:"appointment_id,omitempty"`
-	Appointment   *Appointment `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;foreignKey:AppointmentID;references:AppointmentID" json:"appointment,omitempty"`
+	AppointmentID *string      `gorm:"index" json:"appointment_id,omitempty"`
+    Appointment   *Appointment `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL" json:"appointment,omitempty"`
 
 	Doctor *doctor.Doctor `gorm:"foreignKey:DoctorID;references:DoctorID" json:"doctor,omitempty"`
 }

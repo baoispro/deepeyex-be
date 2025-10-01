@@ -24,7 +24,8 @@ type Appointment struct {
 	BookUserId      string                  `gorm:"not null;size:36" json:"book_user_id"`
 
 	// Quan hệ
-	Patient  patient.Patient   `gorm:"foreignKey:PatientID;references:PatientID" json:"patient"`
-	Hospital hospital.Hospital `gorm:"foreignKey:HospitalID;references:HospitalID" json:"hospital,omitempty"`
-	Doctor   doctor.Doctor     `gorm:"foreignKey:DoctorID;references:DoctorID" json:"doctor,omitempty"`
+	Patient   patient.Patient   `gorm:"foreignKey:PatientID;references:PatientID" json:"patient"`
+	Hospital  hospital.Hospital `gorm:"foreignKey:HospitalID;references:HospitalID" json:"hospital,omitempty"`
+	Doctor    doctor.Doctor     `gorm:"foreignKey:DoctorID;references:DoctorID" json:"doctor,omitempty"`
+	TimeSlots []TimeSlot        `gorm:"foreignKey:AppointmentID" json:"time_slots,omitempty"`
 }

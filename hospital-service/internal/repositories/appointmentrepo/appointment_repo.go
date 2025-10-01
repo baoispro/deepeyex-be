@@ -25,13 +25,12 @@ func (r *AppointmentRepo) Create(a *appointment.Appointment) error {
 }
 
 // ---------------- FindByID ----------------
-// Tìm Appointment theo appointment_id
 func (r *AppointmentRepo) GetByID(id string) (*appointment.Appointment, error) {
 	var a appointment.Appointment
 	err := r.db.
 		Preload("Patient").
-		Preload("TimeSlot").
-		Preload("TimeSlot.Doctor").
+		Preload("TimeSlots").
+		Preload("Doctor").
 		First(&a, "appointment_id = ?", id).Error
 	if err != nil {
 		return nil, err

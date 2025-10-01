@@ -20,9 +20,11 @@ type OrderService struct {
 }
 
 type OrderItemRequest struct {
-	DrugID   string `json:"drug_id"`
-	Quantity int    `json:"quantity" binding:"required"`
-	Service  string `json:"service"`
+	DrugID    *string `json:"drug_id,omitempty"`            // nullable, thuốc có thể không có nếu chỉ là dịch vụ
+	ServiceID *string `json:"service_id,omitempty"`         // nullable, dịch vụ có thể không có nếu chỉ là thuốc
+	ItemName  string  `json:"item_name" binding:"required"` // gộp tên thuốc + dịch vụ, dùng hiển thị
+	Price     float64 `json:"price" binding:"required"`     // giá 1 item, đã nhân theo quy cách nếu cần
+	Quantity  int     `json:"quantity" binding:"required"`  // số lượng
 }
 
 func NewOrderService(repo *orderrepo.OrderRepo, drugRepo *drugrepo.DrugRepo, storage *storage.S3Client) *OrderService {
@@ -54,33 +56,34 @@ func (s *OrderService) CreateOrder(
 	total := 0.0
 
 	for _, it := range items {
-		// Lấy thông tin thuốc
-		d, err := s.drugRepo.GetByID(it.DrugID)
-		if err != nil {
-			tx.Rollback()
-			return nil, err
+		var drugID, serviceID string
+		if it.DrugID != nil {
+			drugID = *it.DrugID
 		}
-
-		// Tính giá sau khi giảm giá
-		price := float64(it.Quantity) * d.Price * (1 - d.DiscountPercent/100)
-		total += price
+		if it.ServiceID != nil {
+			serviceID = *it.ServiceID
+		}
+		// Tính tổng tiền
+		total += it.Price * float64(it.Quantity)
 
 		// Tạo order item
 		orderItem := order.OrderItem{
 			OrderItemID: uuid.NewString(),
-			OrderID:     "", // sẽ được gán sau khi tạo Order
-			DrugID:      it.DrugID,
-			DrugName:    d.Name,  // populate tên thuốc
-			Service:     it.Service,
+			OrderID:     "",
+			DrugID:      drugID,   
+			ServiceID:   serviceID,
+			ItemName:    it.ItemName,
 			Quantity:    it.Quantity,
-			Price:       price,
+			Price:       it.Price,
 		}
 		orderItems = append(orderItems, orderItem)
 
-		// Giảm stock và tăng sold quantity
-		if err := s.drugRepo.UpdateStockAndSold(it.DrugID, it.Quantity); err != nil {
-			tx.Rollback()
-			return nil, err
+		// Giảm stock nếu có DrugID
+		if it.DrugID != nil {
+			if err := s.drugRepo.UpdateStockAndSold(*it.DrugID, it.Quantity); err != nil {
+				tx.Rollback()
+				return nil, err
+			}
 		}
 	}
 
@@ -92,8 +95,8 @@ func (s *OrderService) CreateOrder(
 		BookUserId:    bookUserID,
 		CreatedAt:     time.Now(),
 		Status:        status,
-		TotalAmount:   total,
-		OrderItems:    orderItems,
+		TotalAmount:   total,      // tổng tiền đã tính
+		OrderItems:    orderItems, // liên kết order items
 	}
 
 	// Lưu Order (bao gồm OrderItems)

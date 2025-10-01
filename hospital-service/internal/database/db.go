@@ -58,15 +58,23 @@ func AutoMigrate(db *gorm.DB) error {
 		return err
 	}
 
+	// tạo bảng Appointment trước
 	if err := db.AutoMigrate(&appointment.Appointment{}); err != nil {
 		return err
 	}
 
+	// tạo bảng TimeSlot sau, đảm bảo Appointment tồn tại
 	if err := db.AutoMigrate(&appointment.TimeSlot{}); err != nil {
 		return err
 	}
 
 	if err := db.AutoMigrate(&drug.Drug{}); err != nil {
+		return err
+	}
+
+	if err := db.AutoMigrate(
+		&service.Service{},
+	); err != nil {
 		return err
 	}
 
@@ -100,10 +108,10 @@ func AutoMigrate(db *gorm.DB) error {
 	}
 
 	if err := db.AutoMigrate(
-    &service.Service{},       // Cha
+		&service.DoctorService{},
 	); err != nil {
-			return err
-		}
+		return err
+	}
 
 	return nil
 }
