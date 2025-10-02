@@ -16,6 +16,15 @@ type TimeSlotHandler struct {
 	cfg     config.Config
 }
 
+type createBatchRequest struct {
+	DoctorID string `json:"doctor_id" binding:"required"`
+	Slots    []struct {
+		StartTime string `json:"start_time" binding:"required"` // ISO8601
+		EndTime   string `json:"end_time" binding:"required"`
+		Capacity  int    `json:"capacity" binding:"required"`
+	} `json:"slots" binding:"required"`
+}
+
 // Request struct chỉ chứa field client cần gửi
 type createTimeSlotReq struct {
 	DoctorID  string    `json:"doctor_id" binding:"required"`
@@ -232,4 +241,101 @@ func (h *TimeSlotHandler) GetTimeSlotsByDoctorAndMonth(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "time slots retrieved successfully", slots))
+}
+
+// ---------------- Create Batch TimeSlots ----------------
+// @Summary Create batch time slots
+// @Description Create multiple time slots in a single request
+// @Tags TimeSlots
+// @Accept json
+// @Produce json
+// @Param request body createBatchRequest true "Batch create time slots request"
+// @Success 201 {object} map[string]interface{} "{"message":"time slots created successfully","data":[...]}"
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /timeslots/batch [post]
+func (h *TimeSlotHandler) CreateBatch(c *gin.Context) {
+	var req createBatchRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var inputs []appointmentservice.TimeSlotInput
+	for _, s := range req.Slots {
+		start, err1 := time.Parse(time.RFC3339, s.StartTime)
+		end, err2 := time.Parse(time.RFC3339, s.EndTime)
+		if err1 != nil || err2 != nil {
+			c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "invalid time format, must be RFC3339"))
+			return
+		}
+		inputs = append(inputs, appointmentservice.TimeSlotInput{
+			StartTime: start,
+			EndTime:   end,
+			Capacity:  s.Capacity,
+		})
+	}
+
+	slots, err := h.service.CreateBatch(req.DoctorID, inputs)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusCreated, utils.SuccessResponse(http.StatusCreated, "Time slots created successfully", slots))
+}
+
+// @Summary Create multiple shift slots
+// @Description Create time slots for doctor by providing list of dates and shifts
+// @Tags TimeSlots
+// @Accept json
+// @Produce json
+// @Param request body appointmentservice.CreateMultiShiftSlotsRequest true "Multi shift slot request"
+// @Success 201 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Router /timeslots/multi-shift [post]
+func (h *TimeSlotHandler) CreateMultiShift(c *gin.Context) {
+    var req appointmentservice.CreateMultiShiftSlotsRequest
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
+        return
+    }
+
+    slots, err := h.service.CreateMultiShiftSlots(req)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
+        return
+    }
+
+    c.JSON(http.StatusCreated, utils.SuccessResponse(http.StatusCreated, "Time slots created successfully", slots))
+}
+
+// @Summary Import doctor day-off from Excel
+// @Description Upload excel file to delete doctor timeslots for off-days
+// @Tags TimeSlots
+// @Accept multipart/form-data
+// @Produce json
+// @Param file formData file true "Excel file"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Router /timeslots/import-dayoff [post]
+func (h *TimeSlotHandler) ImportDoctorDayOff(c *gin.Context) {
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "file is required"})
+		return
+	}
+
+	filePath := "./uploads/" + file.Filename
+	if err := c.SaveUploadedFile(file, filePath); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save file"})
+		return
+	}
+
+	if err := h.service.ImportDoctorDayOff(filePath); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "import and delete day-off slots successfully"})
 }

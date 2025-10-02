@@ -29,7 +29,6 @@ import (
 
 	timeslothandler "hospital-service/internal/handlers/appointmenthandler"
 	timeslotrepo "hospital-service/internal/repositories/appointmentrepo"
-	timeslotservice "hospital-service/internal/services/appointmentservice"
 
 	drughandler "hospital-service/internal/handlers/drughandler"
 	drugrepo "hospital-service/internal/repositories/drugrepo"
@@ -68,6 +67,9 @@ import (
 	servicehandler "hospital-service/internal/handlers/servicehandler"
 	servicerepo "hospital-service/internal/repositories/servicerepo"
 	doctorserviceservice "hospital-service/internal/services/doctorserviceservice"
+
+	// Cron Service
+	cronservice "hospital-service/internal/services/cronservice"
 
 	// AuditTrail
 
@@ -118,7 +120,7 @@ func main() {
 	dService := doctorservice.NewDoctorService(dRepo, s3Client)
 	hService := hospitalservice.NewHospitalService(hRepo, s3Client)
 	aService := appointmentservice.NewAppointmentService(aRepo, tRepo)
-	tService := timeslotservice.NewTimeSlotService(tRepo)
+	tService := appointmentservice.NewTimeSlotService(tRepo, dRepo)
 	drugService := drugservice.NewDrugService(drugRepo, s3Client)
 	orderService := orderservice.NewOrderService(orderRepo, drugRepo, s3Client)
 	serviceService := doctorserviceservice.NewServiceService(serviceRepo)
@@ -130,6 +132,9 @@ func main() {
 	prescriptionItemService := prescriptionitemservice.NewPrescriptionItemService(prescriptionitemrepo)
 	bookingService := bookingservice.NewBookingService(aService, orderService)
 	vnpayService := paymentservice.NewVnpayService(cfg)
+
+	// Initialize cron service
+	cronService := cronservice.NewCronService(tService)
 
 	// Initialize handlers
 	pHandler := patienthandler.NewPatientHandler(cfg, pService)
@@ -147,6 +152,13 @@ func main() {
 	bookingHandler := bookinghandler.NewBookingHandler(bookingService)
 	serviceHandler := servicehandler.NewServiceHandler(cfg, serviceService)
 	vnpayHandler := paymenthandler.NewVnpayHandler(vnpayService)
+
+	// Start cron service
+	if err := cronService.Start(); err != nil {
+		log.Printf("Error starting cron service: %v", err)
+	} else {
+		log.Println("Cron service started successfully - Will run every Saturday at 23:00")
+	}
 
 	// Setup router
 	r := routers.SetupRouter(&cfg, pHandler, dHandler, hHandler, aHandler, tHandler, drugHandler, orderHandler, medicalRecordHandler, prHandler, attachmentHandler, followUpHandler, prescriptionItemHander, serviceHandler, bookingHandler, vnpayHandler)

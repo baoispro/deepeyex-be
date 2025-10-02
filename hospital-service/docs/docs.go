@@ -45,56 +45,6 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "post": {
-                "description": "Schedule a new appointment for a patient with a doctor",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Appointments"
-                ],
-                "summary": "Create a new appointment",
-                "parameters": [
-                    {
-                        "description": "Appointment data",
-                        "name": "appointment",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/appointmenthandler.createAppointmentReq"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/appointment.Appointment"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
             }
         },
         "/appointments/doctor/{doctor_id}": {
@@ -486,6 +436,58 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/bookings": {
+            "post": {
+                "description": "Create appointment and order in one transaction",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Bookings"
+                ],
+                "summary": "Create a new booking",
+                "parameters": [
+                    {
+                        "description": "Booking request",
+                        "name": "booking",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/bookingservice.BookingRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/bookingservice.BookingResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -2629,56 +2631,6 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "post": {
-                "description": "Create an order for a patient with list of items",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Orders"
-                ],
-                "summary": "Create a new order",
-                "parameters": [
-                    {
-                        "description": "Order data",
-                        "name": "order",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/orderhandler.CreateOrderRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/order.Order"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
             }
         },
         "/orders/patient/{patient_id}": {
@@ -2799,9 +2751,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/orders/{order_id}/detail": {
+        "/orders/{order_id}/appointment": {
             "put": {
-                "description": "Update order items or other details",
+                "description": "Update the appointment ID of an order (change linked appointment)",
                 "consumes": [
                     "application/json"
                 ],
@@ -2811,7 +2763,7 @@ const docTemplate = `{
                 "tags": [
                     "Orders"
                 ],
-                "summary": "Update order details",
+                "summary": "Update order appointment",
                 "parameters": [
                     {
                         "type": "string",
@@ -2821,12 +2773,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Updated order data",
-                        "name": "order",
+                        "description": "New appointment ID",
+                        "name": "appointment",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/order.Order"
+                            "$ref": "#/definitions/orderhandler.UpdateOrderAppointmentRequest"
                         }
                     }
                 ],
@@ -2842,6 +2794,15 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -2953,8 +2914,7 @@ const docTemplate = `{
                         "type": "string",
                         "description": "User ID",
                         "name": "user_id",
-                        "in": "formData",
-                        "required": true
+                        "in": "formData"
                     },
                     {
                         "type": "string",
@@ -3775,6 +3735,59 @@ const docTemplate = `{
                 }
             }
         },
+        "/timeslots/batch": {
+            "post": {
+                "description": "Create multiple time slots in a single request",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "TimeSlots"
+                ],
+                "summary": "Create batch time slots",
+                "parameters": [
+                    {
+                        "description": "Batch create time slots request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/appointmenthandler.createBatchRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "{\"message\":\"time slots created successfully\",\"data\":[...]}",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/timeslots/doctor/{doctor_id}": {
             "get": {
                 "description": "List all time slots of a doctor",
@@ -3930,6 +3943,94 @@ const docTemplate = `{
                 }
             }
         },
+        "/timeslots/import-dayoff": {
+            "post": {
+                "description": "Upload excel file to delete doctor timeslots for off-days",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "TimeSlots"
+                ],
+                "summary": "Import doctor day-off from Excel",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Excel file",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/timeslots/multi-shift": {
+            "post": {
+                "description": "Create time slots for doctor by providing list of dates and shifts",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "TimeSlots"
+                ],
+                "summary": "Create multiple shift slots",
+                "parameters": [
+                    {
+                        "description": "Multi shift slot request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/appointmentservice.CreateMultiShiftSlotsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/timeslots/{slot_id}": {
             "get": {
                 "description": "Retrieve time slot info by slot_id",
@@ -4067,6 +4168,9 @@ const docTemplate = `{
                 "appointment_id": {
                     "type": "string"
                 },
+                "book_user_id": {
+                    "type": "string"
+                },
                 "checked_in_at": {
                     "description": "Thời gian bệnh nhân check-in (nếu có)",
                     "type": "string"
@@ -4074,9 +4178,15 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
+                "doctor": {
+                    "$ref": "#/definitions/doctor.Doctor"
+                },
                 "doctor_id": {
                     "description": "ID bác sĩ",
                     "type": "string"
+                },
+                "hospital": {
+                    "$ref": "#/definitions/hospital.Hospital"
                 },
                 "hospital_id": {
                     "description": "ID bệnh viện",
@@ -4087,34 +4197,25 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "patient": {
-                    "$ref": "#/definitions/patient.Patient"
+                    "description": "Quan hệ",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/patient.Patient"
+                        }
+                    ]
                 },
                 "patient_id": {
                     "description": "ID bệnh nhân",
                     "type": "string"
                 },
-                "slot_id": {
-                    "description": "ID của khung giờ đã chọn",
-                    "type": "string"
-                },
-                "specialty": {
-                    "description": "Chuyên khoa",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/enums.Specialty"
-                        }
-                    ]
-                },
                 "status": {
                     "$ref": "#/definitions/enums.AppointmentStatus"
                 },
-                "timeSlot": {
-                    "description": "Quan hệ",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/appointment.TimeSlot"
-                        }
-                    ]
+                "time_slots": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/appointment.TimeSlot"
+                    }
                 },
                 "updated_at": {
                     "type": "string"
@@ -4124,6 +4225,12 @@ const docTemplate = `{
         "appointment.TimeSlot": {
             "type": "object",
             "properties": {
+                "appointment": {
+                    "$ref": "#/definitions/appointment.Appointment"
+                },
+                "appointment_id": {
+                    "type": "string"
+                },
                 "capacity": {
                     "type": "integer"
                 },
@@ -4161,33 +4268,38 @@ const docTemplate = `{
                 }
             }
         },
-        "appointmenthandler.createAppointmentReq": {
+        "appointmenthandler.createBatchRequest": {
             "type": "object",
             "required": [
                 "doctor_id",
-                "hospital_id",
-                "patient_id",
-                "slot_id",
-                "specialty"
+                "slots"
             ],
             "properties": {
                 "doctor_id": {
                     "type": "string"
                 },
-                "hospital_id": {
-                    "type": "string"
-                },
-                "notes": {
-                    "type": "string"
-                },
-                "patient_id": {
-                    "type": "string"
-                },
-                "slot_id": {
-                    "type": "string"
-                },
-                "specialty": {
-                    "$ref": "#/definitions/enums.Specialty"
+                "slots": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": [
+                            "capacity",
+                            "end_time",
+                            "start_time"
+                        ],
+                        "properties": {
+                            "capacity": {
+                                "type": "integer"
+                            },
+                            "end_time": {
+                                "type": "string"
+                            },
+                            "start_time": {
+                                "description": "ISO8601",
+                                "type": "string"
+                            }
+                        }
+                    }
                 }
             }
         },
@@ -4225,6 +4337,105 @@ const docTemplate = `{
                 },
                 "start_time": {
                     "type": "string"
+                }
+            }
+        },
+        "appointmentservice.CreateMultiShiftSlotsRequest": {
+            "type": "object",
+            "required": [
+                "doctor_id",
+                "shifts"
+            ],
+            "properties": {
+                "doctor_id": {
+                    "type": "string"
+                },
+                "shifts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/appointmentservice.ShiftSelection"
+                    }
+                }
+            }
+        },
+        "appointmentservice.ShiftSelection": {
+            "type": "object",
+            "required": [
+                "date",
+                "slots"
+            ],
+            "properties": {
+                "date": {
+                    "description": "YYYY-MM-DD",
+                    "type": "string"
+                },
+                "slots": {
+                    "description": "[\"morning\",\"afternoon\",\"evening\"]",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "bookingservice.BookingRequest": {
+            "type": "object",
+            "required": [
+                "book_user_id",
+                "doctor_id",
+                "hospital_id",
+                "order_items",
+                "patient_id",
+                "payment_status",
+                "slot_ids"
+            ],
+            "properties": {
+                "book_user_id": {
+                    "type": "string"
+                },
+                "doctor_id": {
+                    "type": "string"
+                },
+                "hospital_id": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "order_items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/orderservice.OrderItemRequest"
+                    }
+                },
+                "patient_id": {
+                    "type": "string"
+                },
+                "payment_status": {
+                    "description": "thêm field này",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/enums.OrderStatus"
+                        }
+                    ]
+                },
+                "slot_ids": {
+                    "description": "đổi từ SlotID sang SlotIDs",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "bookingservice.BookingResponse": {
+            "type": "object",
+            "properties": {
+                "appointment": {
+                    "$ref": "#/definitions/appointment.Appointment"
+                },
+                "order": {
+                    "$ref": "#/definitions/order.Order"
                 }
             }
         },
@@ -4790,6 +5001,15 @@ const docTemplate = `{
         "order.Order": {
             "type": "object",
             "properties": {
+                "appointment": {
+                    "$ref": "#/definitions/appointment.Appointment"
+                },
+                "appointment_id": {
+                    "type": "string"
+                },
+                "book_user_id": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -4820,14 +5040,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "drug": {
-                    "description": "\u003c-- thêm references",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/drug.Drug"
-                        }
-                    ]
+                    "$ref": "#/definitions/drug.Drug"
                 },
                 "drug_id": {
+                    "type": "string"
+                },
+                "item_name": {
                     "type": "string"
                 },
                 "order_id": {
@@ -4841,23 +5059,22 @@ const docTemplate = `{
                 },
                 "quantity": {
                     "type": "integer"
+                },
+                "service": {
+                    "$ref": "#/definitions/service.Service"
+                },
+                "service_id": {
+                    "type": "string"
                 }
             }
         },
-        "orderhandler.CreateOrderRequest": {
+        "orderhandler.UpdateOrderAppointmentRequest": {
             "type": "object",
             "required": [
-                "items",
-                "patient_id"
+                "appointment_id"
             ],
             "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/orderservice.OrderItemRequest"
-                    }
-                },
-                "patient_id": {
+                "appointment_id": {
                     "type": "string"
                 }
             }
@@ -4876,15 +5093,30 @@ const docTemplate = `{
         "orderservice.OrderItemRequest": {
             "type": "object",
             "required": [
-                "drug_id",
+                "item_name",
+                "price",
                 "quantity"
             ],
             "properties": {
                 "drug_id": {
+                    "description": "nullable, thuốc có thể không có nếu chỉ là dịch vụ",
                     "type": "string"
                 },
+                "item_name": {
+                    "description": "gộp tên thuốc + dịch vụ, dùng hiển thị",
+                    "type": "string"
+                },
+                "price": {
+                    "description": "giá 1 item, đã nhân theo quy cách nếu cần",
+                    "type": "number"
+                },
                 "quantity": {
+                    "description": "số lượng",
                     "type": "integer"
+                },
+                "service_id": {
+                    "description": "nullable, dịch vụ có thể không có nếu chỉ là thuốc",
+                    "type": "string"
                 }
             }
         },
@@ -4922,6 +5154,29 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.Service": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "duration": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "number"
+                },
+                "service_id": {
+                    "type": "string"
+                },
+                "updated_at": {
                     "type": "string"
                 }
             }

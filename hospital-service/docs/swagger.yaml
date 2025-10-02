@@ -7,14 +7,20 @@ definitions:
         type: string
       appointment_id:
         type: string
+      book_user_id:
+        type: string
       checked_in_at:
         description: Thời gian bệnh nhân check-in (nếu có)
         type: string
       created_at:
         type: string
+      doctor:
+        $ref: '#/definitions/doctor.Doctor'
       doctor_id:
         description: ID bác sĩ
         type: string
+      hospital:
+        $ref: '#/definitions/hospital.Hospital'
       hospital_id:
         description: ID bệnh viện
         type: string
@@ -22,28 +28,27 @@ definitions:
         description: Ghi chú thêm từ bệnh nhân
         type: string
       patient:
-        $ref: '#/definitions/patient.Patient'
+        allOf:
+        - $ref: '#/definitions/patient.Patient'
+        description: Quan hệ
       patient_id:
         description: ID bệnh nhân
         type: string
-      slot_id:
-        description: ID của khung giờ đã chọn
-        type: string
-      specialty:
-        allOf:
-        - $ref: '#/definitions/enums.Specialty'
-        description: Chuyên khoa
       status:
         $ref: '#/definitions/enums.AppointmentStatus'
-      timeSlot:
-        allOf:
-        - $ref: '#/definitions/appointment.TimeSlot'
-        description: Quan hệ
+      time_slots:
+        items:
+          $ref: '#/definitions/appointment.TimeSlot'
+        type: array
       updated_at:
         type: string
     type: object
   appointment.TimeSlot:
     properties:
+      appointment:
+        $ref: '#/definitions/appointment.Appointment'
+      appointment_id:
+        type: string
       capacity:
         type: integer
       created_at:
@@ -68,26 +73,29 @@ definitions:
     required:
     - status
     type: object
-  appointmenthandler.createAppointmentReq:
+  appointmenthandler.createBatchRequest:
     properties:
       doctor_id:
         type: string
-      hospital_id:
-        type: string
-      notes:
-        type: string
-      patient_id:
-        type: string
-      slot_id:
-        type: string
-      specialty:
-        $ref: '#/definitions/enums.Specialty'
+      slots:
+        items:
+          properties:
+            capacity:
+              type: integer
+            end_time:
+              type: string
+            start_time:
+              description: ISO8601
+              type: string
+          required:
+          - capacity
+          - end_time
+          - start_time
+          type: object
+        type: array
     required:
     - doctor_id
-    - hospital_id
-    - patient_id
-    - slot_id
-    - specialty
+    - slots
     type: object
   appointmenthandler.createTimeSlotReq:
     properties:
@@ -113,6 +121,73 @@ definitions:
         type: string
       start_time:
         type: string
+    type: object
+  appointmentservice.CreateMultiShiftSlotsRequest:
+    properties:
+      doctor_id:
+        type: string
+      shifts:
+        items:
+          $ref: '#/definitions/appointmentservice.ShiftSelection'
+        type: array
+    required:
+    - doctor_id
+    - shifts
+    type: object
+  appointmentservice.ShiftSelection:
+    properties:
+      date:
+        description: YYYY-MM-DD
+        type: string
+      slots:
+        description: '["morning","afternoon","evening"]'
+        items:
+          type: string
+        type: array
+    required:
+    - date
+    - slots
+    type: object
+  bookingservice.BookingRequest:
+    properties:
+      book_user_id:
+        type: string
+      doctor_id:
+        type: string
+      hospital_id:
+        type: string
+      notes:
+        type: string
+      order_items:
+        items:
+          $ref: '#/definitions/orderservice.OrderItemRequest'
+        type: array
+      patient_id:
+        type: string
+      payment_status:
+        allOf:
+        - $ref: '#/definitions/enums.OrderStatus'
+        description: thêm field này
+      slot_ids:
+        description: đổi từ SlotID sang SlotIDs
+        items:
+          type: string
+        type: array
+    required:
+    - book_user_id
+    - doctor_id
+    - hospital_id
+    - order_items
+    - patient_id
+    - payment_status
+    - slot_ids
+    type: object
+  bookingservice.BookingResponse:
+    properties:
+      appointment:
+        $ref: '#/definitions/appointment.Appointment'
+      order:
+        $ref: '#/definitions/order.Order'
     type: object
   doctor.Doctor:
     properties:
@@ -498,6 +573,12 @@ definitions:
     type: object
   order.Order:
     properties:
+      appointment:
+        $ref: '#/definitions/appointment.Appointment'
+      appointment_id:
+        type: string
+      book_user_id:
+        type: string
       created_at:
         type: string
       order_id:
@@ -518,10 +599,10 @@ definitions:
   order.OrderItem:
     properties:
       drug:
-        allOf:
-        - $ref: '#/definitions/drug.Drug'
-        description: <-- thêm references
+        $ref: '#/definitions/drug.Drug'
       drug_id:
+        type: string
+      item_name:
         type: string
       order_id:
         type: string
@@ -531,18 +612,17 @@ definitions:
         type: number
       quantity:
         type: integer
+      service:
+        $ref: '#/definitions/service.Service'
+      service_id:
+        type: string
     type: object
-  orderhandler.CreateOrderRequest:
+  orderhandler.UpdateOrderAppointmentRequest:
     properties:
-      items:
-        items:
-          $ref: '#/definitions/orderservice.OrderItemRequest'
-        type: array
-      patient_id:
+      appointment_id:
         type: string
     required:
-    - items
-    - patient_id
+    - appointment_id
     type: object
   orderhandler.UpdateOrderStatusRequest:
     properties:
@@ -554,11 +634,23 @@ definitions:
   orderservice.OrderItemRequest:
     properties:
       drug_id:
+        description: nullable, thuốc có thể không có nếu chỉ là dịch vụ
         type: string
+      item_name:
+        description: gộp tên thuốc + dịch vụ, dùng hiển thị
+        type: string
+      price:
+        description: giá 1 item, đã nhân theo quy cách nếu cần
+        type: number
       quantity:
+        description: số lượng
         type: integer
+      service_id:
+        description: nullable, dịch vụ có thể không có nếu chỉ là thuốc
+        type: string
     required:
-    - drug_id
+    - item_name
+    - price
     - quantity
     type: object
   patient.Patient:
@@ -584,6 +676,21 @@ definitions:
       updated_at:
         type: string
       user_id:
+        type: string
+    type: object
+  service.Service:
+    properties:
+      created_at:
+        type: string
+      duration:
+        type: integer
+      name:
+        type: string
+      price:
+        type: number
+      service_id:
+        type: string
+      updated_at:
         type: string
     type: object
   utils.APIResponse:
@@ -619,39 +726,6 @@ paths:
               type: string
             type: object
       summary: List all appointments
-      tags:
-      - Appointments
-    post:
-      consumes:
-      - application/json
-      description: Schedule a new appointment for a patient with a doctor
-      parameters:
-      - description: Appointment data
-        in: body
-        name: appointment
-        required: true
-        schema:
-          $ref: '#/definitions/appointmenthandler.createAppointmentReq'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/appointment.Appointment'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Create a new appointment
       tags:
       - Appointments
   /appointments/{appointment_id}:
@@ -918,6 +992,40 @@ paths:
       summary: Lấy danh sách file đính kèm của một record
       tags:
       - Attachments
+  /bookings:
+    post:
+      consumes:
+      - application/json
+      description: Create appointment and order in one transaction
+      parameters:
+      - description: Booking request
+        in: body
+        name: booking
+        required: true
+        schema:
+          $ref: '#/definitions/bookingservice.BookingRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/bookingservice.BookingResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new booking
+      tags:
+      - Bookings
   /doctors:
     get:
       description: Retrieve all doctors
@@ -2348,39 +2456,6 @@ paths:
       summary: List all orders
       tags:
       - Orders
-    post:
-      consumes:
-      - application/json
-      description: Create an order for a patient with list of items
-      parameters:
-      - description: Order data
-        in: body
-        name: order
-        required: true
-        schema:
-          $ref: '#/definitions/orderhandler.CreateOrderRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/order.Order'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Create a new order
-      tags:
-      - Orders
   /orders/{order_id}:
     delete:
       description: Remove an order by its ID
@@ -2432,23 +2507,23 @@ paths:
       summary: Get order by ID
       tags:
       - Orders
-  /orders/{order_id}/detail:
+  /orders/{order_id}/appointment:
     put:
       consumes:
       - application/json
-      description: Update order items or other details
+      description: Update the appointment ID of an order (change linked appointment)
       parameters:
       - description: Order ID
         in: path
         name: order_id
         required: true
         type: string
-      - description: Updated order data
+      - description: New appointment ID
         in: body
-        name: order
+        name: appointment
         required: true
         schema:
-          $ref: '#/definitions/order.Order'
+          $ref: '#/definitions/orderhandler.UpdateOrderAppointmentRequest'
       produces:
       - application/json
       responses:
@@ -2464,7 +2539,13 @@ paths:
             additionalProperties:
               type: string
             type: object
-      summary: Update order details
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update order appointment
       tags:
       - Orders
   /orders/{order_id}/status:
@@ -2558,7 +2639,6 @@ paths:
       - description: User ID
         in: formData
         name: user_id
-        required: true
         type: string
       - description: Full Name
         in: formData
@@ -3189,6 +3269,41 @@ paths:
       summary: Update time slot
       tags:
       - TimeSlots
+  /timeslots/batch:
+    post:
+      consumes:
+      - application/json
+      description: Create multiple time slots in a single request
+      parameters:
+      - description: Batch create time slots request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/appointmenthandler.createBatchRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: '{"message":"time slots created successfully","data":[...]}'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create batch time slots
+      tags:
+      - TimeSlots
   /timeslots/doctor/{doctor_id}:
     get:
       description: List all time slots of a doctor
@@ -3290,6 +3405,64 @@ paths:
               type: string
             type: object
       summary: Get time slots by doctor and month
+      tags:
+      - TimeSlots
+  /timeslots/import-dayoff:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload excel file to delete doctor timeslots for off-days
+      parameters:
+      - description: Excel file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Import doctor day-off from Excel
+      tags:
+      - TimeSlots
+  /timeslots/multi-shift:
+    post:
+      consumes:
+      - application/json
+      description: Create time slots for doctor by providing list of dates and shifts
+      parameters:
+      - description: Multi shift slot request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/appointmentservice.CreateMultiShiftSlotsRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create multiple shift slots
       tags:
       - TimeSlots
 swagger: "2.0"
