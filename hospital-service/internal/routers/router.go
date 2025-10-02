@@ -10,6 +10,7 @@ import (
 	"hospital-service/internal/handlers/medicalrecordhandler"
 	"hospital-service/internal/handlers/orderhandler"
 	"hospital-service/internal/handlers/patienthandler"
+	"hospital-service/internal/handlers/paymenthandler"
 	"hospital-service/internal/handlers/servicehandler"
 
 	"hospital-service/internal/middlewares"
@@ -28,6 +29,7 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	prescriptionItemHandler *medicalrecordhandler.PrescriptionItemHandler,
 	serviceHandler *servicehandler.ServiceHandler,
 	bookingHandler *bookinghandler.BookingHandler,
+	vnpayHandler *paymenthandler.VnpayHandler,
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -178,6 +180,13 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	{
 		booking.POST("", bookingHandler.CreateBooking)
 	}
+
+	// ===== Payment routes =====
+	vnpay := r.Group("/vnpay")
+    {
+        vnpay.POST("/create-payment", vnpayHandler.CreatePayment)
+        vnpay.GET("/return", vnpayHandler.VnpayReturn)
+    }
 
 	// Swagger
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

@@ -25,6 +25,11 @@ type Config struct {
 	S3Region          string
 	AWSAccessKey      string
 	AWSSecretKey      string
+
+	VnpTmnCode   string
+	VnpSecretKey string
+	VnpUrl       string
+	VnpReturnUrl string
 }
 
 func Load() Config {
@@ -45,6 +50,11 @@ func Load() Config {
 		S3Region:          mustEnv("S3_REGION"),
 		AWSAccessKey:      mustEnv("AWS_ACCESS_KEY_ID"),
 		AWSSecretKey:      mustEnv("AWS_SECRET_ACCESS_KEY"),
+
+		VnpTmnCode:   mustEnv("VNP_TMNCODE"),
+		VnpSecretKey: mustEnv("VNP_SECRET"),
+		VnpUrl:       getEnv("VNP_URL", "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html"),
+		VnpReturnUrl: mustEnv("VNP_RETURNURL"),
 	}
 }
 

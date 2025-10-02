@@ -8,9 +8,11 @@ import (
 	"hospital-service/internal/database"
 	"hospital-service/internal/handlers/bookinghandler"
 	patienthandler "hospital-service/internal/handlers/patienthandler"
+	"hospital-service/internal/handlers/paymenthandler"
 	patientrepo "hospital-service/internal/repositories/patientrepo"
 	"hospital-service/internal/services/bookingservice"
 	patientservice "hospital-service/internal/services/patientservice"
+	"hospital-service/internal/services/paymentservice"
 	"hospital-service/internal/storage"
 
 	doctorhandler "hospital-service/internal/handlers/doctorhandler"
@@ -127,6 +129,7 @@ func main() {
 	followUpService := followupservice.NewFollowUpService(followUpRepo)
 	prescriptionItemService := prescriptionitemservice.NewPrescriptionItemService(prescriptionitemrepo)
 	bookingService := bookingservice.NewBookingService(aService, orderService)
+	vnpayService := paymentservice.NewVnpayService(cfg)
 
 	// Initialize handlers
 	pHandler := patienthandler.NewPatientHandler(cfg, pService)
@@ -143,9 +146,10 @@ func main() {
 	prescriptionItemHander := prescriptionitemhandler.NewPrescriptionItemHandler(cfg, prescriptionItemService)
 	bookingHandler := bookinghandler.NewBookingHandler(bookingService)
 	serviceHandler := servicehandler.NewServiceHandler(cfg, serviceService)
+	vnpayHandler := paymenthandler.NewVnpayHandler(vnpayService)
 
 	// Setup router
-	r := routers.SetupRouter(&cfg, pHandler, dHandler, hHandler, aHandler, tHandler, drugHandler, orderHandler, medicalRecordHandler, prHandler, attachmentHandler, followUpHandler, prescriptionItemHander,serviceHandler, bookingHandler )
+	r := routers.SetupRouter(&cfg, pHandler, dHandler, hHandler, aHandler, tHandler, drugHandler, orderHandler, medicalRecordHandler, prHandler, attachmentHandler, followUpHandler, prescriptionItemHander, serviceHandler, bookingHandler, vnpayHandler)
 
 	log.Printf("Hospital service running on :%s", cfg.Port)
 	if err := r.Run(":" + cfg.Port); err != nil {
