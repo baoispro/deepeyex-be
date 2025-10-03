@@ -43,7 +43,7 @@ func (r *AppointmentRepo) GetByID(id string) (*appointment.Appointment, error) {
 func (r *AppointmentRepo) FindByPatientID(patientID string) ([]appointment.Appointment, error) {
 	var appointments []appointment.Appointment
 	if err := r.db.Where("patient_id = ?", patientID).Preload("TimeSlot").
-		Preload("TimeSlot.Doctor").
+		Preload("TimeSlots.Doctor").
 		Preload("Patient").Find(&appointments).Error; err != nil {
 		return nil, err
 	}
@@ -54,13 +54,14 @@ func (r *AppointmentRepo) FindByPatientID(patientID string) ([]appointment.Appoi
 // Lấy tất cả các Appointment theo doctor_id
 func (r *AppointmentRepo) FindByDoctorID(doctorID string) ([]appointment.Appointment, error) {
 	var appointments []appointment.Appointment
-	if err := r.db.Where("doctor_id = ?", doctorID).Preload("TimeSlot").
-		Preload("TimeSlot.Doctor").
+	if err := r.db.Where("doctor_id = ?", doctorID).Preload("TimeSlots").
+		Preload("TimeSlots.Doctor").
 		Preload("Patient").Find(&appointments).Error; err != nil {
 		return nil, err
 	}
 	return appointments, nil
 }
+
 
 // ---------------- Update ----------------
 // Cập nhật thông tin Appointment
@@ -79,8 +80,8 @@ func (r *AppointmentRepo) ListAll() ([]appointment.Appointment, error) {
 	var appointments []appointment.Appointment
 	err := r.db.
 		Preload("Patient").
-		Preload("TimeSlot").
-		Preload("TimeSlot.Doctor").
+		Preload("TimeSlots").
+		Preload("TimeSlots.Doctor").
 		Find(&appointments).Error
 	if err != nil {
 		return nil, err

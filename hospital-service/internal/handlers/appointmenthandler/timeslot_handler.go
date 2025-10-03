@@ -243,6 +243,49 @@ func (h *TimeSlotHandler) GetTimeSlotsByDoctorAndMonth(c *gin.Context) {
 	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "time slots retrieved successfully", slots))
 }
 
+// ---------------- Get TimeSlots By Doctor and Date Range ----------------
+// @Summary Get time slots by doctor and date range
+// @Description Retrieve all time slots of a doctor in a given date range
+// @Tags TimeSlots
+// @Produce json
+// @Param doctor_id path string true "Doctor ID"
+// @Param start_date query string true "Start date in format YYYY-MM-DD"
+// @Param end_date query string true "End date in format YYYY-MM-DD"
+// @Success 200 {array} appointment.TimeSlot
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /timeslots/doctor/{doctor_id}/date-range [get]
+func (h *TimeSlotHandler) GetTimeSlotsByDoctorAndDateRange(c *gin.Context) {
+	doctorID := c.Param("doctor_id")
+	startDateStr := c.Query("start_date")
+	endDateStr := c.Query("end_date")
+	if startDateStr == "" || endDateStr == "" {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "start_date and end_date are required"))
+		return
+	}
+	
+	startDate, err := time.Parse("2006-01-02", startDateStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "invalid start date format, expected YYYY-MM-DD"))
+		return
+	}
+	
+	endDate, err := time.Parse("2006-01-02", endDateStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "invalid end date format, expected YYYY-MM-DD"))
+		return
+	}
+	
+	slots, err := h.service.GetByDoctorAndDateRange(doctorID, startDate, endDate)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
+		return
+	}
+	
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "time slots retrieved successfully", slots))
+}
+
+
 // ---------------- Create Batch TimeSlots ----------------
 // @Summary Create batch time slots
 // @Description Create multiple time slots in a single request
@@ -322,20 +365,22 @@ func (h *TimeSlotHandler) CreateMultiShift(c *gin.Context) {
 func (h *TimeSlotHandler) ImportDoctorDayOff(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "file is required"})
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "file is required"))
 		return
 	}
 
 	filePath := "./uploads/" + file.Filename
 	if err := c.SaveUploadedFile(file, filePath); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save file"})
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "failed to save file"))
 		return
 	}
 
 	if err := h.service.ImportDoctorDayOff(filePath); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "import and delete day-off slots successfully"})
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "import and delete day-off slots successfully", nil))
 }
+
+

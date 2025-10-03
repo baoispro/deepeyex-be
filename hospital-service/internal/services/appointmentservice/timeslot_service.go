@@ -265,6 +265,11 @@ func (s *TimeSlotService) GetByDoctorAndDate(doctorID string, date time.Time) ([
 	return s.timeSlotRepo.FindByDoctorAndDate(doctorID, date)
 }
 
+func (s *TimeSlotService) GetByDoctorAndDateRange(doctorID string, startDate, endDate time.Time) ([]appointment.TimeSlot, error) {
+	return s.timeSlotRepo.FindByDoctorAndDateRange(doctorID, startDate, endDate)
+}
+	
+
 func generateSlotID() string {
 	return uuid.NewString()
 }
@@ -315,32 +320,33 @@ func (s *TimeSlotService) CreateBatch(doctorID string, inputs []TimeSlotInput) (
 
 	return slots, nil
 }
-
+// Định nghĩa khung giờ các ca
 var shiftDefinitions = map[string][]struct {
 	startHour, startMinute int
 	endHour, endMinute     int
 }{
 	"morning": {
-		{8, 30, 9, 0},
-		{9, 0, 10, 0},
-		{10, 0, 11, 0},
-		{11, 0, 12, 0},
+		{8, 30, 9, 0},   // 08:30 - 09:00
+		{9, 0, 10, 0},   // 09:00 - 10:00
+		{10, 0, 11, 0},  // 10:00 - 11:00
+		{11, 0, 12, 0},  // 11:00 - 12:00
 	},
 	"afternoon": {
-		{13, 30, 14, 0},
-		{14, 0, 15, 0},
-		{15, 0, 16, 0},
-		{16, 0, 17, 0},
+		{13, 30, 14, 0}, // 13:30 - 14:00
+		{14, 0, 15, 0},  // 14:00 - 15:00
+		{15, 0, 16, 0},  // 15:00 - 16:00
+		{16, 0, 17, 0},  // 16:00 - 17:00
 	},
 	"evening": {
-		{18, 0, 19, 0},
-		{19, 0, 20, 0},
-		{20, 0, 21, 0},
+		{18, 0, 19, 0},  // 18:00 - 19:00
+		{19, 0, 20, 0},  // 19:00 - 20:00
+		{20, 0, 21, 0},  // 20:00 - 21:00
 	},
 }
+
 func (s *TimeSlotService) CreateMultiShiftSlots(req CreateMultiShiftSlotsRequest) ([]appointment.TimeSlot, error) {
     var allSlots []appointment.TimeSlot
-
+  	loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
     for _, sel := range req.Shifts {
         date, err := time.Parse("2006-01-02", sel.Date)
         if err != nil {
@@ -355,9 +361,9 @@ func (s *TimeSlotService) CreateMultiShiftSlots(req CreateMultiShiftSlotsRequest
 
             for _, def := range defs {
                 start := time.Date(date.Year(), date.Month(), date.Day(),
-                    def.startHour, def.startMinute, 0, 0, date.Location())
-                end := time.Date(date.Year(), date.Month(), date.Day(),
-                    def.endHour, def.endMinute, 0, 0, date.Location())
+					def.startHour, def.startMinute, 0, 0, loc)
+				end := time.Date(date.Year(), date.Month(), date.Day(),
+     				def.endHour, def.endMinute, 0, 0, loc)             
 
                 slot := appointment.TimeSlot{
                     SlotID:    generateSlotID(),
@@ -468,3 +474,4 @@ func (s *TimeSlotService) ImportDoctorDayOff(filePath string) error {
 
 	return nil
 }
+

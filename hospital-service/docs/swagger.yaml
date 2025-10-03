@@ -3369,6 +3369,49 @@ paths:
       summary: Get time slots by doctor and specific date
       tags:
       - TimeSlots
+  /timeslots/doctor/{doctor_id}/date-range:
+    get:
+      description: Retrieve all time slots of a doctor in a given date range
+      parameters:
+      - description: Doctor ID
+        in: path
+        name: doctor_id
+        required: true
+        type: string
+      - description: Start date in format YYYY-MM-DD
+        in: query
+        name: start_date
+        required: true
+        type: string
+      - description: End date in format YYYY-MM-DD
+        in: query
+        name: end_date
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/appointment.TimeSlot'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get time slots by doctor and date range
+      tags:
+      - TimeSlots
   /timeslots/doctor/{doctor_id}/month:
     get:
       description: Retrieve all time slots of a doctor in a given month
@@ -3465,4 +3508,50 @@ paths:
       summary: Create multiple shift slots
       tags:
       - TimeSlots
+  /vnpay/create-payment:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create VNPAY payment
+      tags:
+      - Payments
+  /vnpay/return:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Handle VNPAY return URL
+      tags:
+      - Payments
 swagger: "2.0"

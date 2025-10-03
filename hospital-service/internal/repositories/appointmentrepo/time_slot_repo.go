@@ -138,3 +138,12 @@ func (r *TimeSlotRepo) FindByIDs(ids []string) ([]appointment.TimeSlot, error) {
 	err := r.db.Where("slot_id IN ?", ids).Find(&timeSlots).Error
 	return timeSlots, err
 }
+
+//// FindByDoctorAndMonth tìm TimeSlot theo doctor và từ ngày startDate đến endDate
+func (r *TimeSlotRepo) FindByDoctorAndDateRange(doctorID string, startDate, endDate time.Time) ([]appointment.TimeSlot, error) {
+	var timeSlots []appointment.TimeSlot
+	err := r.db.Where("doctor_id = ? AND start_time >= ? AND start_time < ?", doctorID, startDate, endDate).
+		Order("start_time asc").
+		Find(&timeSlots).Error
+	return timeSlots, err
+}
