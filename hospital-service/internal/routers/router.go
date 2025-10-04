@@ -92,13 +92,18 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	timeSlot := r.Group("/timeslots")
 	{
 		timeSlot.POST("", tHandler.CreateTimeSlot)
+		timeSlot.POST("/batch", tHandler.CreateBatch)
+		timeSlot.POST("/multi-shift", tHandler.CreateMultiShift)
+		timeSlot.POST("/import-dayoff", tHandler.ImportDoctorDayOff)
 		timeSlot.GET("", tHandler.ListAllTimeSlots)
 		timeSlot.GET("/:slot_id", tHandler.GetTimeSlotByID)
 		timeSlot.GET("/doctor/:doctor_id", tHandler.GetTimeSlotsByDoctor)
 		timeSlot.GET("/doctor/:doctor_id/date", tHandler.GetTimeSlotsByDoctorAndDate)
 		timeSlot.GET("/doctor/:doctor_id/month", tHandler.GetTimeSlotsByDoctorAndMonth)
+		timeSlot.GET("/doctor/:doctor_id/date-range", tHandler.GetTimeSlotsByDoctorAndDateRange)
 		timeSlot.PUT("/:slot_id", tHandler.UpdateTimeSlot)
 		timeSlot.DELETE("/:slot_id", tHandler.DeleteTimeSlot)
+	
 	}
 
 	// ===== Drug routes =====
