@@ -206,3 +206,131 @@ func (h *AuthHandler) Me(c *gin.Context) {
 		"role":    role,
 	}))
 }
+
+// Mobile api
+
+// LoginMobile
+// @Summary Login for mobile app
+// @Description Authenticate user and return access & refresh tokens in JSON (no cookies)
+// @Tags Mobile
+// @Accept json
+// @Produce json
+// @Param login body loginReq true "Login request"
+// @Success 200 {object} map[string]interface{}
+// @Failure 401 {object} map[string]string "Invalid credentials"
+// @Router /public/mobile/login [post]
+func (h *AuthHandler) LoginMobile(c *gin.Context) {
+	var req loginReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusUnauthorized, utils.ErrorResponse(http.StatusUnauthorized, "Invalid username or password"))
+		return
+	}
+
+	access, aExp, refresh, rExp, u, err := h.service.Login(req.Username, req.Password)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, utils.ErrorResponse(http.StatusUnauthorized, "Invalid username or password"))
+		return
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Login successful", gin.H{
+		"access_token":   access,
+		"access_expire":  aExp,
+		"refresh_token":  refresh, // 👈 thêm refresh token vào body
+		"refresh_expire": rExp,
+		"user_id":        u.ID,
+		"role":           string(u.Role),
+	}))
+}
+
+type refreshReq struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
+}
+
+// RefreshMobile
+// @Summary Refresh token for mobile
+// @Description Generate a new access token using refresh token from body
+// @Tags Mobile
+// @Accept json
+// @Produce json
+// @Param refresh body refreshReq true "Refresh token request"
+// @Success 200 {object} map[string]interface{}
+// @Failure 401 {object} map[string]string "Invalid or expired refresh token"
+// @Router /public/mobile/refresh [post]
+func (h *AuthHandler) RefreshMobile(c *gin.Context) {
+	var req refreshReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusUnauthorized, utils.ErrorResponse(http.StatusUnauthorized, "missing refresh token"))
+		return
+	}
+
+	access, aExp, newRefresh, newExp, err := h.service.Refresh(req.RefreshToken)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, utils.ErrorResponse(http.StatusUnauthorized, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Token refreshed successfully", gin.H{
+		"access_token":   access,
+		"access_expire":  aExp,
+		"refresh_token":  newRefresh,
+		"refresh_expire": newExp,
+	}))
+}
+
+type logoutReq struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
+}
+
+// LogoutMobile
+// @Summary Logout for mobile
+// @Description Invalidate refresh token sent from body
+// @Tags Mobile
+// @Accept json
+// @Produce json
+// @Param logout body logoutReq true "Logout request"
+// @Success 200 {object} map[string]string "Logged out"
+// @Router /public/mobile/logout [post]
+func (h *AuthHandler) LogoutMobile(c *gin.Context) {
+	var req logoutReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "missing refresh token"))
+		return
+	}
+
+	h.service.Logout(req.RefreshToken)
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Logged out successfully", nil))
+}
+
+// LoginFirebaseMobile
+// @Summary Login with Firebase (Mobile)
+// @Description Authenticate user using Firebase UID & email, return access & refresh tokens in JSON (no cookies)
+// @Tags Mobile
+// @Accept json
+// @Produce json
+// @Param loginFirebase body loginFirebaseReq true "Firebase login request"
+// @Success 200 {object} map[string]interface{}
+// @Failure 401 {object} map[string]string "Invalid firebase payload or login failed"
+// @Router /public/mobile/login/firebase [post]
+func (h *AuthHandler) LoginFirebaseMobile(c *gin.Context) {
+	var req loginFirebaseReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusUnauthorized, utils.ErrorResponse(http.StatusUnauthorized, "invalid firebase login payload"))
+		return
+	}
+
+	access, aExp, refresh, rExp, u, err := h.service.LoginFirebase(req.FirebaseUID, req.Email)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, utils.ErrorResponse(http.StatusUnauthorized, err.Error()))
+		return
+	}
+
+	// 🚫 Không set cookie
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Firebase login successful", gin.H{
+		"access_token":   access,
+		"access_expire":  aExp,
+		"refresh_token":  refresh,
+		"refresh_expire": rExp,
+		"user_id":        u.ID,
+		"role":           string(u.Role),
+	}))
+}

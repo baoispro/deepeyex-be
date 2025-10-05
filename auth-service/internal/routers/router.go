@@ -23,6 +23,10 @@ func SetupRouter(cfg *config.Config, authHandler *handlers.AuthHandler, userHand
 		public.POST("/refresh", authHandler.Refresh)
 		public.POST("/logout", authHandler.Logout)
 		public.POST("/reset-password", userHandler.UpdatePasswordByEmail)
+		public.POST("mobile/login", authHandler.LoginMobile)
+		public.POST("mobile/refresh", authHandler.RefreshMobile)
+		public.POST("mobile/logout", authHandler.LogoutMobile)
+		public.POST("mobile//login/firebase", authHandler.LoginFirebaseMobile)
 	}
 
 	// ===== Protected routes (cần JWT) =====
