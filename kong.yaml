@@ -198,7 +198,7 @@ services:
     - grpcs
     - http
     - https
-  port: 8081
+  port: 8084
   protocol: http
   read_timeout: 60000
   retries: 5
