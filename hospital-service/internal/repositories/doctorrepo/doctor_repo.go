@@ -1,7 +1,9 @@
 package doctorrepo
 
 import (
+	"hospital-service/internal/models/appointment"
 	"hospital-service/internal/models/doctor"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -71,4 +73,48 @@ func (r *DoctorRepo) FindBySlug(slug string) (*doctor.Doctor, error) {
 		return nil, err
 	}
 	return &d, nil
+}
+func (r *DoctorRepo) FindBestReplacementDoctor(doctorID string, startTime, endTime time.Time) (*doctor.Doctor, error) {
+	var current doctor.Doctor
+	if err := r.db.First(&current, "doctor_id = ?", doctorID).Error; err != nil {
+		return nil, err
+	}
+
+	var candidates []doctor.Doctor
+	if err := r.db.Where("specialty = ? AND hospital_id = ? AND doctor_id <> ?",
+		current.Specialty, current.HospitalID, doctorID).
+		Find(&candidates).Error; err != nil {
+		return nil, err
+	}
+
+	var bestDoctor *doctor.Doctor
+	var bestDiff time.Duration = time.Hour * 24 // cực lớn ban đầu
+
+	for _, d := range candidates {
+		var slots []appointment.TimeSlot
+		if err := r.db.Where("doctor_id = ? AND DATE(start_time) = ?",
+			d.DoctorID, startTime.Format("2006-01-02")).Find(&slots).Error; err != nil {
+			continue
+		}
+
+		for _, s := range slots {
+			if s.AppointmentID != nil && *s.AppointmentID != "" {
+				continue // slot đã có bệnh nhân
+			}
+			diff := absDuration(s.StartTime.Sub(startTime))
+			if diff < bestDiff {
+				bestDiff = diff
+				bestDoctor = &d
+			}
+		}
+	}
+
+	return bestDoctor, nil
+}
+
+func absDuration(d time.Duration) time.Duration {
+    if d < 0 {
+        return -d
+    }
+    return d
 }

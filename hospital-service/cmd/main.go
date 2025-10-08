@@ -79,7 +79,7 @@ import (
 // @title Auth Service API
 // @version 1.0
 // @BasePath /
-// @host localhost:8081
+// @host localhost:8084
 func main() {
 	// Load configuration
 	cfg := config.Load()
@@ -120,7 +120,7 @@ func main() {
 	dService := doctorservice.NewDoctorService(dRepo, s3Client)
 	hService := hospitalservice.NewHospitalService(hRepo, s3Client)
 	aService := appointmentservice.NewAppointmentService(aRepo, tRepo)
-	tService := appointmentservice.NewTimeSlotService(tRepo, dRepo)
+	tService := appointmentservice.NewTimeSlotService(tRepo, dRepo, aRepo)
 	drugService := drugservice.NewDrugService(drugRepo, s3Client)
 	orderService := orderservice.NewOrderService(orderRepo, drugRepo, s3Client)
 	serviceService := doctorserviceservice.NewServiceService(serviceRepo)
