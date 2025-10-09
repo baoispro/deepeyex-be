@@ -701,7 +701,7 @@ definitions:
       status:
         type: integer
     type: object
-host: localhost:8081
+host: localhost:8084
 info:
   contact: {}
   title: Auth Service API

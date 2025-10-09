@@ -147,3 +147,4 @@ func (r *TimeSlotRepo) FindByDoctorAndDateRange(doctorID string, startDate, endD
 		Find(&timeSlots).Error
 	return timeSlots, err
 }
+

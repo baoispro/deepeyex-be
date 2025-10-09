@@ -20,12 +20,16 @@ type Doctor = doctor.Doctor
 type TimeSlotService struct {
 	timeSlotRepo *appointmentrepo.TimeSlotRepo
 	doctorRepo   *doctorrepo.DoctorRepo
+	appointmentRepo  *appointmentrepo.AppointmentRepo
+
 }
 
-func NewTimeSlotService(timeSlotRepo *appointmentrepo.TimeSlotRepo, doctorRepo *doctorrepo.DoctorRepo) *TimeSlotService {
+func NewTimeSlotService(timeSlotRepo *appointmentrepo.TimeSlotRepo, doctorRepo *doctorrepo.DoctorRepo, appointmentRepo *appointmentrepo.AppointmentRepo) *TimeSlotService {
 	return &TimeSlotService{
 		timeSlotRepo: timeSlotRepo,
 		doctorRepo:   doctorRepo,
+		appointmentRepo: appointmentRepo,
+
 	}
 }
 
@@ -398,25 +402,18 @@ func (s *TimeSlotService) ImportDoctorDayOff(filePath string) error {
 		return fmt.Errorf("failed to read rows: %w", err)
 	}
 
-	// Bỏ qua header
 	for i, row := range rows {
-		if i == 0 {
-			continue
-		}
-
-		if len(row) < 4 {
+		if i == 0 || len(row) < 4 {
 			continue
 		}
 
 		doctorID := strings.TrimSpace(row[0])
-		dayOffList := strings.TrimSpace(row[2]) // "08/10/2025;10/10/2025"
-		shiftList := strings.TrimSpace(row[3])  // "morning;afternoon" hoặc "all"
-
+		dayOffList := strings.TrimSpace(row[2])
+		shiftList := strings.TrimSpace(row[3])
 		if doctorID == "" || dayOffList == "" {
 			continue
 		}
 
-		// Tách ngày nghỉ và buổi nghỉ
 		days := strings.Split(dayOffList, ";")
 		shifts := strings.Split(shiftList, ";")
 
@@ -425,14 +422,11 @@ func (s *TimeSlotService) ImportDoctorDayOff(filePath string) error {
 			if d == "" {
 				continue
 			}
-
 			day, err := time.Parse("02/01/2006", d)
 			if err != nil {
-				fmt.Printf("❌ Lỗi parse ngày '%s': %v\n", d, err)
-				continue
+				return fmt.Errorf("lỗi parse ngày '%s' tại dòng %d: %v", d, i+1, err)
 			}
 
-			// Nếu shiftList ít hơn days -> mặc định all
 			var shift string
 			if idx < len(shifts) {
 				shift = strings.ToLower(strings.TrimSpace(shifts[idx]))
@@ -440,33 +434,109 @@ func (s *TimeSlotService) ImportDoctorDayOff(filePath string) error {
 				shift = "all"
 			}
 
+			var ranges [][2]time.Time
 			if shift == "all" {
-				// Xoá toàn bộ slots trong ngày
-				startOfDay := time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, time.Local)
-				endOfDay := startOfDay.Add(24 * time.Hour)
-				err = s.timeSlotRepo.DeleteByDoctorIDAndDateRange(doctorID, startOfDay, endOfDay)
-				if err != nil {
-					fmt.Printf("❌ Lỗi xoá slot bác sĩ %s ngày %s: %v\n", doctorID, d, err)
-					continue
+				start := time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, time.Local)
+				ranges = append(ranges, [2]time.Time{start, start.Add(24 * time.Hour)})
+			} else if defs, ok := shiftDefinitions[shift]; ok {
+				for _, def := range defs {
+					start := time.Date(day.Year(), day.Month(), day.Day(), def.startHour, def.startMinute, 0, 0, time.Local)
+					end := time.Date(day.Year(), day.Month(), day.Day(), def.endHour, def.endMinute, 0, 0, time.Local)
+					ranges = append(ranges, [2]time.Time{start, end})
 				}
-				fmt.Printf("✅ Đã xoá toàn bộ lịch bác sĩ %s ngày %s\n", doctorID, d)
 			} else {
-				// Xoá đúng các slots theo shiftDefinitions
-				if slots, ok := shiftDefinitions[shift]; ok {
-					for _, sl := range slots {
-						start := time.Date(day.Year(), day.Month(), day.Day(), sl.startHour, sl.startMinute, 0, 0, time.Local)
-						end := time.Date(day.Year(), day.Month(), day.Day(), sl.endHour, sl.endMinute, 0, 0, time.Local)
+				return fmt.Errorf("buổi '%s' không hợp lệ tại dòng %d", shift, i+1)
+			}
 
-						err = s.timeSlotRepo.DeleteByDoctorIDAndDateRange(doctorID, start, end)
+			for _, rg := range ranges {
+				start, end := rg[0], rg[1]
+				slots, err := s.timeSlotRepo.FindByDoctorIDAndDateRange(doctorID, start, end)
+				if err != nil {
+					return fmt.Errorf("lỗi lấy slot bác sĩ %s: %v", doctorID, err)
+				}
+
+				for _, sl := range slots {
+					if sl.AppointmentID != nil && *sl.AppointmentID != "" {
+						fmt.Printf("⚠️ Slot %s có appointment, đang xử lý thay thế...\n", sl.SlotID)
+
+						// 🔍 tìm bác sĩ cùng chuyên khoa + hospital
+						altDoctor, err := s.doctorRepo.FindBestReplacementDoctor(doctorID, sl.StartTime, sl.EndTime)
 						if err != nil {
-							fmt.Printf("❌ Lỗi xoá slot bác sĩ %s ngày %s buổi %s (%v-%v): %v\n",
-								doctorID, d, shift, start, end, err)
-							continue
+							return fmt.Errorf("lỗi tìm bác sĩ thay thế cho %s: %v", doctorID, err)
 						}
+						if altDoctor == nil {
+							return fmt.Errorf("🚫 Không tìm thấy bác sĩ cùng chuyên khoa & hospital có slot trống [%s - %s]",
+								sl.StartTime.Format("15:04"), sl.EndTime.Format("15:04"))
+						}
+
+						existingSlots, err := s.timeSlotRepo.FindByDoctorIDAndDateRange(
+							altDoctor.DoctorID,
+							time.Date(sl.StartTime.Year(), sl.StartTime.Month(), sl.StartTime.Day(), 0, 0, 0, 0, time.Local),
+							time.Date(sl.StartTime.Year(), sl.StartTime.Month(), sl.StartTime.Day(), 23, 59, 59, 0, time.Local),
+						)
+						if err != nil {
+							return fmt.Errorf("lỗi tìm slot bác sĩ mới %s: %v", altDoctor.DoctorID, err)
+						}
+
+						var selectedSlot *appointment.TimeSlot
+						for _, es := range existingSlots {
+							if (es.AppointmentID == nil || *es.AppointmentID == "") &&
+								es.StartTime.Equal(sl.StartTime) && es.EndTime.Equal(sl.EndTime) {
+								selectedSlot = &es
+								break
+							}
+						}
+
+						if selectedSlot == nil {
+							for _, es := range existingSlots {
+								if es.AppointmentID == nil || *es.AppointmentID == "" {
+									if isSameShift(sl.StartTime, es.StartTime) {
+										selectedSlot = &es
+										break
+									}
+								}
+							}
+						}
+
+						if selectedSlot == nil {
+							return fmt.Errorf("🚫 Không có slot phù hợp trong ngày cho bác sĩ %s (%s)",
+								altDoctor.DoctorID, altDoctor.FullName)
+						}
+
+						appt, err := s.appointmentRepo.GetByID(*sl.AppointmentID)
+						if err != nil {
+							return fmt.Errorf("lỗi lấy appointment %s: %v", *sl.AppointmentID, err)
+						}
+
+						appt.DoctorID = altDoctor.DoctorID
+						if err := s.appointmentRepo.Update(appt); err != nil {
+							return fmt.Errorf("lỗi cập nhật appointment %s sang bác sĩ %s: %v",
+								*sl.AppointmentID, altDoctor.DoctorID, err)
+						}
+
+						selectedSlot.AppointmentID = sl.AppointmentID
+						if err := s.timeSlotRepo.Update(selectedSlot); err != nil {
+							return fmt.Errorf("lỗi cập nhật slot thay thế %s: %v", selectedSlot.SlotID, err)
+						}
+
+						if err := s.timeSlotRepo.Delete(sl.SlotID); err != nil {
+							fmt.Printf("⚠️ Lỗi xoá slot cũ %s: %v\n", sl.SlotID, err)
+						}
+
+						fmt.Printf("🔄 Appointment %s chuyển sang bác sĩ %s (%s) slot %s [%s→%s]\n",
+							*sl.AppointmentID, altDoctor.DoctorID, altDoctor.FullName,
+							selectedSlot.SlotID,
+							selectedSlot.StartTime.Format("15:04"), selectedSlot.EndTime.Format("15:04"),
+						)
+						continue
 					}
-					fmt.Printf("✅ Đã xoá lịch bác sĩ %s ngày %s buổi %s\n", doctorID, d, shift)
-				} else {
-					fmt.Printf("⚠️ Buổi '%s' không hợp lệ tại dòng %d\n", shift, i+1)
+
+					// Nếu không có appointment → xoá slot
+					if err := s.timeSlotRepo.Delete(sl.SlotID); err != nil {
+						fmt.Printf("❌ Lỗi xoá slot %s: %v\n", sl.SlotID, err)
+					} else {
+						fmt.Printf("✅ Đã xoá slot %s (doctor %s)\n", sl.SlotID, doctorID)
+					}
 				}
 			}
 		}
@@ -475,3 +545,17 @@ func (s *TimeSlotService) ImportDoctorDayOff(filePath string) error {
 	return nil
 }
 
+
+func isSameShift(t1, t2 time.Time) bool {
+	h1, h2 := t1.Hour(), t2.Hour()
+	switch {
+	case h1 < 12 && h2 < 12:
+		return true // sáng
+	case h1 >= 12 && h1 < 17 && h2 >= 12 && h2 < 17:
+		return true // chiều
+	case h1 >= 17 && h2 >= 17:
+		return true // tối
+	default:
+		return false
+	}
+}
