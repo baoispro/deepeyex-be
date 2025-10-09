@@ -2,6 +2,7 @@ package hospitalrepo
 
 import (
 	"hospital-service/internal/models/hospital"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -24,7 +25,9 @@ func (r *HospitalRepo) Create(h *hospital.Hospital) error {
 // FindByID tìm hospital theo ID
 func (r *HospitalRepo) FindByID(id string) (*hospital.Hospital, error) {
 	var h hospital.Hospital
-	err := r.db.First(&h, "hospital_id = ?", id).Error
+	err := r.db.
+		Preload("Doctors").
+		First(&h, "hospital_id = ?", id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +47,9 @@ func (r *HospitalRepo) Delete(id string) error {
 // List hospitals
 func (r *HospitalRepo) List() ([]hospital.Hospital, error) {
 	var hospitals []hospital.Hospital
-	err := r.db.Find(&hospitals).Error
+	err := r.db.
+		Preload("Doctors").
+		Find(&hospitals).Error
 	return hospitals, err
 }
 
@@ -70,11 +75,25 @@ func (r *HospitalRepo) ListWardsByCity(city string) ([]string, error) {
 // ---------------- SearchByAddress ----------------
 func (r *HospitalRepo) SearchByAddress(keyword string) ([]hospital.Hospital, error) {
 	var hospitals []hospital.Hospital
-	likeQuery := "%" + keyword + "%"
-	err := r.db.Where("address ILIKE ? OR ward ILIKE ? OR city ILIKE ?", likeQuery, likeQuery, likeQuery).
+	if keyword == "" {
+		return hospitals, nil
+	}
+
+	likeQuery := "%" + strings.ToLower(keyword) + "%"
+	err := r.db.
+		Where(`
+			LOWER(name) LIKE ? OR 
+			LOWER(address) LIKE ? OR 
+			LOWER(ward) LIKE ? OR 
+			LOWER(city) LIKE ?
+		`, likeQuery, likeQuery, likeQuery, likeQuery).
 		Find(&hospitals).Error
+
 	return hospitals, err
 }
+
+
+
 
 // ---------------- ListByCityAndWard ----------------
 func (r *HospitalRepo) ListByCityAndWard(city, ward string) ([]hospital.Hospital, error) {

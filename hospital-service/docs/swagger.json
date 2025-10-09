@@ -1212,6 +1212,190 @@
                 }
             }
         },
+        "/emails/appointment-confirmation": {
+            "post": {
+                "description": "Send confirmation email for a booked appointment",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Email"
+                ],
+                "summary": "Send appointment confirmation email",
+                "parameters": [
+                    {
+                        "description": "Appointment details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/emailhandler.sendAppointmentConfirmationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/utils.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utils.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/utils.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/emails/appointment-reminder": {
+            "post": {
+                "description": "Send reminder email for an upcoming appointment",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Email"
+                ],
+                "summary": "Send appointment reminder email",
+                "parameters": [
+                    {
+                        "description": "Appointment details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/emailhandler.sendAppointmentReminderRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/utils.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utils.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/utils.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/emails/prescription": {
+            "post": {
+                "description": "Send prescription details via email",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Email"
+                ],
+                "summary": "Send prescription email",
+                "parameters": [
+                    {
+                        "description": "Prescription details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/emailhandler.sendPrescriptionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/utils.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utils.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/utils.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/emails/send": {
+            "post": {
+                "description": "Send a custom email to recipients",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Email"
+                ],
+                "summary": "Send custom email",
+                "parameters": [
+                    {
+                        "description": "Email details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/emailhandler.sendEmailAPIRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/utils.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utils.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/utils.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/followups/{follow_up_id}": {
             "put": {
                 "description": "Cập nhật notes hoặc next appointment",
@@ -1652,7 +1836,7 @@
         },
         "/hospitals/search": {
             "get": {
-                "description": "Search hospitals by keyword in address, ward, or city",
+                "description": "Search hospitals by keyword in name, address, ward, or city",
                 "produces": [
                     "application/json"
                 ],
@@ -4636,6 +4820,137 @@
                 },
                 "updated_at": {
                     "type": "string"
+                }
+            }
+        },
+        "emailhandler.sendAppointmentConfirmationRequest": {
+            "type": "object",
+            "required": [
+                "appointment_code",
+                "appointment_date",
+                "appointment_time",
+                "doctor_name",
+                "order_items",
+                "patient_name",
+                "to_email"
+            ],
+            "properties": {
+                "appointment_code": {
+                    "type": "string"
+                },
+                "appointment_date": {
+                    "type": "string"
+                },
+                "appointment_time": {
+                    "type": "string"
+                },
+                "doctor_name": {
+                    "type": "string"
+                },
+                "order_items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/emailservice.OrderItem"
+                    }
+                },
+                "patient_name": {
+                    "type": "string"
+                },
+                "to_email": {
+                    "type": "string"
+                }
+            }
+        },
+        "emailhandler.sendAppointmentReminderRequest": {
+            "type": "object",
+            "required": [
+                "appointment_date",
+                "appointment_time",
+                "doctor_name",
+                "patient_name",
+                "to_email"
+            ],
+            "properties": {
+                "appointment_date": {
+                    "type": "string"
+                },
+                "appointment_time": {
+                    "type": "string"
+                },
+                "doctor_name": {
+                    "type": "string"
+                },
+                "patient_name": {
+                    "type": "string"
+                },
+                "to_email": {
+                    "type": "string"
+                }
+            }
+        },
+        "emailhandler.sendEmailAPIRequest": {
+            "type": "object",
+            "required": [
+                "from",
+                "html",
+                "subject",
+                "to"
+            ],
+            "properties": {
+                "from": {
+                    "type": "string"
+                },
+                "html": {
+                    "type": "string"
+                },
+                "subject": {
+                    "type": "string"
+                },
+                "text": {
+                    "type": "string"
+                },
+                "to": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "emailhandler.sendPrescriptionRequest": {
+            "type": "object",
+            "required": [
+                "patient_name",
+                "prescription_details",
+                "to_email"
+            ],
+            "properties": {
+                "patient_name": {
+                    "type": "string"
+                },
+                "prescription_details": {
+                    "type": "string"
+                },
+                "to_email": {
+                    "type": "string"
+                }
+            }
+        },
+        "emailservice.OrderItem": {
+            "type": "object",
+            "properties": {
+                "itemName": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "number",
+                    "format": "float64"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "serviceID": {
+                    "type": "integer"
                 }
             }
         },
