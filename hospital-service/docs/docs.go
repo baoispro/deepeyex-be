@@ -1311,6 +1311,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/emails/order-confirmation": {
+            "post": {
+                "description": "Send confirmation email for a successful order with full delivery information",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Email"
+                ],
+                "summary": "Send order confirmation email",
+                "parameters": [
+                    {
+                        "description": "Order details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/emailhandler.sendOrderConfirmationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/utils.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utils.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/utils.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/emails/prescription": {
             "post": {
                 "description": "Send prescription details via email",
@@ -2802,6 +2848,56 @@ const docTemplate = `{
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/order.Order"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a new order with items and delivery information",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Create a new order",
+                "parameters": [
+                    {
+                        "description": "Order information",
+                        "name": "order",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/orderhandler.CreateOrderRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/order.Order"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
                             }
                         }
                     },
@@ -4924,6 +5020,60 @@ const docTemplate = `{
                 }
             }
         },
+        "emailhandler.sendOrderConfirmationRequest": {
+            "type": "object",
+            "required": [
+                "delivery_method",
+                "order_code",
+                "order_items",
+                "patient_name",
+                "to_email"
+            ],
+            "properties": {
+                "delivery_address": {
+                    "type": "string"
+                },
+                "delivery_city": {
+                    "type": "string"
+                },
+                "delivery_district": {
+                    "type": "string"
+                },
+                "delivery_fee": {
+                    "type": "number"
+                },
+                "delivery_fullname": {
+                    "type": "string"
+                },
+                "delivery_method": {
+                    "type": "string"
+                },
+                "delivery_notes": {
+                    "type": "string"
+                },
+                "delivery_phone": {
+                    "type": "string"
+                },
+                "delivery_ward": {
+                    "type": "string"
+                },
+                "order_code": {
+                    "type": "string"
+                },
+                "order_items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/emailservice.OrderConfirmationItem"
+                    }
+                },
+                "patient_name": {
+                    "type": "string"
+                },
+                "to_email": {
+                    "type": "string"
+                }
+            }
+        },
         "emailhandler.sendPrescriptionRequest": {
             "type": "object",
             "required": [
@@ -4943,21 +5093,43 @@ const docTemplate = `{
                 }
             }
         },
-        "emailservice.OrderItem": {
+        "emailservice.OrderConfirmationItem": {
             "type": "object",
             "properties": {
-                "itemName": {
+                "drug_id": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "name": {
                     "type": "string"
                 },
                 "price": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "quantity": {
                     "type": "integer"
                 },
-                "serviceID": {
+                "sale_price": {
+                    "type": "number"
+                }
+            }
+        },
+        "emailservice.OrderItem": {
+            "type": "object",
+            "properties": {
+                "item_name": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "number"
+                },
+                "quantity": {
                     "type": "integer"
+                },
+                "service_id": {
+                    "type": "string"
                 }
             }
         },
@@ -4974,6 +5146,19 @@ const docTemplate = `{
                 "Confirmed",
                 "Completed",
                 "Canceled"
+            ]
+        },
+        "enums.DeliveryMethod": {
+            "type": "string",
+            "enum": [
+                "PICKUP",
+                "HOME_DELIVERY",
+                "EXPRESS_DELIVERY"
+            ],
+            "x-enum-varnames": [
+                "PICKUP",
+                "HOME_DELIVERY",
+                "EXPRESS_DELIVERY"
             ]
         },
         "enums.Gender": {
@@ -5462,6 +5647,50 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
+                "delivery_address": {
+                    "description": "nullable, chỉ cần khi giao hàng",
+                    "type": "string"
+                },
+                "delivery_city": {
+                    "description": "nullable, thành phố",
+                    "type": "string"
+                },
+                "delivery_district": {
+                    "description": "nullable, quận",
+                    "type": "string"
+                },
+                "delivery_email": {
+                    "description": "nullable, email người nhận",
+                    "type": "string"
+                },
+                "delivery_fee": {
+                    "description": "phí giao hàng",
+                    "type": "number"
+                },
+                "delivery_fullname": {
+                    "description": "nullable, tên người nhận",
+                    "type": "string"
+                },
+                "delivery_method": {
+                    "description": "Thông tin giao hàng",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/enums.DeliveryMethod"
+                        }
+                    ]
+                },
+                "delivery_notes": {
+                    "description": "nullable, ghi chú thêm",
+                    "type": "string"
+                },
+                "delivery_phone": {
+                    "description": "nullable",
+                    "type": "string"
+                },
+                "delivery_ward": {
+                    "description": "nullable, phường",
+                    "type": "string"
+                },
                 "order_id": {
                     "type": "string"
                 },
@@ -5517,6 +5746,40 @@ const docTemplate = `{
                 }
             }
         },
+        "orderhandler.CreateOrderRequest": {
+            "type": "object",
+            "required": [
+                "book_user_id",
+                "items",
+                "patient_id"
+            ],
+            "properties": {
+                "appointment_id": {
+                    "description": "nullable",
+                    "type": "string"
+                },
+                "book_user_id": {
+                    "type": "string"
+                },
+                "delivery_info": {
+                    "description": "nullable, mặc định là PICKUP",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/orderservice.DeliveryInfo"
+                        }
+                    ]
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/orderservice.OrderItemRequest"
+                    }
+                },
+                "patient_id": {
+                    "type": "string"
+                }
+            }
+        },
         "orderhandler.UpdateOrderAppointmentRequest": {
             "type": "object",
             "required": [
@@ -5536,6 +5799,58 @@ const docTemplate = `{
             "properties": {
                 "status": {
                     "$ref": "#/definitions/enums.OrderStatus"
+                }
+            }
+        },
+        "orderservice.DeliveryInfo": {
+            "type": "object",
+            "required": [
+                "method"
+            ],
+            "properties": {
+                "address": {
+                    "description": "nullable, bắt buộc nếu method là HOME_DELIVERY hoặc EXPRESS_DELIVERY",
+                    "type": "string"
+                },
+                "city": {
+                    "description": "nullable, thành phố",
+                    "type": "string"
+                },
+                "district": {
+                    "description": "nullable, quận",
+                    "type": "string"
+                },
+                "email": {
+                    "description": "nullable, email người nhận",
+                    "type": "string"
+                },
+                "fee": {
+                    "description": "phí giao hàng, 0 nếu PICKUP",
+                    "type": "number"
+                },
+                "fullname": {
+                    "description": "nullable, tên người nhận",
+                    "type": "string"
+                },
+                "method": {
+                    "description": "PICKUP, HOME_DELIVERY, EXPRESS_DELIVERY",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/enums.DeliveryMethod"
+                        }
+                    ]
+                },
+                "notes": {
+                    "description": "nullable, ghi chú thêm cho người giao hàng",
+                    "type": "string"
+                },
+                "phone": {
+                    "description": "nullable, số điện thoại liên hệ giao hàng",
+                    "type": "string"
+                },
+                "ward": {
+                    "description": "nullable, phường",
+                    "type": "string"
                 }
             }
         },

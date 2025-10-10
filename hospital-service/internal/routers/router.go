@@ -121,6 +121,7 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	// ===== Order routes =====
 	order := r.Group("/orders")
 	{
+		order.POST("", orderHandler.CreateOrder)                           // Create order
 		order.GET("", orderHandler.ListAllOrders)                          // List all
 		order.GET("/:order_id", orderHandler.GetOrderByID)                 // Get by OrderID
 		order.GET("/patient/:patient_id", orderHandler.GetOrdersByPatient) // Get orders by patient
@@ -202,6 +203,7 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 		email.POST("/appointment-confirmation", emailHandler.SendAppointmentConfirmation)
 		email.POST("/appointment-reminder", emailHandler.SendAppointmentReminder)
 		email.POST("/prescription", emailHandler.SendPrescription)
+		email.POST("/order-confirmation", emailHandler.SendOrderConfirmation)
 	}
 
 	// Swagger

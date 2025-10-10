@@ -8,14 +8,27 @@ import (
 )
 
 type Order struct {
-	OrderID       string            `gorm:"column:order_id;primaryKey;size:36" json:"order_id"`
-	PatientID     string            `gorm:"not null" json:"patient_id"`
-	AppointmentID string            `gorm:"column:appointment_id;size:36" json:"appointment_id"`
-	BookUserId    string            `gorm:"not null;size:36" json:"book_user_id"`
-	CreatedAt     time.Time         `gorm:"autoCreateTime" json:"created_at"`
-	Status        enums.OrderStatus `gorm:"type:order_status;default:'PENDING'" json:"status"`
-	TotalAmount   float64           `gorm:"type:decimal(10,2)" json:"total_amount"`
-	OrderItems    []OrderItem       `gorm:"foreignKey:OrderID;constraint:OnDelete:CASCADE" json:"order_items"`
-	Patient       patient.Patient   `gorm:"foreignKey:PatientID;references:PatientID" json:"patient"`
-	Appointment appointment.Appointment `gorm:"foreignKey:AppointmentID;references:AppointmentID" json:"appointment,omitempty"`
+	OrderID         string                `gorm:"column:order_id;primaryKey;size:36" json:"order_id"`
+	PatientID       string                `gorm:"not null" json:"patient_id"`
+	AppointmentID   string                `gorm:"column:appointment_id;size:36" json:"appointment_id"`
+	BookUserId      string                `gorm:"not null;size:36" json:"book_user_id"`
+	CreatedAt       time.Time             `gorm:"autoCreateTime" json:"created_at"`
+	Status          enums.OrderStatus     `gorm:"type:order_status;default:'PENDING'" json:"status"`
+	TotalAmount     float64               `gorm:"type:decimal(10,2)" json:"total_amount"`
+	
+	// Thông tin giao hàng
+	DeliveryMethod  enums.DeliveryMethod  `gorm:"type:varchar(50);default:'PICKUP'" json:"delivery_method"`
+	DeliveryAddress *string               `gorm:"type:text" json:"delivery_address,omitempty"` // nullable, chỉ cần khi giao hàng
+	DeliveryPhone   *string               `gorm:"type:varchar(20)" json:"delivery_phone,omitempty"` // nullable
+	DeliveryNotes   *string               `gorm:"type:text" json:"delivery_notes,omitempty"` // nullable, ghi chú thêm
+	DeliveryFee     float64               `gorm:"type:decimal(10,2);default:0" json:"delivery_fee"` // phí giao hàng
+	DeliveryFullname *string               `gorm:"type:varchar(255)" json:"delivery_fullname,omitempty"` // nullable, tên người nhận
+	DeliveryEmail    *string               `gorm:"type:varchar(255)" json:"delivery_email,omitempty"` // nullable, email người nhận
+	DeliveryCity    *string               `gorm:"type:varchar(255)" json:"delivery_city,omitempty"` // nullable, thành phố
+	DeliveryDistrict    *string               `gorm:"type:varchar(255)" json:"delivery_district,omitempty"` // nullable, quận
+	DeliveryWard    *string               `gorm:"type:varchar(255)" json:"delivery_ward,omitempty"` // nullable, phường
+	
+	OrderItems      []OrderItem           `gorm:"foreignKey:OrderID;constraint:OnDelete:CASCADE" json:"order_items"`
+	Patient         patient.Patient       `gorm:"foreignKey:PatientID;references:PatientID" json:"patient"`
+	Appointment     appointment.Appointment `gorm:"foreignKey:AppointmentID;references:AppointmentID" json:"appointment,omitempty"`
 }

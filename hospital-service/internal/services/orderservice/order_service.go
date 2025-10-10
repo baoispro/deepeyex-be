@@ -27,6 +27,19 @@ type OrderItemRequest struct {
 	Quantity  int     `json:"quantity" binding:"required"`  // số lượng
 }
 
+type DeliveryInfo struct {
+	Method  enums.DeliveryMethod `json:"method" binding:"required"`  // PICKUP, HOME_DELIVERY, EXPRESS_DELIVERY
+	Address *string              `json:"address,omitempty"`          // nullable, bắt buộc nếu method là HOME_DELIVERY hoặc EXPRESS_DELIVERY
+	Phone   *string              `json:"phone,omitempty"`            // nullable, số điện thoại liên hệ giao hàng
+	Fullname   *string           `json:"fullname,omitempty"`            // nullable, tên người nhận
+	Email   *string           	 `json:"email,omitempty"`            // nullable, email người nhận
+	Notes   *string              `json:"notes,omitempty"`            // nullable, ghi chú thêm cho người giao hàng
+	Fee     float64              `json:"fee"`                        // phí giao hàng, 0 nếu PICKUP
+	City   *string              `json:"city,omitempty"`            // nullable, thành phố
+	District   *string              `json:"district,omitempty"`            // nullable, quận
+	Ward   *string              `json:"ward,omitempty"`            // nullable, phường
+}
+
 func NewOrderService(repo *orderrepo.OrderRepo, drugRepo *drugrepo.DrugRepo, storage *storage.S3Client) *OrderService {
 	return &OrderService{
 		repo:     repo,
@@ -41,9 +54,32 @@ func (s *OrderService) CreateOrder(
 	bookUserID string,
 	status enums.OrderStatus,
 	items []OrderItemRequest,
+	deliveryInfo *DeliveryInfo,
 ) (*order.Order, error) {
 	if patientID == "" || len(items) == 0 {
 		return nil, errors.New("invalid order data")
+	}
+
+	// Validate delivery info
+	if deliveryInfo != nil {
+		if !deliveryInfo.Method.IsValid() {
+			return nil, errors.New("invalid delivery method")
+		}
+		// Nếu là giao hàng tận nơi, bắt buộc phải có địa chỉ và số điện thoại
+		if (deliveryInfo.Method == enums.HOME_DELIVERY || deliveryInfo.Method == enums.EXPRESS_DELIVERY) {
+			if deliveryInfo.Address == nil || *deliveryInfo.Address == "" {
+				return nil, errors.New("delivery address is required for home/express delivery")
+			}
+			if deliveryInfo.Phone == nil || *deliveryInfo.Phone == "" {
+				return nil, errors.New("phone number is required for home/express delivery")
+			}
+		}
+	} else {
+		// Mặc định là nhận tại bệnh viện nếu không có thông tin giao hàng
+		deliveryInfo = &DeliveryInfo{
+			Method: enums.PICKUP,
+			Fee:    0,
+		}
 	}
 
 	// Bắt đầu transaction
@@ -87,16 +123,29 @@ func (s *OrderService) CreateOrder(
 		}
 	}
 
+	// Cộng phí giao hàng vào tổng tiền
+	total += deliveryInfo.Fee
+
 	// Tạo đơn hàng
 	o := &order.Order{
-		OrderID:       generateOrderID(),
-		PatientID:     patientID,
-		AppointmentID: appointmentID,
-		BookUserId:    bookUserID,
-		CreatedAt:     time.Now(),
-		Status:        status,
-		TotalAmount:   total,      // tổng tiền đã tính
-		OrderItems:    orderItems, // liên kết order items
+		OrderID:         generateOrderID(),
+		PatientID:       patientID,
+		AppointmentID:   appointmentID,
+		BookUserId:      bookUserID,
+		CreatedAt:       time.Now(),
+		Status:          status,
+		TotalAmount:     total,      // tổng tiền đã tính (bao gồm phí ship)
+		DeliveryMethod:  deliveryInfo.Method,
+		DeliveryAddress: deliveryInfo.Address,
+		DeliveryPhone:   deliveryInfo.Phone,
+		DeliveryNotes:   deliveryInfo.Notes,
+		DeliveryFee:     deliveryInfo.Fee,
+		DeliveryCity:    deliveryInfo.City,
+		DeliveryDistrict: deliveryInfo.District,
+		DeliveryWard:    deliveryInfo.Ward,
+		DeliveryFullname: deliveryInfo.Fullname,
+		DeliveryEmail:   deliveryInfo.Email,
+		OrderItems:      orderItems, // liên kết order items
 	}
 
 	// Lưu Order (bao gồm OrderItems)

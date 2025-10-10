@@ -44,6 +44,23 @@ type sendPrescriptionRequest struct {
 	PrescriptionDetails string `json:"prescription_details" binding:"required"`
 }
 
+// SendOrderConfirmationRequest cấu trúc request cho email xác nhận đơn hàng
+type sendOrderConfirmationRequest struct {
+	ToEmail          string                               `json:"to_email" binding:"required,email"`
+	PatientName      string                               `json:"patient_name" binding:"required"`
+	OrderCode        string                               `json:"order_code" binding:"required"`
+	OrderItems       []emailservice.OrderConfirmationItem `json:"order_items" binding:"required,dive"`
+	DeliveryMethod   string                               `json:"delivery_method" binding:"required"`
+	DeliveryAddress  string                               `json:"delivery_address,omitempty"`
+	DeliveryPhone    string                               `json:"delivery_phone,omitempty"`
+	DeliveryFullname string                               `json:"delivery_fullname,omitempty"`
+	DeliveryCity     string                               `json:"delivery_city,omitempty"`
+	DeliveryDistrict string                               `json:"delivery_district,omitempty"`
+	DeliveryWard     string                               `json:"delivery_ward,omitempty"`
+	DeliveryNotes    string                               `json:"delivery_notes,omitempty"`
+	DeliveryFee      float64                              `json:"delivery_fee"`
+}
+
 // SendEmail gửi email tùy chỉnh
 // @Summary Send custom email
 // @Description Send a custom email to recipients
@@ -195,5 +212,47 @@ func (h *EmailHandler) SendPrescription(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Prescription email sent successfully", nil))
+}
+
+// SendOrderConfirmation gửi email xác nhận đơn hàng
+// @Summary Send order confirmation email
+// @Description Send confirmation email for a successful order with full delivery information
+// @Tags Email
+// @Accept json
+// @Produce json
+// @Param request body sendOrderConfirmationRequest true "Order details"
+// @Success 200 {object} utils.APIResponse
+// @Failure 400 {object} utils.APIResponse
+// @Failure 500 {object} utils.APIResponse
+// @Router /emails/order-confirmation [post]
+func (h *EmailHandler) SendOrderConfirmation(c *gin.Context) {
+	var req sendOrderConfirmationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
+		return
+	}
+
+	err := h.service.SendOrderConfirmation(
+		req.ToEmail,
+		req.PatientName,
+		req.OrderCode,
+		req.OrderItems,
+		req.DeliveryMethod,
+		req.DeliveryAddress,
+		req.DeliveryPhone,
+		req.DeliveryFullname,
+		req.DeliveryCity,
+		req.DeliveryDistrict,
+		req.DeliveryWard,
+		req.DeliveryNotes,
+		req.DeliveryFee,
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Order confirmation email sent successfully", nil))
 }
 

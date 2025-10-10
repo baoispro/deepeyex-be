@@ -31,10 +31,20 @@ type SendEmailRequest struct {
 }
 
 type OrderItem struct {
-	ServiceID string     `json:"service_id"`
+	ServiceID string  `json:"service_id"`
 	ItemName  string  `json:"item_name"`
 	Quantity  int     `json:"quantity"`
 	Price     float64 `json:"price"`
+}
+
+// OrderConfirmationItem struct cho email xác nhận đơn hàng
+type OrderConfirmationItem struct {
+	DrugID    string   `json:"drug_id"`
+	Name      string   `json:"name"`
+	Image     string   `json:"image,omitempty"`
+	Price     float64  `json:"price"`
+	SalePrice *float64 `json:"sale_price,omitempty"`
+	Quantity  int      `json:"quantity"`
 }
 
 
@@ -273,6 +283,219 @@ func (s *EmailService) SendPrescriptionEmail(toEmail, patientName, prescriptionD
 	return err
 }
 
+
+// SendOrderConfirmation gửi email xác nhận đơn hàng thành công
+func (s *EmailService) SendOrderConfirmation(
+	toEmail, patientName, orderCode string,
+	orderItems []OrderConfirmationItem,
+	deliveryMethod, deliveryAddress, deliveryPhone, deliveryFullname string,
+	deliveryCity, deliveryDistrict, deliveryWard, deliveryNotes string,
+	deliveryFee float64,
+) error {
+
+	// Tính tổng tiền sản phẩm
+	var subtotal float64
+	for _, item := range orderItems {
+		// Sử dụng giá sale nếu có, không thì dùng giá gốc
+		finalPrice := item.Price
+		if item.SalePrice != nil && *item.SalePrice > 0 {
+			finalPrice = *item.SalePrice
+		}
+		subtotal += finalPrice * float64(item.Quantity)
+	}
+
+	// Tổng tiền cuối cùng (bao gồm phí ship)
+	total := subtotal + deliveryFee
+
+	// Tạo danh sách sản phẩm HTML
+	var orderDetailsHTML string
+	for _, item := range orderItems {
+		// Sử dụng giá sale nếu có
+		finalPrice := item.Price
+		priceDisplay := formatCurrency(item.Price)
+		
+		if item.SalePrice != nil && *item.SalePrice > 0 {
+			finalPrice = *item.SalePrice
+			// Hiển thị giá gốc gạch ngang + giá sale
+			priceDisplay = fmt.Sprintf(`<span style="text-decoration: line-through; color: #999;">%s₫</span> <span style="color: #e53935; font-weight: bold;">%s₫</span>`, 
+				formatCurrency(item.Price), 
+				formatCurrency(*item.SalePrice))
+		} else {
+			priceDisplay = fmt.Sprintf(`%s₫`, formatCurrency(item.Price))
+		}
+		
+		orderDetailsHTML += fmt.Sprintf(
+			`<tr>
+				<td style="padding: 10px; border-bottom: 1px solid #eee;">
+					<div style="display: flex; align-items: center; gap: 10px;">
+						%s
+						<span>%s</span>
+					</div>
+				</td>
+				<td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">%d</td>
+				<td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">%s</td>
+				<td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right; font-weight: bold;">%s₫</td>
+			</tr>`,
+			func() string {
+				if item.Image != "" {
+					return fmt.Sprintf(`<img src="%s" alt="%s" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">`, item.Image, item.Name)
+				}
+				return ""
+			}(),
+			item.Name,
+			item.Quantity,
+			priceDisplay,
+			formatCurrency(finalPrice*float64(item.Quantity)),
+		)
+	}
+
+	// Tạo thông tin giao hàng HTML
+	var deliveryMethodText string
+	var deliveryInfoHTML string
+
+	if deliveryMethod == "HOME_DELIVERY" {
+		deliveryMethodText = "Giao hàng tận nơi"
+		fullAddress := deliveryAddress
+		if deliveryWard != "" {
+			fullAddress = deliveryWard + ", " + fullAddress
+		}
+		if deliveryDistrict != "" {
+			fullAddress = deliveryDistrict + ", " + fullAddress
+		}
+		if deliveryCity != "" {
+			fullAddress = deliveryCity + ", " + fullAddress
+		}
+
+		deliveryInfoHTML = fmt.Sprintf(`
+			<div class="info-box">
+				<h3>Thông tin giao hàng:</h3>
+				<p><strong>Người nhận:</strong> %s</p>
+				<p><strong>Số điện thoại:</strong> %s</p>
+				<p><strong>Địa chỉ:</strong> %s</p>
+				<p><strong>Phí vận chuyển:</strong> %s₫</p>
+				%s
+			</div>`,
+			deliveryFullname,
+			deliveryPhone,
+			fullAddress,
+			formatCurrency(deliveryFee),
+			func() string {
+				if deliveryNotes != "" {
+					return fmt.Sprintf("<p><strong>Ghi chú:</strong> %s</p>", deliveryNotes)
+				}
+				return ""
+			}(),
+		)
+	} else {
+		deliveryMethodText = "Nhận tại bệnh viện"
+		deliveryInfoHTML = `
+			<div class="info-box">
+				<h3>Thông tin nhận hàng:</h3>
+				<p><strong>Phương thức:</strong> Nhận tại bệnh viện</p>
+				<p>Vui lòng đến quầy lễ tân để nhận đơn hàng của bạn.</p>
+			</div>`
+	}
+
+	html := fmt.Sprintf(`
+		<!DOCTYPE html>
+		<html>
+		<head>
+			<meta charset="UTF-8">
+			<style>
+				body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+				.container { max-width: 600px; margin: 0 auto; padding: 20px; }
+				.header { background-color: #4CAF50; color: white; padding: 20px; text-align: center; }
+				.content { padding: 20px; background-color: #f9f9f9; }
+				.footer { text-align: center; padding: 20px; font-size: 12px; color: #666; }
+				.info-box { background-color: white; padding: 15px; margin: 10px 0; border-left: 4px solid #4CAF50; }
+				table { width: 100%%; border-collapse: collapse; background-color: white; margin: 10px 0; }
+				th { background-color: #4CAF50; color: white; padding: 10px; text-align: left; }
+				.total-row { background-color: #f0f0f0; font-weight: bold; }
+				.success-badge { background-color: #4CAF50; color: white; padding: 5px 15px; border-radius: 20px; display: inline-block; }
+			</style>
+		</head>
+		<body>
+			<div class="container">
+				<div class="header">
+					<h1>✅ Đặt Hàng Thành Công</h1>
+				</div>
+				<div class="content">
+					<p>Kính gửi <strong>%s</strong>,</p>
+					<p>Cảm ơn bạn đã đặt hàng tại <strong>DeepEyeX Medical Center</strong>!</p>
+					<p>Đơn hàng của bạn đã được xác nhận và đang được xử lý.</p>
+					
+					<div class="info-box">
+						<h3>Thông tin đơn hàng:</h3>
+						<p><strong>Mã đơn hàng:</strong> %s</p>
+						<p><strong>Phương thức nhận hàng:</strong> <span class="success-badge">%s</span></p>
+					</div>
+
+					<h3>Chi tiết sản phẩm:</h3>
+					<table>
+						<thead>
+							<tr>
+								<th>Sản phẩm</th>
+								<th style="text-align: center;">Số lượng</th>
+								<th style="text-align: right;">Đơn giá</th>
+								<th style="text-align: right;">Thành tiền</th>
+							</tr>
+						</thead>
+						<tbody>
+							%s
+							<tr class="total-row">
+								<td colspan="3" style="padding: 10px; text-align: right;">Tạm tính:</td>
+								<td style="padding: 10px; text-align: right;">%s₫</td>
+							</tr>
+							<tr class="total-row">
+								<td colspan="3" style="padding: 10px; text-align: right;">Phí vận chuyển:</td>
+								<td style="padding: 10px; text-align: right;">%s₫</td>
+							</tr>
+							<tr class="total-row" style="background-color: #4CAF50; color: white;">
+								<td colspan="3" style="padding: 15px; text-align: right; font-size: 18px;">TỔNG CỘNG:</td>
+								<td style="padding: 15px; text-align: right; font-size: 18px;">%s₫</td>
+							</tr>
+						</tbody>
+					</table>
+
+					%s
+					
+					<p style="margin-top: 20px;">Nếu có bất kỳ thắc mắc nào, vui lòng liên hệ với chúng tôi.</p>
+					<p style="margin-top: 20px;">Trân trọng,<br><strong>DeepEyeX Medical Center</strong></p>
+				</div>
+				<div class="footer">
+					<p>Email này được gửi tự động. Vui lòng không reply.</p>
+					<p>&copy; 2025 DeepEyeX. All rights reserved.</p>
+				</div>
+			</div>
+		</body>
+		</html>
+	`,
+		patientName,
+		orderCode,
+		deliveryMethodText,
+		orderDetailsHTML,
+		formatCurrency(subtotal),
+		formatCurrency(deliveryFee),
+		formatCurrency(total),
+		deliveryInfoHTML,
+	)
+
+	text := fmt.Sprintf(
+		"Kính gửi %s,\n\nĐơn hàng của bạn đã được đặt thành công!\n\nMã đơn hàng: %s\nPhương thức: %s\nTổng tiền: %s₫\n\nTrân trọng,\nDeepEyeX Medical Center",
+		patientName, orderCode, deliveryMethodText, formatCurrency(total),
+	)
+
+	req := SendEmailRequest{
+		From:    "DeepEyeX <onboard@resend.dev>",
+		To:      []string{toEmail},
+		Subject: "Xác nhận đơn hàng - " + orderCode,
+		HTML:    html,
+		Text:    text,
+	}
+
+	_, err := s.SendEmail(req)
+	return err
+}
 
 // formatCurrency format số tiền với dấu chấm ngăn cách hàng nghìn (VD: 2.500.000)
 func formatCurrency(value float64) string {
