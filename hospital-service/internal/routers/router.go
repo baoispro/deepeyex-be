@@ -12,6 +12,7 @@ import (
 	"hospital-service/internal/handlers/patienthandler"
 	"hospital-service/internal/handlers/paymenthandler"
 	"hospital-service/internal/handlers/servicehandler"
+	"hospital-service/internal/handlers/uploadhandler"
 
 	"hospital-service/internal/middlewares"
 
@@ -30,6 +31,7 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	serviceHandler *servicehandler.ServiceHandler,
 	bookingHandler *bookinghandler.BookingHandler,
 	vnpayHandler *paymenthandler.VnpayHandler,
+	uploadhandler *uploadhandler.UploadHandler,
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -103,7 +105,7 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 		timeSlot.GET("/doctor/:doctor_id/date-range", tHandler.GetTimeSlotsByDoctorAndDateRange)
 		timeSlot.PUT("/:slot_id", tHandler.UpdateTimeSlot)
 		timeSlot.DELETE("/:slot_id", tHandler.DeleteTimeSlot)
-	
+
 	}
 
 	// ===== Drug routes =====
@@ -188,10 +190,16 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 
 	// ===== Payment routes =====
 	vnpay := r.Group("/vnpay")
-    {
-        vnpay.POST("/create-payment", vnpayHandler.CreatePayment)
-        vnpay.GET("/return", vnpayHandler.VnpayReturn)
-    }
+	{
+		vnpay.POST("/create-payment", vnpayHandler.CreatePayment)
+		vnpay.GET("/return", vnpayHandler.VnpayReturn)
+	}
+
+	// ===== Upload routes =====
+	upload := r.Group("/upload")
+	{
+		upload.POST("", uploadhandler.UploadFile)
+	}
 
 	// Swagger
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

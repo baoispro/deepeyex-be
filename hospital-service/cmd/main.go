@@ -9,10 +9,12 @@ import (
 	"hospital-service/internal/handlers/bookinghandler"
 	patienthandler "hospital-service/internal/handlers/patienthandler"
 	"hospital-service/internal/handlers/paymenthandler"
+	"hospital-service/internal/handlers/uploadhandler"
 	patientrepo "hospital-service/internal/repositories/patientrepo"
 	"hospital-service/internal/services/bookingservice"
 	patientservice "hospital-service/internal/services/patientservice"
 	"hospital-service/internal/services/paymentservice"
+	"hospital-service/internal/services/uploadservice"
 	"hospital-service/internal/storage"
 
 	doctorhandler "hospital-service/internal/handlers/doctorhandler"
@@ -132,6 +134,7 @@ func main() {
 	prescriptionItemService := prescriptionitemservice.NewPrescriptionItemService(prescriptionitemrepo)
 	bookingService := bookingservice.NewBookingService(aService, orderService)
 	vnpayService := paymentservice.NewVnpayService(cfg)
+	uploadservice := uploadservice.NewUploadService(s3Client)
 
 	// Initialize cron service
 	cronService := cronservice.NewCronService(tService)
@@ -152,6 +155,7 @@ func main() {
 	bookingHandler := bookinghandler.NewBookingHandler(bookingService)
 	serviceHandler := servicehandler.NewServiceHandler(cfg, serviceService)
 	vnpayHandler := paymenthandler.NewVnpayHandler(vnpayService)
+	uploadhandler := uploadhandler.NewUploadHandler(uploadservice)
 
 	// Start cron service
 	if err := cronService.Start(); err != nil {
@@ -161,7 +165,7 @@ func main() {
 	}
 
 	// Setup router
-	r := routers.SetupRouter(&cfg, pHandler, dHandler, hHandler, aHandler, tHandler, drugHandler, orderHandler, medicalRecordHandler, prHandler, attachmentHandler, followUpHandler, prescriptionItemHander, serviceHandler, bookingHandler, vnpayHandler)
+	r := routers.SetupRouter(&cfg, pHandler, dHandler, hHandler, aHandler, tHandler, drugHandler, orderHandler, medicalRecordHandler, prHandler, attachmentHandler, followUpHandler, prescriptionItemHander, serviceHandler, bookingHandler, vnpayHandler, uploadhandler)
 
 	log.Printf("Hospital service running on :%s", cfg.Port)
 	if err := r.Run(":" + cfg.Port); err != nil {

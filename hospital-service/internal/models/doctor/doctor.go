@@ -7,7 +7,7 @@ import (
 
 type Doctor struct {
 	DoctorID   string          `json:"doctor_id" gorm:"type:uuid;primaryKey"`
-	UserID     string          `json:"user_id" gorm:"type:uuid;not null"`
+	UserID     string          `json:"user_id" gorm:"type:uuid;"`
 	FullName   string          `json:"full_name" gorm:"size:100;not null"`
 	Phone      string          `json:"phone" gorm:"size:20"`
 	Email      string          `json:"email" gorm:"size:100"`
