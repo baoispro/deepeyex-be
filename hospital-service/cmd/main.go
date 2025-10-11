@@ -7,6 +7,7 @@ import (
 	"hospital-service/internal/config"
 	"hospital-service/internal/database"
 	"hospital-service/internal/handlers/bookinghandler"
+	"hospital-service/internal/handlers/callhandler"
 	patienthandler "hospital-service/internal/handlers/patienthandler"
 	"hospital-service/internal/handlers/paymenthandler"
 	"hospital-service/internal/handlers/uploadhandler"
@@ -156,6 +157,7 @@ func main() {
 	serviceHandler := servicehandler.NewServiceHandler(cfg, serviceService)
 	vnpayHandler := paymenthandler.NewVnpayHandler(vnpayService)
 	uploadhandler := uploadhandler.NewUploadHandler(uploadservice)
+	callhandler := callhandler.NewStringeeHandler()
 
 	// Start cron service
 	if err := cronService.Start(); err != nil {
@@ -165,7 +167,7 @@ func main() {
 	}
 
 	// Setup router
-	r := routers.SetupRouter(&cfg, pHandler, dHandler, hHandler, aHandler, tHandler, drugHandler, orderHandler, medicalRecordHandler, prHandler, attachmentHandler, followUpHandler, prescriptionItemHander, serviceHandler, bookingHandler, vnpayHandler, uploadhandler)
+	r := routers.SetupRouter(&cfg, pHandler, dHandler, hHandler, aHandler, tHandler, drugHandler, orderHandler, medicalRecordHandler, prHandler, attachmentHandler, followUpHandler, prescriptionItemHander, serviceHandler, bookingHandler, vnpayHandler, uploadhandler, callhandler)
 
 	log.Printf("Hospital service running on :%s", cfg.Port)
 	if err := r.Run(":" + cfg.Port); err != nil {

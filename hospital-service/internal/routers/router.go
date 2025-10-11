@@ -4,6 +4,7 @@ import (
 	"hospital-service/internal/config"
 	"hospital-service/internal/handlers/appointmenthandler"
 	"hospital-service/internal/handlers/bookinghandler"
+	"hospital-service/internal/handlers/callhandler"
 	"hospital-service/internal/handlers/doctorhandler"
 	"hospital-service/internal/handlers/drughandler"
 	"hospital-service/internal/handlers/hospitalhandler"
@@ -32,6 +33,7 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	bookingHandler *bookinghandler.BookingHandler,
 	vnpayHandler *paymenthandler.VnpayHandler,
 	uploadhandler *uploadhandler.UploadHandler,
+	callhandler *callhandler.StringeeHandler,
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -199,6 +201,12 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	upload := r.Group("/upload")
 	{
 		upload.POST("", uploadhandler.UploadFile)
+	}
+
+	// ===== Call routes =====
+	call := r.Group("/call")
+	{
+		call.GET("stringee-token", callhandler.GetStringeeToken)
 	}
 
 	// Swagger
