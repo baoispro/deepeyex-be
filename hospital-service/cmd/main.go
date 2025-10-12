@@ -78,7 +78,9 @@ import (
 	emailhandler "hospital-service/internal/handlers/emailhandler"
 	emailservice "hospital-service/internal/services/emailservice"
 
-	// AuditTrail
+	// WebSocket
+	websockethandler "hospital-service/internal/handlers/websockethandler"
+	"hospital-service/internal/websocket"
 
 	"hospital-service/internal/routers"
 )
@@ -96,6 +98,11 @@ func main() {
 	if err := database.AutoMigrate(db); err != nil {
 		log.Fatal(err)
 	}
+
+	// ✅ Initialize WebSocket Hub
+	wsHub := websocket.NewHub()
+	go wsHub.Run() // Start hub in goroutine
+	log.Println("WebSocket Hub started successfully")
 
 	// Initialize repositories
 	pRepo := patientrepo.NewPatientRepo(db)
@@ -137,7 +144,7 @@ func main() {
 	attachmentService := attachmentservice.NewAttachmentService(attachmentRepo)
 	followUpService := followupservice.NewFollowUpService(followUpRepo)
 	prescriptionItemService := prescriptionitemservice.NewPrescriptionItemService(prescriptionitemrepo)
-	bookingService := bookingservice.NewBookingService(aService, orderService)
+	bookingService := bookingservice.NewBookingService(aService, orderService, wsHub) // ✅ Pass WebSocket Hub
 	vnpayService := paymentservice.NewVnpayService(cfg)
 	emailService := emailservice.NewEmailService(cfg)
 	uploadservice := uploadservice.NewUploadService(s3Client)
@@ -164,6 +171,7 @@ func main() {
 	emailHandler := emailhandler.NewEmailHandler(emailService)
 	uploadhandler := uploadhandler.NewUploadHandler(uploadservice)
 	callhandler := callhandler.NewStringeeHandler()
+	wsHandler := websockethandler.NewWebSocketHandler(wsHub) // ✅ WebSocket Handler
 
 	// Start cron service
 	if err := cronService.Start(); err != nil {
@@ -173,7 +181,7 @@ func main() {
 	}
 
 	// Setup router
-	r := routers.SetupRouter(&cfg, pHandler, dHandler, hHandler, aHandler, tHandler, drugHandler, orderHandler, medicalRecordHandler, prHandler, attachmentHandler, followUpHandler, prescriptionItemHander, serviceHandler, bookingHandler, vnpayHandler, emailHandler, uploadhandler, callhandler)
+	r := routers.SetupRouter(&cfg, pHandler, dHandler, hHandler, aHandler, tHandler, drugHandler, orderHandler, medicalRecordHandler, prHandler, attachmentHandler, followUpHandler, prescriptionItemHander, serviceHandler, bookingHandler, vnpayHandler, emailHandler, uploadhandler, callhandler, wsHandler)
 
 	log.Printf("Hospital service running on :%s", cfg.Port)
 	if err := r.Run(":" + cfg.Port); err != nil {

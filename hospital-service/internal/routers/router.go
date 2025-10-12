@@ -15,6 +15,7 @@ import (
 	"hospital-service/internal/handlers/paymenthandler"
 	"hospital-service/internal/handlers/servicehandler"
 	"hospital-service/internal/handlers/uploadhandler"
+	"hospital-service/internal/handlers/websockethandler"
 
 	"hospital-service/internal/middlewares"
 
@@ -36,6 +37,7 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	emailHandler *emailhandler.EmailHandler,
 	uploadhandler *uploadhandler.UploadHandler,
 	callhandler *callhandler.StringeeHandler,
+	wsHandler *websockethandler.WebSocketHandler,
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -220,6 +222,14 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	call := r.Group("/call")
 	{
 		call.GET("stringee-token", callhandler.GetStringeeToken)
+	}
+
+	// ===== WebSocket routes =====
+	ws := r.Group("/ws")
+	{
+		ws.GET("", wsHandler.ServeWS)                                // WebSocket connection endpoint
+		ws.GET("/connected", wsHandler.GetConnectedDoctors)          // Get list of connected doctors
+		ws.GET("/status/:doctor_id", wsHandler.GetDoctorConnectionStatus) // Check doctor connection status
 	}
 
 	// Swagger

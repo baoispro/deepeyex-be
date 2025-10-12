@@ -491,7 +491,16 @@ definitions:
         type: string
       disease_code:
         type: string
+      eye_type:
+        description: '"LEFT" | "RIGHT" | "BOTH"'
+        type: string
       id:
+        type: string
+      main_image_url:
+        description: URL hình ảnh chính dùng để chẩn đoán
+        type: string
+      notes:
+        description: Ghi chú thêm
         type: string
       recommended_plans:
         items:
@@ -575,12 +584,25 @@ definitions:
       disease_code:
         example: D001
         type: string
+      eye_type:
+        description: '"LEFT" | "RIGHT" | "BOTH"'
+        example: RIGHT
+        type: string
+      main_image_url:
+        description: URL hình ảnh chẩn đoán
+        example: https://s3.../image.jpg
+        type: string
+      notes:
+        description: Ghi chú thêm
+        example: Patient complained about blurry vision
+        type: string
       patient_id:
         example: abc123
         type: string
     required:
     - confidence
     - disease_code
+    - main_image_url
     - patient_id
     type: object
   medicalrecord.InitRecordAndDiagnosisResponse:
@@ -669,9 +691,19 @@ definitions:
         type: number
       disease_code:
         type: string
+      eye_type:
+        description: '"LEFT" | "RIGHT" | "BOTH"'
+        type: string
+      main_image_url:
+        description: URL hình ảnh chẩn đoán
+        type: string
+      notes:
+        description: Ghi chú
+        type: string
     required:
     - confidence
     - disease_code
+    - main_image_url
     type: object
   medicalrecordhandler.CreateMedicalRecordRequest:
     properties:
@@ -3979,4 +4011,64 @@ paths:
       summary: Handle VNPAY return URL
       tags:
       - Payments
+  /ws:
+    get:
+      description: Doctors connect to this endpoint to receive real-time appointment
+        notifications
+      parameters:
+      - description: Doctor ID
+        in: query
+        name: doctor_id
+        required: true
+        type: string
+      responses:
+        "101":
+          description: Switching Protocols
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+      summary: WebSocket endpoint for doctors to receive real-time notifications
+      tags:
+      - WebSocket
+  /ws/connected:
+    get:
+      description: Get list of doctor IDs currently connected via WebSocket
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get list of connected doctors
+      tags:
+      - WebSocket
+  /ws/status/{doctor_id}:
+    get:
+      description: Check if a specific doctor is currently connected
+      parameters:
+      - description: Doctor ID
+        in: path
+        name: doctor_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Check doctor connection status
+      tags:
+      - WebSocket
 swagger: "2.0"

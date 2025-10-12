@@ -8,6 +8,7 @@ import (
 	"hospital-service/internal/models/order"
 	"hospital-service/internal/services/appointmentservice"
 	"hospital-service/internal/services/orderservice"
+	"hospital-service/internal/websocket"
 )
 
 // Request struct để tạo booking
@@ -31,12 +32,14 @@ type BookingResponse struct {
 type BookingService struct {
 	appointmentService *appointmentservice.AppointmentService
 	orderService       *orderservice.OrderService
+	wsHub              *websocket.Hub // ✅ Thêm WebSocket Hub
 }
 
-func NewBookingService(apptSvc *appointmentservice.AppointmentService, ordSvc *orderservice.OrderService) *BookingService {
+func NewBookingService(apptSvc *appointmentservice.AppointmentService, ordSvc *orderservice.OrderService, wsHub *websocket.Hub) *BookingService {
 	return &BookingService{
 		appointmentService: apptSvc,
 		orderService:       ordSvc,
+		wsHub:              wsHub,
 	}
 }
 
@@ -59,8 +62,24 @@ func (s *BookingService) CreateBooking(req BookingRequest) (*BookingResponse, er
 		return nil, fmt.Errorf("failed to create order: %v", err)
 	}
 
+	// ✅ 3. Broadcast notification đến bác sĩ qua WebSocket
+	if s.wsHub != nil {
+		go s.notifyDoctorNewAppointment(appt, ord)
+	}
+
 	return &BookingResponse{
 		Appointment: appt,
 		Order:       ord,
 	}, nil
+}
+
+// notifyDoctorNewAppointment gửi notification đến bác sĩ khi có lịch hẹn mới
+func (s *BookingService) notifyDoctorNewAppointment(appt *appointment.Appointment, ord *order.Order) {
+	payload := map[string]interface{}{
+		"appointment": appt,
+		"order":       ord,
+		"message":     "Bạn có lịch hẹn mới",
+	}
+
+	s.wsHub.BroadcastToDoctor(appt.DoctorID, websocket.NewAppointment, payload)
 }

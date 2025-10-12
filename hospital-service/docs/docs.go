@@ -4569,6 +4569,95 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/ws": {
+            "get": {
+                "description": "Doctors connect to this endpoint to receive real-time appointment notifications",
+                "tags": [
+                    "WebSocket"
+                ],
+                "summary": "WebSocket endpoint for doctors to receive real-time notifications",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Doctor ID",
+                        "name": "doctor_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "101": {
+                        "description": "Switching Protocols",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utils.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/utils.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/ws/connected": {
+            "get": {
+                "description": "Get list of doctor IDs currently connected via WebSocket",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "WebSocket"
+                ],
+                "summary": "Get list of connected doctors",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/ws/status/{doctor_id}": {
+            "get": {
+                "description": "Check if a specific doctor is currently connected",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "WebSocket"
+                ],
+                "summary": "Check doctor connection status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Doctor ID",
+                        "name": "doctor_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -5288,7 +5377,19 @@ const docTemplate = `{
                 "disease_code": {
                     "type": "string"
                 },
+                "eye_type": {
+                    "description": "\"LEFT\" | \"RIGHT\" | \"BOTH\"",
+                    "type": "string"
+                },
                 "id": {
+                    "type": "string"
+                },
+                "main_image_url": {
+                    "description": "URL hình ảnh chính dùng để chẩn đoán",
+                    "type": "string"
+                },
+                "notes": {
+                    "description": "Ghi chú thêm",
                     "type": "string"
                 },
                 "recommended_plans": {
@@ -5401,6 +5502,7 @@ const docTemplate = `{
             "required": [
                 "confidence",
                 "disease_code",
+                "main_image_url",
                 "patient_id"
             ],
             "properties": {
@@ -5415,6 +5517,21 @@ const docTemplate = `{
                 "disease_code": {
                     "type": "string",
                     "example": "D001"
+                },
+                "eye_type": {
+                    "description": "\"LEFT\" | \"RIGHT\" | \"BOTH\"",
+                    "type": "string",
+                    "example": "RIGHT"
+                },
+                "main_image_url": {
+                    "description": "URL hình ảnh chẩn đoán",
+                    "type": "string",
+                    "example": "https://s3.../image.jpg"
+                },
+                "notes": {
+                    "description": "Ghi chú thêm",
+                    "type": "string",
+                    "example": "Patient complained about blurry vision"
                 },
                 "patient_id": {
                     "type": "string",
@@ -5547,13 +5664,26 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "confidence",
-                "disease_code"
+                "disease_code",
+                "main_image_url"
             ],
             "properties": {
                 "confidence": {
                     "type": "number"
                 },
                 "disease_code": {
+                    "type": "string"
+                },
+                "eye_type": {
+                    "description": "\"LEFT\" | \"RIGHT\" | \"BOTH\"",
+                    "type": "string"
+                },
+                "main_image_url": {
+                    "description": "URL hình ảnh chẩn đoán",
+                    "type": "string"
+                },
+                "notes": {
+                    "description": "Ghi chú",
                     "type": "string"
                 }
             }
