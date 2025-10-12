@@ -277,7 +277,7 @@ func (h *HospitalHandler) ListWardsByCity(c *gin.Context) {
 
 // ---------------- Search By Address ----------------
 // @Summary Search hospitals by address
-// @Description Search hospitals by keyword in address, ward, or city
+// @Description Search hospitals by keyword in name, address, ward, or city
 // @Tags Hospitals
 // @Produce json
 // @Param keyword query string true "Search keyword"

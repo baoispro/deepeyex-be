@@ -14,7 +14,7 @@ type TimeSlot struct {
 	CreatedAt     time.Time    `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt     time.Time    `gorm:"autoUpdateTime" json:"updated_at"`
 	AppointmentID *string      `gorm:"index" json:"appointment_id,omitempty"`
-    Appointment   *Appointment `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL" json:"appointment,omitempty"`
+	Appointment   *Appointment `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL" json:"appointment,omitempty"`
 
 	Doctor *doctor.Doctor `gorm:"foreignKey:DoctorID;references:DoctorID" json:"doctor,omitempty"`
 }

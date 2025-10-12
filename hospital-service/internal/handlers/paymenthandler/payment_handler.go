@@ -21,7 +21,6 @@ func NewVnpayHandler(service *paymentservice.VnpayService) *VnpayHandler {
 // @Tags Payments
 // @Accept json
 // @Produce json
-// @Param payment body map[string]interface{} true "Payment request"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
@@ -51,7 +50,6 @@ func (h *VnpayHandler) CreatePayment(c *gin.Context) {
 // @Summary Handle VNPAY return URL
 // @Tags Payments
 // @Produce json
-// @Param query query map[string]string true "Return query"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]string
 // @Router /vnpay/return [get]

@@ -237,6 +237,148 @@ definitions:
       updated_at:
         type: string
     type: object
+  emailhandler.sendAppointmentConfirmationRequest:
+    properties:
+      appointment_code:
+        type: string
+      appointment_date:
+        type: string
+      appointment_time:
+        type: string
+      doctor_name:
+        type: string
+      order_items:
+        items:
+          $ref: '#/definitions/emailservice.OrderItem'
+        type: array
+      patient_name:
+        type: string
+      to_email:
+        type: string
+    required:
+    - appointment_code
+    - appointment_date
+    - appointment_time
+    - doctor_name
+    - order_items
+    - patient_name
+    - to_email
+    type: object
+  emailhandler.sendAppointmentReminderRequest:
+    properties:
+      appointment_date:
+        type: string
+      appointment_time:
+        type: string
+      doctor_name:
+        type: string
+      patient_name:
+        type: string
+      to_email:
+        type: string
+    required:
+    - appointment_date
+    - appointment_time
+    - doctor_name
+    - patient_name
+    - to_email
+    type: object
+  emailhandler.sendEmailAPIRequest:
+    properties:
+      from:
+        type: string
+      html:
+        type: string
+      subject:
+        type: string
+      text:
+        type: string
+      to:
+        items:
+          type: string
+        type: array
+    required:
+    - from
+    - html
+    - subject
+    - to
+    type: object
+  emailhandler.sendOrderConfirmationRequest:
+    properties:
+      delivery_address:
+        type: string
+      delivery_city:
+        type: string
+      delivery_district:
+        type: string
+      delivery_fee:
+        type: number
+      delivery_fullname:
+        type: string
+      delivery_method:
+        type: string
+      delivery_notes:
+        type: string
+      delivery_phone:
+        type: string
+      delivery_ward:
+        type: string
+      order_code:
+        type: string
+      order_items:
+        items:
+          $ref: '#/definitions/emailservice.OrderConfirmationItem'
+        type: array
+      patient_name:
+        type: string
+      to_email:
+        type: string
+    required:
+    - delivery_method
+    - order_code
+    - order_items
+    - patient_name
+    - to_email
+    type: object
+  emailhandler.sendPrescriptionRequest:
+    properties:
+      patient_name:
+        type: string
+      prescription_details:
+        type: string
+      to_email:
+        type: string
+    required:
+    - patient_name
+    - prescription_details
+    - to_email
+    type: object
+  emailservice.OrderConfirmationItem:
+    properties:
+      drug_id:
+        type: string
+      image:
+        type: string
+      name:
+        type: string
+      price:
+        type: number
+      quantity:
+        type: integer
+      sale_price:
+        type: number
+    type: object
+  emailservice.OrderItem:
+    properties:
+      item_name:
+        type: string
+      price:
+        type: number
+      quantity:
+        type: integer
+      service_id:
+        type: string
+    type: object
   enums.AppointmentStatus:
     enum:
     - PENDING
@@ -249,6 +391,16 @@ definitions:
     - Confirmed
     - Completed
     - Canceled
+  enums.DeliveryMethod:
+    enum:
+    - PICKUP
+    - HOME_DELIVERY
+    - EXPRESS_DELIVERY
+    type: string
+    x-enum-varnames:
+    - PICKUP
+    - HOME_DELIVERY
+    - EXPRESS_DELIVERY
   enums.Gender:
     enum:
     - male
@@ -581,6 +733,37 @@ definitions:
         type: string
       created_at:
         type: string
+      delivery_address:
+        description: nullable, chỉ cần khi giao hàng
+        type: string
+      delivery_city:
+        description: nullable, thành phố
+        type: string
+      delivery_district:
+        description: nullable, quận
+        type: string
+      delivery_email:
+        description: nullable, email người nhận
+        type: string
+      delivery_fee:
+        description: phí giao hàng
+        type: number
+      delivery_fullname:
+        description: nullable, tên người nhận
+        type: string
+      delivery_method:
+        allOf:
+        - $ref: '#/definitions/enums.DeliveryMethod'
+        description: Thông tin giao hàng
+      delivery_notes:
+        description: nullable, ghi chú thêm
+        type: string
+      delivery_phone:
+        description: nullable
+        type: string
+      delivery_ward:
+        description: nullable, phường
+        type: string
       order_id:
         type: string
       order_items:
@@ -617,6 +800,28 @@ definitions:
       service_id:
         type: string
     type: object
+  orderhandler.CreateOrderRequest:
+    properties:
+      appointment_id:
+        description: nullable
+        type: string
+      book_user_id:
+        type: string
+      delivery_info:
+        allOf:
+        - $ref: '#/definitions/orderservice.DeliveryInfo'
+        description: nullable, mặc định là PICKUP
+      items:
+        items:
+          $ref: '#/definitions/orderservice.OrderItemRequest'
+        type: array
+      patient_id:
+        type: string
+    required:
+    - book_user_id
+    - items
+    - patient_id
+    type: object
   orderhandler.UpdateOrderAppointmentRequest:
     properties:
       appointment_id:
@@ -630,6 +835,42 @@ definitions:
         $ref: '#/definitions/enums.OrderStatus'
     required:
     - status
+    type: object
+  orderservice.DeliveryInfo:
+    properties:
+      address:
+        description: nullable, bắt buộc nếu method là HOME_DELIVERY hoặc EXPRESS_DELIVERY
+        type: string
+      city:
+        description: nullable, thành phố
+        type: string
+      district:
+        description: nullable, quận
+        type: string
+      email:
+        description: nullable, email người nhận
+        type: string
+      fee:
+        description: phí giao hàng, 0 nếu PICKUP
+        type: number
+      fullname:
+        description: nullable, tên người nhận
+        type: string
+      method:
+        allOf:
+        - $ref: '#/definitions/enums.DeliveryMethod'
+        description: PICKUP, HOME_DELIVERY, EXPRESS_DELIVERY
+      notes:
+        description: nullable, ghi chú thêm cho người giao hàng
+        type: string
+      phone:
+        description: nullable, số điện thoại liên hệ giao hàng
+        type: string
+      ward:
+        description: nullable, phường
+        type: string
+    required:
+    - method
     type: object
   orderservice.OrderItemRequest:
     properties:
@@ -1506,6 +1747,157 @@ paths:
       summary: Update drug info
       tags:
       - Drugs
+  /emails/appointment-confirmation:
+    post:
+      consumes:
+      - application/json
+      description: Send confirmation email for a booked appointment
+      parameters:
+      - description: Appointment details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/emailhandler.sendAppointmentConfirmationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+      summary: Send appointment confirmation email
+      tags:
+      - Email
+  /emails/appointment-reminder:
+    post:
+      consumes:
+      - application/json
+      description: Send reminder email for an upcoming appointment
+      parameters:
+      - description: Appointment details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/emailhandler.sendAppointmentReminderRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+      summary: Send appointment reminder email
+      tags:
+      - Email
+  /emails/order-confirmation:
+    post:
+      consumes:
+      - application/json
+      description: Send confirmation email for a successful order with full delivery
+        information
+      parameters:
+      - description: Order details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/emailhandler.sendOrderConfirmationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+      summary: Send order confirmation email
+      tags:
+      - Email
+  /emails/prescription:
+    post:
+      consumes:
+      - application/json
+      description: Send prescription details via email
+      parameters:
+      - description: Prescription details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/emailhandler.sendPrescriptionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+      summary: Send prescription email
+      tags:
+      - Email
+  /emails/send:
+    post:
+      consumes:
+      - application/json
+      description: Send a custom email to recipients
+      parameters:
+      - description: Email details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/emailhandler.sendEmailAPIRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+      summary: Send custom email
+      tags:
+      - Email
   /followups/{follow_up_id}:
     delete:
       consumes:
@@ -1923,7 +2315,7 @@ paths:
       - Hospitals
   /hospitals/search:
     get:
-      description: Search hospitals by keyword in address, ward, or city
+      description: Search hospitals by keyword in name, address, ward, or city
       parameters:
       - description: Search keyword
         in: query
@@ -2454,6 +2846,39 @@ paths:
               type: string
             type: object
       summary: List all orders
+      tags:
+      - Orders
+    post:
+      consumes:
+      - application/json
+      description: Create a new order with items and delivery information
+      parameters:
+      - description: Order information
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/orderhandler.CreateOrderRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/order.Order'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new order
       tags:
       - Orders
   /orders/{order_id}:

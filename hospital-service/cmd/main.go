@@ -74,6 +74,10 @@ import (
 	// Cron Service
 	cronservice "hospital-service/internal/services/cronservice"
 
+	// Email Service
+	emailhandler "hospital-service/internal/handlers/emailhandler"
+	emailservice "hospital-service/internal/services/emailservice"
+
 	// AuditTrail
 
 	"hospital-service/internal/routers"
@@ -135,6 +139,7 @@ func main() {
 	prescriptionItemService := prescriptionitemservice.NewPrescriptionItemService(prescriptionitemrepo)
 	bookingService := bookingservice.NewBookingService(aService, orderService)
 	vnpayService := paymentservice.NewVnpayService(cfg)
+	emailService := emailservice.NewEmailService(cfg)
 	uploadservice := uploadservice.NewUploadService(s3Client)
 
 	// Initialize cron service
@@ -156,6 +161,7 @@ func main() {
 	bookingHandler := bookinghandler.NewBookingHandler(bookingService)
 	serviceHandler := servicehandler.NewServiceHandler(cfg, serviceService)
 	vnpayHandler := paymenthandler.NewVnpayHandler(vnpayService)
+	emailHandler := emailhandler.NewEmailHandler(emailService)
 	uploadhandler := uploadhandler.NewUploadHandler(uploadservice)
 	callhandler := callhandler.NewStringeeHandler()
 
@@ -167,7 +173,7 @@ func main() {
 	}
 
 	// Setup router
-	r := routers.SetupRouter(&cfg, pHandler, dHandler, hHandler, aHandler, tHandler, drugHandler, orderHandler, medicalRecordHandler, prHandler, attachmentHandler, followUpHandler, prescriptionItemHander, serviceHandler, bookingHandler, vnpayHandler, uploadhandler, callhandler)
+	r := routers.SetupRouter(&cfg, pHandler, dHandler, hHandler, aHandler, tHandler, drugHandler, orderHandler, medicalRecordHandler, prHandler, attachmentHandler, followUpHandler, prescriptionItemHander, serviceHandler, bookingHandler, vnpayHandler, emailHandler, uploadhandler, callhandler)
 
 	log.Printf("Hospital service running on :%s", cfg.Port)
 	if err := r.Run(":" + cfg.Port); err != nil {

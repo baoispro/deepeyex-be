@@ -26,16 +26,16 @@ func NewCronService(timeSlotService *appointmentservice.TimeSlotService) *CronSe
 
 // Start khởi động cron service
 func (s *CronService) Start() error {
-	// Thêm job chạy vào thứ 7 hàng tuần lúc 23:00 để tạo lịch cho tuần tiếp theo
-	// Cron expression: "0 23 * * 6" (phút giờ ngày tháng thứ) - 6 = thứ 7
-	_, err := s.cron.AddFunc("0 23 * * 6", s.generateWeeklyTimeSlots)
+	// Thêm job chạy vào ngày 28 hàng tháng lúc 00:00 để tạo lịch cho tháng tiếp theo
+	// Cron expression: "0 0 28 * *" (phút giờ ngày tháng thứ)
+	_, err := s.cron.AddFunc("0 0 28 * *", s.generateMonthlyTimeSlots)
 	if err != nil {
 		log.Printf("Error adding cron job: %v", err)
 		return err
 	}
 
 	s.cron.Start()
-	log.Println("Cron service started successfully - Will run every Saturday at 23:00")
+	log.Println("Cron service started successfully - Will run every 28th of the month at 00:00")
 	return nil
 }
 
@@ -45,18 +45,18 @@ func (s *CronService) Stop() {
 	log.Println("Cron service stopped")
 }
 
-// generateWeeklyTimeSlots job chính để generate time slots hàng tuần
-func (s *CronService) generateWeeklyTimeSlots() {
-	log.Println("Starting weekly time slots generation...")
+// generateMonthlyTimeSlots job chính để generate time slots hàng tháng
+func (s *CronService) generateMonthlyTimeSlots() {
+	log.Println("🚀 Starting monthly time slots generation...")
 	
 	startTime := time.Now()
-	err := s.timeSlotService.GenerateTimeSlotsForWeek()
+	err := s.timeSlotService.GenerateTimeSlotsForMonth()
 	duration := time.Since(startTime)
 	
 	if err != nil {
-		log.Printf("Error generating weekly time slots: %v (took %v)", err, duration)
+		log.Printf("❌ Error generating monthly time slots: %v (took %v)", err, duration)
 	} else {
-		log.Printf("Successfully generated weekly time slots (took %v)", duration)
+		log.Printf("✅ Successfully generated monthly time slots (took %v)", duration)
 	}
 }
 
