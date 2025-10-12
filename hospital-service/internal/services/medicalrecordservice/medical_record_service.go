@@ -21,7 +21,15 @@ func NewMedicalRecordService(repo *medicalrecordrepo.MedicalRecordRepo) *Medical
 
 // ---------------- MedicalRecord Management ----------------
 func (s *MedicalRecordService) InitRecordAndDiagnosis(req medicalrecord.InitRecordAndDiagnosisRequest) (*medicalrecord.InitRecordAndDiagnosisResponse, error) {
-	record, aiDiag, err := s.repo.InitRecordAndDiagnosis(req.PatientID, req.DiseaseCode, req.Diagnosis, req.Confidence)
+	record, aiDiag, err := s.repo.InitRecordAndDiagnosis(
+		req.PatientID,
+		req.DiseaseCode,
+		req.Diagnosis,
+		req.Confidence,
+		req.MainImageURL, // ✅ Thêm hình ảnh
+		req.EyeType,      // ✅ Thêm loại mắt
+		req.Notes,        // ✅ Thêm ghi chú
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -84,13 +92,21 @@ func (s *MedicalRecordService) ListAIDiagnoses(recordID string) ([]*medicalrecor
 	return s.repo.ListAIDiagnosesByRecordID(recordID)
 }
 
-func (s *MedicalRecordService) AddAIDiagnosisByRecordID(recordID, diseaseCode string, confidence float64) (*medicalrecord.AIDiagnosis, error) {
+func (s *MedicalRecordService) AddAIDiagnosisByRecordID(
+	recordID, diseaseCode string,
+	confidence float64,
+	mainImageURL string,
+	eyeType, notes *string,
+) (*medicalrecord.AIDiagnosis, error) {
 	diagnosis := &medicalrecord.AIDiagnosis{
-		ID:          uuid.New().String(),
-		RecordID:    recordID,
-		DiseaseCode: diseaseCode,
-		Confidence:  confidence,
-		CreatedAt:   time.Now(),
+		ID:           uuid.New().String(),
+		RecordID:     recordID,
+		DiseaseCode:  diseaseCode,
+		Confidence:   confidence,
+		MainImageURL: mainImageURL, // ✅ Thêm
+		EyeType:      eyeType,      // ✅ Thêm
+		Notes:        notes,        // ✅ Thêm
+		CreatedAt:    time.Now(),
 	}
 
 	return s.repo.AddAIDiagnosis(diagnosis)

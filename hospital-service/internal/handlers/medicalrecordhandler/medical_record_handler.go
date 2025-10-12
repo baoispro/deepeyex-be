@@ -25,8 +25,11 @@ type CreateMedicalRecordRequest struct {
 }
 
 type CreateAIDiagnosisRequest struct {
-	DiseaseCode string  `json:"disease_code" binding:"required"`
-	Confidence  float64 `json:"confidence" binding:"required"`
+	DiseaseCode  string  `json:"disease_code" binding:"required"`
+	Confidence   float64 `json:"confidence" binding:"required"`
+	MainImageURL string  `json:"main_image_url" binding:"required"` // URL hình ảnh chẩn đoán
+	EyeType      *string `json:"eye_type,omitempty"`                // "LEFT" | "RIGHT" | "BOTH"
+	Notes        *string `json:"notes,omitempty"`                   // Ghi chú
 }
 
 
@@ -178,7 +181,14 @@ func (h *MedicalRecordHandler) AddAIDiagnosis(c *gin.Context) {
 		return
 	}
 
-	diagnosis, err := h.service.AddAIDiagnosisByRecordID(recordID, req.DiseaseCode, req.Confidence)
+	diagnosis, err := h.service.AddAIDiagnosisByRecordID(
+		recordID,
+		req.DiseaseCode,
+		req.Confidence,
+		req.MainImageURL, // ✅ Thêm
+		req.EyeType,      // ✅ Thêm
+		req.Notes,        // ✅ Thêm
+	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return

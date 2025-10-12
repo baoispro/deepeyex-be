@@ -22,6 +22,9 @@ type InitRecordAndDiagnosisRequest struct {
 	DiseaseCode  string  `json:"disease_code" binding:"required" example:"D001"`
 	Confidence   float64 `json:"confidence" binding:"required" example:"0.89"`
 	Diagnosis    string  `json:"diagnosis" example:"AI preliminary diagnosis"`
+	MainImageURL string  `json:"main_image_url" binding:"required" example:"https://s3.../image.jpg"` // URL hình ảnh chẩn đoán
+	EyeType      *string `json:"eye_type,omitempty" example:"RIGHT"`                                   // "LEFT" | "RIGHT" | "BOTH"
+	Notes        *string `json:"notes,omitempty" example:"Patient complained about blurry vision"`    // Ghi chú thêm
 }
 
 // Response trả về cả Record và Diagnosis
