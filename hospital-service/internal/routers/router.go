@@ -4,6 +4,7 @@ import (
 	"hospital-service/internal/config"
 	"hospital-service/internal/handlers/appointmenthandler"
 	"hospital-service/internal/handlers/bookinghandler"
+	"hospital-service/internal/handlers/callhandler"
 	"hospital-service/internal/handlers/doctorhandler"
 	"hospital-service/internal/handlers/drughandler"
 	"hospital-service/internal/handlers/emailhandler"
@@ -13,6 +14,7 @@ import (
 	"hospital-service/internal/handlers/patienthandler"
 	"hospital-service/internal/handlers/paymenthandler"
 	"hospital-service/internal/handlers/servicehandler"
+	"hospital-service/internal/handlers/uploadhandler"
 
 	"hospital-service/internal/middlewares"
 
@@ -32,6 +34,8 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	bookingHandler *bookinghandler.BookingHandler,
 	vnpayHandler *paymenthandler.VnpayHandler,
 	emailHandler *emailhandler.EmailHandler,
+	uploadhandler *uploadhandler.UploadHandler,
+	callhandler *callhandler.StringeeHandler,
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -105,7 +109,7 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 		timeSlot.GET("/doctor/:doctor_id/date-range", tHandler.GetTimeSlotsByDoctorAndDateRange)
 		timeSlot.PUT("/:slot_id", tHandler.UpdateTimeSlot)
 		timeSlot.DELETE("/:slot_id", tHandler.DeleteTimeSlot)
-	
+
 	}
 
 	// ===== Drug routes =====
@@ -204,6 +208,18 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 		email.POST("/appointment-reminder", emailHandler.SendAppointmentReminder)
 		email.POST("/prescription", emailHandler.SendPrescription)
 		email.POST("/order-confirmation", emailHandler.SendOrderConfirmation)
+	}
+
+	// ===== Upload routes =====
+	upload := r.Group("/upload")
+	{
+		upload.POST("", uploadhandler.UploadFile)
+	}
+
+	// ===== Call routes =====
+	call := r.Group("/call")
+	{
+		call.GET("stringee-token", callhandler.GetStringeeToken)
 	}
 
 	// Swagger

@@ -7,12 +7,15 @@ import (
 	"hospital-service/internal/config"
 	"hospital-service/internal/database"
 	"hospital-service/internal/handlers/bookinghandler"
+	"hospital-service/internal/handlers/callhandler"
 	patienthandler "hospital-service/internal/handlers/patienthandler"
 	"hospital-service/internal/handlers/paymenthandler"
+	"hospital-service/internal/handlers/uploadhandler"
 	patientrepo "hospital-service/internal/repositories/patientrepo"
 	"hospital-service/internal/services/bookingservice"
 	patientservice "hospital-service/internal/services/patientservice"
 	"hospital-service/internal/services/paymentservice"
+	"hospital-service/internal/services/uploadservice"
 	"hospital-service/internal/storage"
 
 	doctorhandler "hospital-service/internal/handlers/doctorhandler"
@@ -137,6 +140,7 @@ func main() {
 	bookingService := bookingservice.NewBookingService(aService, orderService)
 	vnpayService := paymentservice.NewVnpayService(cfg)
 	emailService := emailservice.NewEmailService(cfg)
+	uploadservice := uploadservice.NewUploadService(s3Client)
 
 	// Initialize cron service
 	cronService := cronservice.NewCronService(tService)
@@ -158,6 +162,8 @@ func main() {
 	serviceHandler := servicehandler.NewServiceHandler(cfg, serviceService)
 	vnpayHandler := paymenthandler.NewVnpayHandler(vnpayService)
 	emailHandler := emailhandler.NewEmailHandler(emailService)
+	uploadhandler := uploadhandler.NewUploadHandler(uploadservice)
+	callhandler := callhandler.NewStringeeHandler()
 
 	// Start cron service
 	if err := cronService.Start(); err != nil {
@@ -167,7 +173,7 @@ func main() {
 	}
 
 	// Setup router
-	r := routers.SetupRouter(&cfg, pHandler, dHandler, hHandler, aHandler, tHandler, drugHandler, orderHandler, medicalRecordHandler, prHandler, attachmentHandler, followUpHandler, prescriptionItemHander, serviceHandler, bookingHandler, vnpayHandler, emailHandler)
+	r := routers.SetupRouter(&cfg, pHandler, dHandler, hHandler, aHandler, tHandler, drugHandler, orderHandler, medicalRecordHandler, prHandler, attachmentHandler, followUpHandler, prescriptionItemHander, serviceHandler, bookingHandler, vnpayHandler, emailHandler, uploadhandler, callhandler)
 
 	log.Printf("Hospital service running on :%s", cfg.Port)
 	if err := r.Run(":" + cfg.Port); err != nil {
