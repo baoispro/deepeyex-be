@@ -101,10 +101,10 @@ func (s *EmailService) SendAppointmentConfirmation(
 			<style>
 				body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
 				.container { max-width: 600px; margin: 0 auto; padding: 20px; }
-				.header { background-color: #4CAF50; color: white; padding: 20px; text-align: center; }
+				.header { background-color: #1250dc; color: white; padding: 20px; text-align: center; }
 				.content { padding: 20px; background-color: #f9f9f9; }
 				.footer { text-align: center; padding: 20px; font-size: 12px; color: #666; }
-				.info-box { background-color: white; padding: 15px; margin: 10px 0; border-left: 4px solid #4CAF50; }
+				.info-box { background-color: white; padding: 15px; margin: 10px 0; border-left: 4px solid #1250dc; }
 				ul { padding-left: 20px; }
 			</style>
 		</head>
@@ -404,14 +404,14 @@ func (s *EmailService) SendOrderConfirmation(
 			<style>
 				body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
 				.container { max-width: 600px; margin: 0 auto; padding: 20px; }
-				.header { background-color: #4CAF50; color: white; padding: 20px; text-align: center; }
+				.header { background-color: #1250dc; color: white; padding: 20px; text-align: center; }
 				.content { padding: 20px; background-color: #f9f9f9; }
 				.footer { text-align: center; padding: 20px; font-size: 12px; color: #666; }
-				.info-box { background-color: white; padding: 15px; margin: 10px 0; border-left: 4px solid #4CAF50; }
+				.info-box { background-color: white; padding: 15px; margin: 10px 0; border-left: 4px solid #1250dc; }
 				table { width: 100%%; border-collapse: collapse; background-color: white; margin: 10px 0; }
-				th { background-color: #4CAF50; color: white; padding: 10px; text-align: left; }
+				th { background-color: #1250dc; color: white; padding: 10px; text-align: left; }
 				.total-row { background-color: #f0f0f0; font-weight: bold; }
-				.success-badge { background-color: #4CAF50; color: white; padding: 5px 15px; border-radius: 20px; display: inline-block; }
+				.success-badge { background-color: #1250dc; color: white; padding: 5px 15px; border-radius: 20px; display: inline-block; }
 			</style>
 		</head>
 		<body>
@@ -450,7 +450,7 @@ func (s *EmailService) SendOrderConfirmation(
 								<td colspan="3" style="padding: 10px; text-align: right;">Phí vận chuyển:</td>
 								<td style="padding: 10px; text-align: right;">%s₫</td>
 							</tr>
-							<tr class="total-row" style="background-color: #4CAF50; color: white;">
+							<tr class="total-row" style="background-color: #1250dc; color: white;">
 								<td colspan="3" style="padding: 15px; text-align: right; font-size: 18px;">TỔNG CỘNG:</td>
 								<td style="padding: 15px; text-align: right; font-size: 18px;">%s₫</td>
 							</tr>
