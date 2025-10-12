@@ -92,9 +92,6 @@ func (r *HospitalRepo) SearchByAddress(keyword string) ([]hospital.Hospital, err
 	return hospitals, err
 }
 
-
-
-
 // ---------------- ListByCityAndWard ----------------
 func (r *HospitalRepo) ListByCityAndWard(city, ward string) ([]hospital.Hospital, error) {
 	var hospitals []hospital.Hospital

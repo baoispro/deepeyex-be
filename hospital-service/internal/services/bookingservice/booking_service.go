@@ -44,7 +44,7 @@ func (s *BookingService) CreateBooking(req BookingRequest) (*BookingResponse, er
 	if req.PatientID == "" || req.DoctorID == "" || req.HospitalID == "" || len(req.SlotIDs) == 0 || req.BookUserID == "" {
 		return nil, errors.New("missing required fields")
 	}
-	fmt.Println("req.OrderItems", req.DoctorID)
+
 	// 1. Tạo appointment
 	appt, err := s.appointmentService.Create(req.PatientID, req.DoctorID, req.HospitalID, req.BookUserID, req.SlotIDs, req.Notes)
 	if err != nil {
