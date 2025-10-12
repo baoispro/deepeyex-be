@@ -23,8 +23,11 @@ type UpdateOrderStatusRequest struct {
 
 // Request struct để tạo order
 type CreateOrderRequest struct {
-	PatientID string                          `json:"patient_id" binding:"required"`
-	Items     []orderservice.OrderItemRequest `json:"items" binding:"required"`
+	PatientID     string                          `json:"patient_id" binding:"required"`
+	AppointmentID string                          `json:"appointment_id,omitempty"` // nullable
+	BookUserID    string                          `json:"book_user_id" binding:"required"`
+	Items         []orderservice.OrderItemRequest `json:"items" binding:"required"`
+	DeliveryInfo  *orderservice.DeliveryInfo      `json:"delivery_info,omitempty"` // nullable, mặc định là PICKUP
 }
 
 type UpdateOrderAppointmentRequest struct {
@@ -33,6 +36,41 @@ type UpdateOrderAppointmentRequest struct {
 
 func NewOrderHandler(cfg config.Config, service *orderservice.OrderService) *OrderHandler {
 	return &OrderHandler{service: service, cfg: cfg}
+}
+
+// ---------------- Create Order ----------------
+// @Summary Create a new order
+// @Description Create a new order with items and delivery information
+// @Tags Orders
+// @Accept json
+// @Produce json
+// @Param order body CreateOrderRequest true "Order information"
+// @Success 201 {object} order.Order
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /orders [post]
+func (h *OrderHandler) CreateOrder(c *gin.Context) {
+	var req CreateOrderRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
+		return
+	}
+
+	// Tạo order với status mặc định là PENDING
+	order, err := h.service.CreateOrder(
+		req.PatientID,
+		req.AppointmentID,
+		req.BookUserID,
+		enums.PENDING,
+		req.Items,
+		req.DeliveryInfo,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusCreated, utils.SuccessResponse(http.StatusCreated, "Order created successfully", order))
 }
 
 // ---------------- Get Order By ID ----------------

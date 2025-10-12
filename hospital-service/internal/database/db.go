@@ -46,6 +46,16 @@ func AutoMigrate(db *gorm.DB) error {
 		return err
 	}
 
+	// Enum DeliveryMethod
+	if err := db.Exec(`DO $$
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'delivery_method') THEN
+            CREATE TYPE delivery_method AS ENUM ('PICKUP', 'HOME_DELIVERY', 'EXPRESS_DELIVERY');
+        END IF;
+    END$$;`).Error; err != nil {
+		return err
+	}
+
 	if err := db.AutoMigrate(&hospital.Hospital{}); err != nil {
 		return err
 	}

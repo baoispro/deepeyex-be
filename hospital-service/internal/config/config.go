@@ -30,6 +30,8 @@ type Config struct {
 	VnpSecretKey string
 	VnpUrl       string
 	VnpReturnUrl string
+
+	ResendAPIKey string
 }
 
 func Load() Config {
@@ -55,6 +57,8 @@ func Load() Config {
 		VnpSecretKey: mustEnv("VNP_SECRET"),
 		VnpUrl:       getEnv("VNP_URL", "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html"),
 		VnpReturnUrl: mustEnv("VNP_RETURNURL"),
+
+		ResendAPIKey: mustEnv("RESEND_API_KEY"),
 	}
 }
 

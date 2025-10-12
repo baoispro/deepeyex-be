@@ -52,7 +52,7 @@ func (s *BookingService) CreateBooking(req BookingRequest) (*BookingResponse, er
 	}
 
 	// 2. Tạo order gắn với appointment
-	ord, err := s.orderService.CreateOrder(req.PatientID, appt.AppointmentID, req.BookUserID, req.PaymentStatus, req.OrderItems)
+	ord, err := s.orderService.CreateOrder(req.PatientID, appt.AppointmentID, req.BookUserID, req.PaymentStatus, req.OrderItems, nil)
 	if err != nil {
 		// Nếu tạo order fail, rollback appointment
 		_ = s.appointmentService.Delete(appt.AppointmentID)

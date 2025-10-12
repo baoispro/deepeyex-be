@@ -170,6 +170,40 @@ func (s *TimeSlotService) GenerateTimeSlotsForWeek() error {
 	return nil
 }
 
+// GenerateTimeSlotsForMonth tạo time slots cho tất cả bác sĩ trong tháng tới (chỉ các ngày làm việc thứ 2 đến thứ 6)
+func (s *TimeSlotService) GenerateTimeSlotsForMonth() error {
+	doctors, err := s.doctorRepo.List()
+	if err != nil {
+		return err
+	}
+
+	nextMonthStart := s.getNextMonthStart(time.Now())
+	nextMonthEnd := nextMonthStart.AddDate(0, 1, 0).Add(-time.Second) // Cuối tháng
+
+	log.Printf("🗓️ Generating time slots for month: %v to %v", 
+		nextMonthStart.Format("2006-01-02"), nextMonthEnd.Format("2006-01-02"))
+
+	// Duyệt qua tất cả các ngày trong tháng
+	currentDate := nextMonthStart
+	workdaysCount := 0
+	
+	for currentDate.Before(nextMonthEnd) || currentDate.Equal(nextMonthEnd) {
+		// Chỉ tạo time slots cho các ngày làm việc (thứ 2 đến thứ 6)
+		if currentDate.Weekday() >= time.Monday && currentDate.Weekday() <= time.Friday {
+			if err := s.generateTimeSlotsForDate(doctors, currentDate); err != nil {
+				log.Printf("⚠️ Error generating slots for date %v: %v", currentDate.Format("2006-01-02"), err)
+			} else {
+				workdaysCount++
+			}
+		}
+		currentDate = currentDate.AddDate(0, 0, 1) // Chuyển sang ngày tiếp theo
+	}
+
+	log.Printf("✅ Generated time slots for all doctors for month %v/%v (%d workdays)", 
+		nextMonthStart.Month(), nextMonthStart.Year(), workdaysCount)
+	return nil
+}
+
 // GenerateTimeSlotsForDoctor tạo slot tuần cho 1 bác sĩ (thứ 2 đến thứ 6)
 func (s *TimeSlotService) GenerateTimeSlotsForDoctor(doctorID string) error {
 	doctor, err := s.doctorRepo.FindByID(doctorID)
@@ -259,6 +293,13 @@ func (s *TimeSlotService) getNextWeekStart(now time.Time) time.Time {
 	}
 	nextMonday := now.AddDate(0, 0, daysUntilMonday)
 	return time.Date(nextMonday.Year(), nextMonday.Month(), nextMonday.Day(), 0, 0, 0, 0, nextMonday.Location())
+}
+
+// getNextMonthStart trả về ngày đầu tiên của tháng tiếp theo
+func (s *TimeSlotService) getNextMonthStart(now time.Time) time.Time {
+	// Lấy ngày 1 của tháng tiếp theo
+	nextMonth := now.AddDate(0, 1, 0)
+	return time.Date(nextMonth.Year(), nextMonth.Month(), 1, 0, 0, 0, 0, nextMonth.Location())
 }
 
 func (s *TimeSlotService) GetByDoctorAndMonth(doctorID string, date time.Time) ([]appointment.TimeSlot, error) {

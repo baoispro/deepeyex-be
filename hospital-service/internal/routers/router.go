@@ -6,6 +6,7 @@ import (
 	"hospital-service/internal/handlers/bookinghandler"
 	"hospital-service/internal/handlers/doctorhandler"
 	"hospital-service/internal/handlers/drughandler"
+	"hospital-service/internal/handlers/emailhandler"
 	"hospital-service/internal/handlers/hospitalhandler"
 	"hospital-service/internal/handlers/medicalrecordhandler"
 	"hospital-service/internal/handlers/orderhandler"
@@ -30,6 +31,7 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	serviceHandler *servicehandler.ServiceHandler,
 	bookingHandler *bookinghandler.BookingHandler,
 	vnpayHandler *paymenthandler.VnpayHandler,
+	emailHandler *emailhandler.EmailHandler,
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -119,6 +121,7 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	// ===== Order routes =====
 	order := r.Group("/orders")
 	{
+		order.POST("", orderHandler.CreateOrder)                           // Create order
 		order.GET("", orderHandler.ListAllOrders)                          // List all
 		order.GET("/:order_id", orderHandler.GetOrderByID)                 // Get by OrderID
 		order.GET("/patient/:patient_id", orderHandler.GetOrdersByPatient) // Get orders by patient
@@ -192,6 +195,16 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
         vnpay.POST("/create-payment", vnpayHandler.CreatePayment)
         vnpay.GET("/return", vnpayHandler.VnpayReturn)
     }
+
+	// ===== Email routes =====
+	email := r.Group("/emails")
+	{
+		email.POST("/send", emailHandler.SendEmail)
+		email.POST("/appointment-confirmation", emailHandler.SendAppointmentConfirmation)
+		email.POST("/appointment-reminder", emailHandler.SendAppointmentReminder)
+		email.POST("/prescription", emailHandler.SendPrescription)
+		email.POST("/order-confirmation", emailHandler.SendOrderConfirmation)
+	}
 
 	// Swagger
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
