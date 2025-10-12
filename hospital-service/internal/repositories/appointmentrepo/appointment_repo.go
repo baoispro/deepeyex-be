@@ -43,7 +43,7 @@ func (r *AppointmentRepo) GetByID(id string) (*appointment.Appointment, error) {
 // Lấy tất cả các Appointment theo patient_id
 func (r *AppointmentRepo) FindByPatientID(patientID string) ([]appointment.Appointment, error) {
 	var appointments []appointment.Appointment
-	if err := r.db.Where("patient_id = ?", patientID).Preload("TimeSlot").
+	if err := r.db.Where("patient_id = ?", patientID).Preload("TimeSlots").
 		Preload("TimeSlots.Doctor").
 		Preload("Patient").Find(&appointments).Error; err != nil {
 		return nil, err

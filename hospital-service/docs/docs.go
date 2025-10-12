@@ -498,6 +498,53 @@ const docTemplate = `{
                 }
             }
         },
+        "/call/stringee-token": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Calls"
+                ],
+                "summary": "Get Stringee access token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/doctors": {
             "get": {
                 "description": "Retrieve all doctors",
@@ -4500,6 +4547,57 @@ const docTemplate = `{
                 }
             }
         },
+        "/upload": {
+            "post": {
+                "description": "Upload file to S3 and return its URL",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Upload"
+                ],
+                "summary": "Upload a file",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "File to upload",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/vnpay/create-payment": {
             "post": {
                 "consumes": [
@@ -4620,6 +4718,10 @@ const docTemplate = `{
                 },
                 "patient_id": {
                     "description": "ID bệnh nhân",
+                    "type": "string"
+                },
+                "service_name": {
+                    "description": "Cho phép empty string làm default",
                     "type": "string"
                 },
                 "status": {
@@ -4801,6 +4903,7 @@ const docTemplate = `{
                 "order_items",
                 "patient_id",
                 "payment_status",
+                "service_name",
                 "slot_ids"
             ],
             "properties": {
@@ -4832,6 +4935,9 @@ const docTemplate = `{
                             "$ref": "#/definitions/enums.OrderStatus"
                         }
                     ]
+                },
+                "service_name": {
+                    "type": "string"
                 },
                 "slot_ids": {
                     "description": "đổi từ SlotID sang SlotIDs",
@@ -5191,17 +5297,39 @@ const docTemplate = `{
             "type": "string",
             "enum": [
                 "ophthalmology",
-                "internal_medicine",
-                "neurology",
-                "endocrinology",
-                "pediatrics"
+                "retina",
+                "cornea",
+                "glaucoma",
+                "refractive_surgery",
+                "pediatric_ophthalm",
+                "schedule_manager"
+            ],
+            "x-enum-comments": {
+                "SpecialtyCornea": "Chuyên khoa giác mạc",
+                "SpecialtyGlaucoma": "Cườm nước",
+                "SpecialtyOphthalmology": "Nhãn khoa tổng quát",
+                "SpecialtyPediatricOphthalm": "Nhãn khoa nhi",
+                "SpecialtyRefractiveSurgery": "Phẫu thuật khúc xạ (LASIK)",
+                "SpecialtyRetina": "Chuyên khoa võng mạc",
+                "SpecialtyScheduleManager": "Quản lý lịch bác sĩ"
+            },
+            "x-enum-descriptions": [
+                "Nhãn khoa tổng quát",
+                "Chuyên khoa võng mạc",
+                "Chuyên khoa giác mạc",
+                "Cườm nước",
+                "Phẫu thuật khúc xạ (LASIK)",
+                "Nhãn khoa nhi",
+                "Quản lý lịch bác sĩ"
             ],
             "x-enum-varnames": [
                 "SpecialtyOphthalmology",
-                "SpecialtyInternalMedicine",
-                "SpecialtyNeurology",
-                "SpecialtyEndocrinology",
-                "SpecialtyPediatrics"
+                "SpecialtyRetina",
+                "SpecialtyCornea",
+                "SpecialtyGlaucoma",
+                "SpecialtyRefractiveSurgery",
+                "SpecialtyPediatricOphthalm",
+                "SpecialtyScheduleManager"
             ]
         },
         "hospital.Hospital": {

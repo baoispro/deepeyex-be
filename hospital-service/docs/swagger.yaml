@@ -34,6 +34,9 @@ definitions:
       patient_id:
         description: ID bệnh nhân
         type: string
+      service_name:
+        description: Cho phép empty string làm default
+        type: string
       status:
         $ref: '#/definitions/enums.AppointmentStatus'
       time_slots:
@@ -168,6 +171,8 @@ definitions:
         allOf:
         - $ref: '#/definitions/enums.OrderStatus'
         description: thêm field này
+      service_name:
+        type: string
       slot_ids:
         description: đổi từ SlotID sang SlotIDs
         items:
@@ -180,6 +185,7 @@ definitions:
     - order_items
     - patient_id
     - payment_status
+    - service_name
     - slot_ids
     type: object
   bookingservice.BookingResponse:
@@ -424,17 +430,37 @@ definitions:
   enums.Specialty:
     enum:
     - ophthalmology
-    - internal_medicine
-    - neurology
-    - endocrinology
-    - pediatrics
+    - retina
+    - cornea
+    - glaucoma
+    - refractive_surgery
+    - pediatric_ophthalm
+    - schedule_manager
     type: string
+    x-enum-comments:
+      SpecialtyCornea: Chuyên khoa giác mạc
+      SpecialtyGlaucoma: Cườm nước
+      SpecialtyOphthalmology: Nhãn khoa tổng quát
+      SpecialtyPediatricOphthalm: Nhãn khoa nhi
+      SpecialtyRefractiveSurgery: Phẫu thuật khúc xạ (LASIK)
+      SpecialtyRetina: Chuyên khoa võng mạc
+      SpecialtyScheduleManager: Quản lý lịch bác sĩ
+    x-enum-descriptions:
+    - Nhãn khoa tổng quát
+    - Chuyên khoa võng mạc
+    - Chuyên khoa giác mạc
+    - Cườm nước
+    - Phẫu thuật khúc xạ (LASIK)
+    - Nhãn khoa nhi
+    - Quản lý lịch bác sĩ
     x-enum-varnames:
     - SpecialtyOphthalmology
-    - SpecialtyInternalMedicine
-    - SpecialtyNeurology
-    - SpecialtyEndocrinology
-    - SpecialtyPediatrics
+    - SpecialtyRetina
+    - SpecialtyCornea
+    - SpecialtyGlaucoma
+    - SpecialtyRefractiveSurgery
+    - SpecialtyPediatricOphthalm
+    - SpecialtyScheduleManager
   hospital.Hospital:
     properties:
       address:
@@ -1267,6 +1293,37 @@ paths:
       summary: Create a new booking
       tags:
       - Bookings
+  /call/stringee-token:
+    get:
+      parameters:
+      - description: User ID
+        in: query
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get Stringee access token
+      tags:
+      - Calls
   /doctors:
     get:
       description: Retrieve all doctors
@@ -3933,6 +3990,40 @@ paths:
       summary: Create multiple shift slots
       tags:
       - TimeSlots
+  /upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload file to S3 and return its URL
+      parameters:
+      - description: File to upload
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Upload a file
+      tags:
+      - Upload
   /vnpay/create-payment:
     post:
       consumes:
