@@ -68,24 +68,38 @@ func (s *VnpayService) CreatePaymentURL(amount int, orderId string) (string, err
 
 func (s *VnpayService) VerifyReturn(query url.Values) bool {
 	vnpSecureHash := query.Get("vnp_SecureHash")
-	query.Del("vnp_SecureHash")
+	
+	// CHỈ lấy các params bắt đầu với "vnp_" (không lấy orderId hay params khác)
+	vnpParams := url.Values{}
+	for key, values := range query {
+		// Bỏ qua vnp_SecureHash và các params không phải vnp_*
+		if key != "vnp_SecureHash" && len(key) > 4 && key[:4] == "vnp_" {
+			for _, value := range values {
+				vnpParams.Add(key, value)
+			}
+		}
+	}
 
-	// sort keys
-	keys := make([]string, 0, len(query))
-	for k := range query {
+	// Sort keys
+	keys := make([]string, 0, len(vnpParams))
+	for k := range vnpParams {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
 
+	// Build query string theo thứ tự alphabet
 	values := url.Values{}
 	for _, k := range keys {
-		values.Add(k, query.Get(k))
+		values.Add(k, vnpParams.Get(k))
 	}
 	queryString := values.Encode()
 
+	// Tính hash
 	h := hmac.New(sha512.New, []byte(s.secretKey))
 	h.Write([]byte(queryString))
 	hash := hex.EncodeToString(h.Sum(nil))
+
+
 
 	return hash == vnpSecureHash
 }
