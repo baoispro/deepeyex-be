@@ -17,10 +17,15 @@ func NewMedicalRecordRepository(db *gorm.DB) *MedicalRecordRepo {
 
 
 // InitRecordAndDiagnosis: tạo MedicalRecord và AIDiagnosis trong cùng 1 transaction
-func (r *MedicalRecordRepo) InitRecordAndDiagnosis(patientID, diseaseCode, diagnosisText string, confidence float64) (*medicalrecord.MedicalRecord, *medicalrecord.AIDiagnosis, error) {
+func (r *MedicalRecordRepo) InitRecordAndDiagnosis(
+	patientID, diseaseCode, diagnosisText string,
+	confidence float64,
+	mainImageURL string,
+	eyeType, notes *string,
+) (*medicalrecord.MedicalRecord, *medicalrecord.AIDiagnosis, error) {
 	var (
-		record  *medicalrecord.MedicalRecord
-		aiDiag  *medicalrecord.AIDiagnosis
+		record *medicalrecord.MedicalRecord
+		aiDiag *medicalrecord.AIDiagnosis
 	)
 
 	err := r.db.Transaction(func(tx *gorm.DB) error {
@@ -35,12 +40,15 @@ func (r *MedicalRecordRepo) InitRecordAndDiagnosis(patientID, diseaseCode, diagn
 			return err
 		}
 
-		// Step 2: Tạo AIDiagnosis
+		// Step 2: Tạo AIDiagnosis với hình ảnh
 		aiDiag = &medicalrecord.AIDiagnosis{
-			ID:          uuid.New().String(),
-			RecordID:    record.RecordID,
-			DiseaseCode: diseaseCode,
-			Confidence:  confidence,
+			ID:           uuid.New().String(),
+			RecordID:     record.RecordID,
+			DiseaseCode:  diseaseCode,
+			Confidence:   confidence,
+			MainImageURL: mainImageURL, // ✅ Thêm
+			EyeType:      eyeType,      // ✅ Thêm
+			Notes:        notes,        // ✅ Thêm
 		}
 		if err := tx.Create(aiDiag).Error; err != nil {
 			return err

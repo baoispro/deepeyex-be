@@ -17,6 +17,7 @@ type BookingRequest struct {
 	HospitalID    string                          `json:"hospital_id" binding:"required"`
 	SlotIDs       []string                        `json:"slot_ids" binding:"required"` // đổi từ SlotID sang SlotIDs
 	BookUserID    string                          `json:"book_user_id" binding:"required"`
+	ServiceName   string                          `json:"service_name" binding:"required"`
 	Notes         string                          `json:"notes,omitempty"`
 	OrderItems    []orderservice.OrderItemRequest `json:"order_items" binding:"required"`
 	PaymentStatus enums.OrderStatus               `json:"payment_status" binding:"required"` // thêm field này
@@ -46,7 +47,7 @@ func (s *BookingService) CreateBooking(req BookingRequest) (*BookingResponse, er
 	}
 
 	// 1. Tạo appointment
-	appt, err := s.appointmentService.Create(req.PatientID, req.DoctorID, req.HospitalID, req.BookUserID, req.SlotIDs, req.Notes)
+	appt, err := s.appointmentService.Create(req.PatientID, req.DoctorID, req.HospitalID, req.BookUserID, req.SlotIDs, req.Notes, req.ServiceName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create appointment: %v", err)
 	}

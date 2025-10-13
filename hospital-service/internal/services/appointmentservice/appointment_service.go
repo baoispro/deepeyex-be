@@ -26,7 +26,7 @@ func NewAppointmentService(repo *appointmentrepo.AppointmentRepo, timeSlotRepo *
 
 func (s *AppointmentService) Create(
 	patientID, doctorID, hospitalID, bookUserID string,
-	slotIDs []string, notes string,
+	slotIDs []string, notes string, serviceName string,
 ) (*appointment.Appointment, error) {
 
 	if patientID == "" || doctorID == "" || hospitalID == "" || bookUserID == "" || len(slotIDs) == 0 {
@@ -55,6 +55,7 @@ func (s *AppointmentService) Create(
 			HospitalID:    hospitalID,
 			BookUserId:    bookUserID,
 			Notes:         &notes,
+			ServiceName:   serviceName,
 			CreatedAt:     time.Now(),
 			UpdatedAt:     time.Now(),
 			Status:        enums.Pending,
