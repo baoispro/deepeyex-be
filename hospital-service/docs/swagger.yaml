@@ -992,6 +992,38 @@ definitions:
       updated_at:
         type: string
     type: object
+  servicehandler.AssignServiceRequest:
+    properties:
+      doctor_id:
+        type: string
+      service_id:
+        type: string
+    required:
+    - doctor_id
+    - service_id
+    type: object
+  servicehandler.CreateServiceRequest:
+    properties:
+      duration:
+        type: integer
+      name:
+        type: string
+      price:
+        type: number
+    required:
+    - duration
+    - name
+    - price
+    type: object
+  servicehandler.UpdateServiceRequest:
+    properties:
+      duration:
+        type: integer
+      name:
+        type: string
+      price:
+        type: number
+    type: object
   utils.APIResponse:
     properties:
       data: {}
@@ -1569,6 +1601,38 @@ paths:
               type: string
             type: object
       summary: List services by doctor ID
+      tags:
+      - Services
+  /doctors/{doctor_id}/services/{service_id}:
+    delete:
+      description: Admin removes a service from a doctor
+      parameters:
+      - description: Doctor ID
+        in: path
+        name: doctor_id
+        required: true
+        type: string
+      - description: Service ID
+        in: path
+        name: service_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Remove service from doctor
       tags:
       - Services
   /doctors/hospital/{hospital_id}:
@@ -3646,6 +3710,181 @@ paths:
       summary: List prescriptions for a medical record
       tags:
       - Prescriptions
+  /services:
+    get:
+      description: Get all available services
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List all services
+      tags:
+      - Services
+    post:
+      consumes:
+      - application/json
+      description: Admin creates a new service
+      parameters:
+      - description: Service data
+        in: body
+        name: service
+        required: true
+        schema:
+          $ref: '#/definitions/servicehandler.CreateServiceRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new service
+      tags:
+      - Services
+  /services/{service_id}:
+    delete:
+      description: Admin deletes a service
+      parameters:
+      - description: Service ID
+        in: path
+        name: service_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete a service
+      tags:
+      - Services
+    get:
+      description: Get a specific service by ID
+      parameters:
+      - description: Service ID
+        in: path
+        name: service_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get service by ID
+      tags:
+      - Services
+    put:
+      consumes:
+      - application/json
+      description: Admin updates service information
+      parameters:
+      - description: Service ID
+        in: path
+        name: service_id
+        required: true
+        type: string
+      - description: Updated service data
+        in: body
+        name: service
+        required: true
+        schema:
+          $ref: '#/definitions/servicehandler.UpdateServiceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update a service
+      tags:
+      - Services
+  /services/assign:
+    post:
+      consumes:
+      - application/json
+      description: Admin assigns a service to a doctor
+      parameters:
+      - description: Doctor and Service IDs
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/servicehandler.AssignServiceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Assign service to doctor
+      tags:
+      - Services
   /timeslots:
     get:
       description: Retrieve all time slots

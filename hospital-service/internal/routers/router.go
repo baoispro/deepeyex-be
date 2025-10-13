@@ -184,9 +184,21 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	}
 
 	// ===== Service routes =====
-	service := r.Group("/doctors/:doctor_id/services")
+	services := r.Group("/services")
 	{
-		service.GET("", serviceHandler.ListServicesByDoctorID) // List services by Doctor ID
+		services.POST("", serviceHandler.CreateService)                      // Create service
+		services.GET("", serviceHandler.ListAllServices)                     // List all services
+		services.GET("/:service_id", serviceHandler.GetServiceByID)          // Get service by ID
+		services.PUT("/:service_id", serviceHandler.UpdateService)           // Update service
+		services.DELETE("/:service_id", serviceHandler.DeleteService)        // Delete service
+		services.POST("/assign", serviceHandler.AssignServiceToDoctor)       // Assign service to doctor
+	}
+
+	// ===== Doctor-Service routes =====
+	doctorServices := r.Group("/doctors/:doctor_id/services")
+	{
+		doctorServices.GET("", serviceHandler.ListServicesByDoctorID)              // List services by doctor
+		doctorServices.DELETE("/:service_id", serviceHandler.RemoveServiceFromDoctor) // Remove service from doctor
 	}
 
 	// ===== Booking routes =====
