@@ -30,7 +30,7 @@ func AutoMigrate(db *gorm.DB) error {
 	if err := db.Exec(`DO $$
     BEGIN
         IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'appointment_status') THEN
-            CREATE TYPE appointment_status AS ENUM ('PENDING','CONFIRMED','COMPLETED','CANCELED');
+            CREATE TYPE appointment_status AS ENUM ('PENDING','CONFIRMED','COMPLETED','CANCELED','PENDING_ONLINE','CONFIRMED_ONLINE','COMPLETED_ONLINE');
         END IF;
     END$$;`).Error; err != nil {
 		return err

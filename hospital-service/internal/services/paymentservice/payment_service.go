@@ -69,6 +69,7 @@ func (s *VnpayService) CreatePaymentURL(amount int, orderId string) (string, err
 func (s *VnpayService) VerifyReturn(query url.Values) bool {
 	vnpSecureHash := query.Get("vnp_SecureHash")
 	query.Del("vnp_SecureHash")
+	query.Del("orderId")
 
 	// sort keys
 	keys := make([]string, 0, len(query))
