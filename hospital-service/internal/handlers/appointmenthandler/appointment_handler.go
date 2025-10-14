@@ -190,3 +190,32 @@ func (h *AppointmentHandler) DeleteAppointment(c *gin.Context) {
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Appointment deleted successfully", nil))
 }
+
+// ---------------- Get Online Appointments ----------------
+// @Summary Get online appointments
+// @Description Get all online appointments (status = PendingOnline) by bookUserID or doctorID
+// @Tags Appointments
+// @Produce json
+// @Param book_user_id query string false "Book user ID"
+// @Param doctor_id query string false "Doctor ID"
+// @Success 200 {array} appointment.Appointment
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /appointments/online [get]
+func (h *AppointmentHandler) GetOnlineAppointments(c *gin.Context) {
+	bookUserID := c.Query("book_user_id")
+	doctorID := c.Query("doctor_id")
+
+	if bookUserID == "" && doctorID == "" {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "book_user_id or doctor_id is required"))
+		return
+	}
+
+	appointments, err := h.service.GetOnlineAppointments(bookUserID, doctorID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Online appointments retrieved successfully", appointments))
+}

@@ -44,6 +44,11 @@ func (s *AppointmentService) Create(
 		return nil, errors.New("some slots not found")
 	}
 
+	var status = enums.Pending
+	if(serviceName == "Tư vấn trực tuyến với bác sĩ") {
+		status = enums.PendingOnline
+	}
+
 	var a *appointment.Appointment
 
 	// Transaction bắt đầu
@@ -58,7 +63,7 @@ func (s *AppointmentService) Create(
 			ServiceName:   serviceName,
 			CreatedAt:     time.Now(),
 			UpdatedAt:     time.Now(),
-			Status:        enums.Pending,
+			Status:        status,
 		}
 		a.AppointmentCode = fmt.Sprintf("APPT-%d-%04d", time.Now().UnixNano(), rand.Intn(10000))
 
@@ -145,6 +150,39 @@ func (s *AppointmentService) ListAll() ([]appointment.Appointment, error) {
 // Xóa lịch khám
 func (s *AppointmentService) Delete(id string) error {
 	return s.repo.Delete(id)
+}
+
+// ---------------- GetOnlineAppointments ----------------
+// Lấy danh sách lịch khám trực tuyến (PendingOnline) theo bookUserID hoặc doctorID
+func (s *AppointmentService) GetOnlineAppointments(bookUserID, doctorID string) ([]appointment.Appointment, error) {
+	if bookUserID == "" && doctorID == "" {
+		return nil, errors.New("bookUserID or doctorID is required")
+	}
+
+	var result []appointment.Appointment
+	query := s.repo.DB().Model(&appointment.Appointment{})
+
+	// Lọc theo bookUserID hoặc doctorID
+	if bookUserID != "" {
+		query = query.Where("book_user_id = ?", bookUserID)
+	}
+	if doctorID != "" {
+		query = query.Where("doctor_id = ?", doctorID)
+	}
+
+	// Chỉ lấy các appointment có trạng thái PendingOnline
+	query = query.Where("status = ?", enums.PendingOnline)
+
+	query = query.
+		Preload("Patient").
+		Preload("Doctor").
+		Preload("TimeSlots")
+
+	if err := query.Find(&result).Error; err != nil {
+		return nil, fmt.Errorf("failed to fetch online appointments: %v", err)
+	}
+
+	return result, nil
 }
 
 // ---------------- Helper ----------------
