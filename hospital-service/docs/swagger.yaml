@@ -34,6 +34,9 @@ definitions:
       patient_id:
         description: ID bệnh nhân
         type: string
+      related_record_id:
+        description: nếu là tái khám
+        type: string
       service_name:
         description: Cho phép empty string làm default
         type: string
@@ -391,12 +394,18 @@ definitions:
     - CONFIRMED
     - COMPLETED
     - CANCELED
+    - PENDING_ONLINE
+    - CONFIRMED_ONLINE
+    - COMPLETED_ONLINE
     type: string
     x-enum-varnames:
     - Pending
     - Confirmed
     - Completed
     - Canceled
+    - PendingOnline
+    - ConfirmedOnline
+    - CompletedOnline
   enums.DeliveryMethod:
     enum:
     - PICKUP
@@ -517,6 +526,9 @@ definitions:
         type: string
       disease_code:
         type: string
+      doctor_notes:
+        description: ghi chú bác sĩ khi xác nhận
+        type: string
       eye_type:
         description: '"LEFT" | "RIGHT" | "BOTH"'
         type: string
@@ -528,73 +540,34 @@ definitions:
       notes:
         description: Ghi chú thêm
         type: string
-      recommended_plans:
-        items:
-          $ref: '#/definitions/medicalrecord.AIRecommendedPlan'
-        type: array
+      patient_id:
+        type: string
       record_id:
         type: string
-    type: object
-  medicalrecord.AIRecommendedPlan:
-    properties:
-      ai_diagnosis_id:
+      status:
+        description: PENDING, APPROVED, REJECTED
         type: string
-      dosage:
+      verification_sig:
+        description: chữ ký điện tử (base64 hoặc URL)
         type: string
-      drug_name:
+      verified_at:
+        description: thời điểm bác sĩ xác nhận
         type: string
-      duration_days:
-        type: integer
-      frequency:
+      verified_by:
+        description: ID bác sĩ xác nhận
         type: string
-      id:
-        type: string
-    type: object
-  medicalrecord.AddRecommendedPlanRequest:
-    properties:
-      description:
-        description: Ghi chú thêm, có thể bỏ trống
-        type: string
-      dosage:
-        description: Liều lượng
-        type: string
-      drug_name:
-        description: Tên thuốc
-        type: string
-      duration_days:
-        description: Số ngày dùng
-        type: integer
-      frequency:
-        description: Số lần dùng
-        type: string
-    required:
-    - dosage
-    - drug_name
-    - duration_days
-    - frequency
     type: object
   medicalrecord.Attachment:
     properties:
       created_at:
+        type: string
+      description:
         type: string
       file_type:
         type: string
       file_url:
         type: string
       id:
-        type: string
-      record_id:
-        type: string
-    type: object
-  medicalrecord.FollowUp:
-    properties:
-      created_at:
-        type: string
-      follow_up_id:
-        type: string
-      next_appointment:
-        type: string
-      notes:
         type: string
       record_id:
         type: string
@@ -654,41 +627,48 @@ definitions:
         items:
           $ref: '#/definitions/medicalrecord.Attachment'
         type: array
-      created_by:
-        description: '"AI" | "DOCTOR"'
-        type: string
       createdAt:
         type: string
       diagnosis:
         type: string
       doctor_id:
         type: string
-      follow_ups:
-        items:
-          $ref: '#/definitions/medicalrecord.FollowUp'
-        type: array
+      notes:
+        type: string
       patient_id:
         type: string
+      prescriptions:
+        items:
+          $ref: '#/definitions/medicalrecord.Prescription'
+        type: array
       record_id:
+        type: string
+      related_record_id:
+        description: nếu là tái khám
         type: string
       updatedAt:
         type: string
     type: object
   medicalrecord.Prescription:
     properties:
-      approved_at:
-        type: string
-      approved_by:
+      ai_diagnosis_id:
         type: string
       createdAt:
+        type: string
+      description:
         type: string
       items:
         items:
           $ref: '#/definitions/medicalrecord.PrescriptionItem'
         type: array
+      medical_record_id:
+        type: string
+      patient_id:
+        type: string
       prescription_id:
         type: string
-      record_id:
+      source:
+        description: AI hoặc DOCTOR
         type: string
       status:
         description: PENDING, APPROVED, REJECTED
@@ -704,11 +684,18 @@ definitions:
         type: string
       duration_days:
         type: integer
+      end_date:
+        description: auto tính = StartDate + DurationDays
+        type: string
       frequency:
+        type: string
+      notes:
         type: string
       prescription_id:
         type: string
       prescription_item_id:
+        type: string
+      start_date:
         type: string
     type: object
   medicalrecordhandler.CreateAIDiagnosisRequest:
@@ -751,13 +738,6 @@ definitions:
     - doctor_id
     - patient_id
     type: object
-  medicalrecordhandler.UpdateFollowUpRequest:
-    properties:
-      next_appointment:
-        type: string
-      notes:
-        type: string
-    type: object
   medicalrecordhandler.createPrescriptionReq:
     properties:
       approved_at:
@@ -779,6 +759,33 @@ definitions:
       approved_by:
         type: string
       status:
+        type: string
+    type: object
+  medicalrecordservice.AIDiagnosisResponse:
+    properties:
+      confidence:
+        type: number
+      created_at:
+        type: string
+      disease_code:
+        type: string
+      eye_type:
+        type: string
+      id:
+        type: string
+      main_image_url:
+        type: string
+      notes:
+        type: string
+      patient_id:
+        type: string
+      record_id:
+        type: string
+      status:
+        type: string
+      verified_at:
+        type: string
+      verified_by:
         type: string
     type: object
   order.Order:
@@ -1038,6 +1045,173 @@ info:
   title: Auth Service API
   version: "1.0"
 paths:
+  /ai-diagnoses:
+    get:
+      description: Retrieve all AI diagnosis records that are awaiting doctor verification
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/medicalrecordservice.AIDiagnosisResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get all AI diagnoses with status PENDING
+      tags:
+      - AI Diagnoses
+    post:
+      consumes:
+      - multipart/form-data
+      description: Create an AI diagnosis record (generated by AI model) with optional
+        image upload
+      parameters:
+      - description: Patient ID
+        in: formData
+        name: patient_id
+        required: true
+        type: string
+      - description: Record ID
+        in: formData
+        name: record_id
+        required: true
+        type: string
+      - description: Disease Code
+        in: formData
+        name: disease_code
+        required: true
+        type: string
+      - description: AI Confidence (0–1)
+        in: formData
+        name: confidence
+        required: true
+        type: number
+      - description: Eye Type (left/right)
+        in: formData
+        name: eye_type
+        type: string
+      - description: Additional Notes
+        in: formData
+        name: notes
+        type: string
+      - description: Main image file
+        in: formData
+        name: main_image
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/medicalrecordservice.AIDiagnosisResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new AI diagnosis
+      tags:
+      - AI Diagnoses
+  /ai-diagnoses/{id}/verify:
+    put:
+      consumes:
+      - multipart/form-data
+      description: Doctor verifies AI diagnosis and updates status, notes, and signature
+      parameters:
+      - description: Diagnosis ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Doctor ID
+        in: formData
+        name: doctor_id
+        required: true
+        type: string
+      - description: Status (VERIFIED/REJECTED)
+        in: formData
+        name: status
+        required: true
+        type: string
+      - description: Doctor Notes
+        in: formData
+        name: notes
+        type: string
+      - description: Doctor Signature Image
+        in: formData
+        name: signature
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Verify an AI diagnosis
+      tags:
+      - AI Diagnoses
+  /ai-diagnoses/patient/{patient_id}:
+    get:
+      description: Retrieve AI diagnosis records for a specific patient (all statuses)
+      parameters:
+      - description: Patient ID
+        in: path
+        name: patient_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/medicalrecord.AIDiagnosis'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get AI diagnoses by patient ID
+      tags:
+      - AI Diagnoses
   /appointments:
     get:
       description: Retrieve a list of all appointments in the system
@@ -1206,6 +1380,43 @@ paths:
               type: string
             type: object
       summary: Get appointments by doctor ID
+      tags:
+      - Appointments
+  /appointments/online:
+    get:
+      description: Get all online appointments (status = PendingOnline) by bookUserID
+        or doctorID
+      parameters:
+      - description: Book user ID
+        in: query
+        name: book_user_id
+        type: string
+      - description: Doctor ID
+        in: query
+        name: doctor_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/appointment.Appointment'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get online appointments
       tags:
       - Appointments
   /appointments/patient/{patient_id}:
@@ -2051,131 +2262,6 @@ paths:
       summary: Send custom email
       tags:
       - Email
-  /followups/{follow_up_id}:
-    delete:
-      consumes:
-      - application/json
-      description: Xóa follow-up theo ID
-      parameters:
-      - description: FollowUp ID
-        in: path
-        name: follow_up_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Xóa lịch tái khám
-      tags:
-      - FollowUps
-    put:
-      consumes:
-      - application/json
-      description: Cập nhật notes hoặc next appointment
-      parameters:
-      - description: FollowUp ID
-        in: path
-        name: follow_up_id
-        required: true
-        type: string
-      - description: Update Data
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/medicalrecordhandler.UpdateFollowUpRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Cập nhật lịch tái khám
-      tags:
-      - FollowUps
-  /followups/{record_id}/medical_records:
-    get:
-      consumes:
-      - application/json
-      description: Trả về tất cả follow-up của medical record
-      parameters:
-      - description: Medical Record ID
-        in: path
-        name: record_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              additionalProperties: true
-              type: object
-            type: array
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Lấy danh sách lịch tái khám
-      tags:
-      - FollowUps
-    post:
-      consumes:
-      - application/json
-      description: Thêm follow-up cho medical record
-      parameters:
-      - description: Medical Record ID
-        in: path
-        name: record_id
-        required: true
-        type: string
-      - description: FollowUp Data
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/medicalrecordhandler.UpdateFollowUpRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Tạo lịch tái khám
-      tags:
-      - FollowUps
   /hospitals:
     get:
       description: Retrieve all hospitals
@@ -2773,75 +2859,6 @@ paths:
       summary: Add AI Diagnosis to Medical Record
       tags:
       - AI_Diagnoses
-  /medical_records/ai_diagnoses/{diagnosis_id}/recommended_plans:
-    get:
-      consumes:
-      - application/json
-      description: Get a list of recommended treatment plans for a specific AI Diagnosis
-      parameters:
-      - description: AI Diagnosis ID
-        in: path
-        name: diagnosis_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/medicalrecord.AIRecommendedPlan'
-            type: array
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: List AI Recommended Plans
-      tags:
-      - AI_RecommendedPlans
-    post:
-      consumes:
-      - application/json
-      description: Add a new recommended treatment plan to an AI Diagnosis
-      parameters:
-      - description: AI Diagnosis ID
-        in: path
-        name: diagnosis_id
-        required: true
-        type: string
-      - description: Recommended Plan payload
-        in: body
-        name: payload
-        required: true
-        schema:
-          $ref: '#/definitions/medicalrecord.AddRecommendedPlanRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/medicalrecord.AIRecommendedPlan'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Add a Recommended Plan
-      tags:
-      - AI_RecommendedPlans
   /medical_records/ai_diagnoses/{id}:
     delete:
       consumes:
@@ -2910,43 +2927,6 @@ paths:
       summary: Get AI Diagnosis by ID
       tags:
       - AI_Diagnoses
-  /medical_records/ai_recommended_plans/{plan_id}:
-    delete:
-      consumes:
-      - application/json
-      description: Delete a recommended treatment plan by its ID
-      parameters:
-      - description: Recommended Plan ID
-        in: path
-        name: plan_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Delete a Recommended Plan
-      tags:
-      - AI_RecommendedPlans
   /medical_records/init:
     post:
       consumes:
