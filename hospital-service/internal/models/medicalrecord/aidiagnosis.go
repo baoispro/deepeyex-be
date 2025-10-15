@@ -5,7 +5,7 @@ import "time"
 type AIDiagnosis struct {
 	ID           string    `gorm:"primaryKey;size:36" json:"id"`
 	PatientID    string    `gorm:"size:36;not null" json:"patient_id"`
-	RecordID     string    `gorm:"size:36;not null" json:"record_id"`
+	RecordID     *string   `gorm:"size:36" json:"record_id,omitempty"`
 	DiseaseCode  string    `gorm:"size:50;not null" json:"disease_code"`
 	Confidence   float64   `gorm:"type:decimal(5,4);not null" json:"confidence"`
 	MainImageURL string    `gorm:"size:500" json:"main_image_url"`    // URL hình ảnh chính dùng để chẩn đoán

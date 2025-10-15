@@ -99,7 +99,7 @@ func (s *MedicalRecordService) AddAIDiagnosisByRecordID(
 ) (*medicalrecord.AIDiagnosis, error) {
 	diagnosis := &medicalrecord.AIDiagnosis{
 		ID:           uuid.New().String(),
-		RecordID:     recordID,
+		RecordID:     &recordID,
 		DiseaseCode:  diseaseCode,
 		Confidence:   confidence,
 		MainImageURL: mainImageURL, // ✅ Thêm

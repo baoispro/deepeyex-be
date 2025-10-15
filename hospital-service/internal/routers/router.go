@@ -37,6 +37,7 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	uploadhandler *uploadhandler.UploadHandler,
 	callhandler *callhandler.StringeeHandler,
 	wsHandler *websockethandler.WebSocketHandler,
+	aidiagnosisHandler *medicalrecordhandler.AIDiagnosisHandler,
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -173,18 +174,18 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	// ===== Service routes =====
 	services := r.Group("/services")
 	{
-		services.POST("", serviceHandler.CreateService)                      // Create service
-		services.GET("", serviceHandler.ListAllServices)                     // List all services
-		services.GET("/:service_id", serviceHandler.GetServiceByID)          // Get service by ID
-		services.PUT("/:service_id", serviceHandler.UpdateService)           // Update service
-		services.DELETE("/:service_id", serviceHandler.DeleteService)        // Delete service
-		services.POST("/assign", serviceHandler.AssignServiceToDoctor)       // Assign service to doctor
+		services.POST("", serviceHandler.CreateService)                // Create service
+		services.GET("", serviceHandler.ListAllServices)               // List all services
+		services.GET("/:service_id", serviceHandler.GetServiceByID)    // Get service by ID
+		services.PUT("/:service_id", serviceHandler.UpdateService)     // Update service
+		services.DELETE("/:service_id", serviceHandler.DeleteService)  // Delete service
+		services.POST("/assign", serviceHandler.AssignServiceToDoctor) // Assign service to doctor
 	}
 
 	// ===== Doctor-Service routes =====
 	doctorServices := r.Group("/doctors/:doctor_id/services")
 	{
-		doctorServices.GET("", serviceHandler.ListServicesByDoctorID)              // List services by doctor
+		doctorServices.GET("", serviceHandler.ListServicesByDoctorID)                 // List services by doctor
 		doctorServices.DELETE("/:service_id", serviceHandler.RemoveServiceFromDoctor) // Remove service from doctor
 	}
 
@@ -196,10 +197,10 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 
 	// ===== Payment routes =====
 	vnpay := r.Group("/vnpay")
-    {
-        vnpay.POST("/create-payment", vnpayHandler.CreatePayment)
-        vnpay.GET("/return", vnpayHandler.VnpayReturn)
-    }
+	{
+		vnpay.POST("/create-payment", vnpayHandler.CreatePayment)
+		vnpay.GET("/return", vnpayHandler.VnpayReturn)
+	}
 
 	// ===== Email routes =====
 	email := r.Group("/emails")
@@ -226,9 +227,18 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	// ===== WebSocket routes =====
 	ws := r.Group("/ws")
 	{
-		ws.GET("", wsHandler.ServeWS)                                // WebSocket connection endpoint
-		ws.GET("/connected", wsHandler.GetConnectedDoctors)          // Get list of connected doctors
+		ws.GET("", wsHandler.ServeWS)                                     // WebSocket connection endpoint
+		ws.GET("/connected", wsHandler.GetConnectedDoctors)               // Get list of connected doctors
 		ws.GET("/status/:doctor_id", wsHandler.GetDoctorConnectionStatus) // Check doctor connection status
+	}
+
+	// ===== Call routes =====
+	ai := r.Group("/ai-diagnoses")
+	{
+		ai.POST("", aidiagnosisHandler.Create)
+		ai.GET("", aidiagnosisHandler.FindAllPending)
+		ai.GET("/patient/:patient_id", aidiagnosisHandler.FindByPatientID)
+		ai.PUT("/:id/verify", aidiagnosisHandler.Verify)
 	}
 
 	// Swagger

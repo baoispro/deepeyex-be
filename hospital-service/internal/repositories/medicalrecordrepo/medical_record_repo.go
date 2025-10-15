@@ -42,7 +42,7 @@ func (r *MedicalRecordRepo) InitRecordAndDiagnosis(
 		// Step 2: Tạo AIDiagnosis với hình ảnh
 		aiDiag = &medicalrecord.AIDiagnosis{
 			ID:           uuid.New().String(),
-			RecordID:     record.RecordID,
+			RecordID:     &record.RecordID,
 			DiseaseCode:  diseaseCode,
 			Confidence:   confidence,
 			MainImageURL: mainImageURL, // ✅ Thêm
