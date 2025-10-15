@@ -132,30 +132,36 @@ func (h *AIDiagnosisHandler) FindByPatientID(c *gin.Context) {
 // @Summary Verify an AI diagnosis
 // @Description Doctor verifies AI diagnosis and updates status, notes, and signature
 // @Tags AI Diagnoses
-// @Accept json
+// @Accept multipart/form-data
 // @Produce json
 // @Param id path string true "Diagnosis ID"
-// @Param body body map[string]string true "Verification data (doctor_id, status, notes, signature)"
+// @Param doctor_id formData string true "Doctor ID"
+// @Param status formData string true "Status (VERIFIED/REJECTED)"
+// @Param notes formData string false "Doctor Notes"
+// @Param signature formData file false "Doctor Signature Image"
 // @Success 200 {object} map[string]string
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /ai-diagnoses/{id}/verify [put]
 func (h *AIDiagnosisHandler) Verify(c *gin.Context) {
 	id := c.Param("id")
+	doctorID := c.PostForm("doctor_id")
+	status := c.PostForm("status")
+	notes := c.PostForm("notes")
 
-	var req struct {
-		DoctorID  string `json:"doctor_id" binding:"required"`
-		Status    string `json:"status" binding:"required"`
-		Notes     string `json:"notes"`
-		Signature string `json:"signature"`
-	}
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "Invalid request: "+err.Error()))
+	if doctorID == "" || status == "" {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "Missing required fields: doctor_id, status"))
 		return
 	}
 
-	err := h.service.Verify(id, req.DoctorID, req.Status, req.Notes, req.Signature)
+	// Lấy file signature (nếu có)
+	var signatureFile interface{}
+	fileHeader, err := c.FormFile("signature")
+	if err == nil {
+		signatureFile = fileHeader
+	}
+
+	err = h.service.Verify(id, doctorID, status, notes, signatureFile)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return

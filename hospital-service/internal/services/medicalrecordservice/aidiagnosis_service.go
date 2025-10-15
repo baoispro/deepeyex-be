@@ -123,7 +123,7 @@ func (s *AIDiagnosisService) FindAll() ([]medicalrecord.AIDiagnosis, error) {
 }
 
 // Verify cho bác sĩ xác nhận chẩn đoán AI
-func (s *AIDiagnosisService) Verify(id, doctorID, status, notes, signature string) error {
+func (s *AIDiagnosisService) Verify(id, doctorID, status, notes string, signatureFile interface{}) error {
 	diagnosis, err := s.repo.FindByID(id)
 	if err != nil {
 		return fmt.Errorf("diagnosis not found: %v", err)
@@ -136,8 +136,16 @@ func (s *AIDiagnosisService) Verify(id, doctorID, status, notes, signature strin
 	if notes != "" {
 		diagnosis.DoctorNotes = &notes
 	}
-	if signature != "" {
-		diagnosis.VerificationSig = &signature
+
+	// Upload signature lên S3 nếu có
+	if signatureFile != nil {
+		fileHeader := signatureFile.(*storage.FileHeader)
+		key := "signatures/" + uuid.NewString() + filepath.Ext(fileHeader.Filename)
+		signatureURL, err := s.storage.UploadFile(fileHeader, key)
+		if err != nil {
+			return fmt.Errorf("failed to upload signature: %v", err)
+		}
+		diagnosis.VerificationSig = &signatureURL
 	}
 
 	if err := s.repo.Update(diagnosis); err != nil {
