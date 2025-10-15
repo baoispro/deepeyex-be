@@ -14,7 +14,7 @@ type MedicalRecord struct {
 	UpdatedAt       time.Time      `gorm:"autoUpdateTime"`
 	AI_Diagnoses    []AIDiagnosis  `gorm:"foreignKey:RecordID;references:RecordID" json:"ai_diagnoses"`
 	Attachments     []Attachment   `gorm:"foreignKey:RecordID;references:RecordID" json:"attachments"`
-	Prescriptions   []Prescription `gorm:"foreignKey:MedicalRecordID;references:ID" json:"prescriptions"`
+	Prescriptions   []Prescription `gorm:"foreignKey:MedicalRecordID;references:RecordID" json:"prescriptions"`
 }
 
 // Request khi gọi endpoint
