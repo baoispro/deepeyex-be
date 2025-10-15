@@ -22,7 +22,9 @@ type Appointment struct {
 	UpdatedAt       time.Time               `gorm:"autoUpdateTime" json:"updated_at"`
 	CheckedInAt     *time.Time              `json:"checked_in_at,omitempty"` // Thời gian bệnh nhân check-in (nếu có)
 	BookUserId      string                  `gorm:"not null;size:36" json:"book_user_id"`
-	ServiceName     string                  `gorm:"default:'';size:255" json:"service_name"` // Cho phép empty string làm default
+	ServiceName     string                  `gorm:"default:'';size:255" json:"service_name"`    // Cho phép empty string làm default
+	RelatedRecordID *string                 `gorm:"size:36" json:"related_record_id,omitempty"` // nếu là tái khám
+
 	// Quan hệ
 	Patient   patient.Patient   `gorm:"foreignKey:PatientID;references:PatientID" json:"patient"`
 	Hospital  hospital.Hospital `gorm:"foreignKey:HospitalID;references:HospitalID" json:"hospital,omitempty"`

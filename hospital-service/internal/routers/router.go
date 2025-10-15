@@ -29,7 +29,6 @@ import (
 func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandler, doctorHandler *doctorhandler.DoctorHandler, hHandler *hospitalhandler.HospitalHandler, aHandler *appointmenthandler.AppointmentHandler, tHandler *appointmenthandler.TimeSlotHandler, drugHandler *drughandler.DrugHandler, orderHandler *orderhandler.OrderHandler, medicalRecordHandler *medicalrecordhandler.MedicalRecordHandler,
 	prescriptionHandler *medicalrecordhandler.PrescriptionHandler,
 	attachmentHandler *medicalrecordhandler.AttachmentHandler,
-	followUpHandler *medicalrecordhandler.FollowUpHandler,
 	prescriptionItemHandler *medicalrecordhandler.PrescriptionItemHandler,
 	serviceHandler *servicehandler.ServiceHandler,
 	bookingHandler *bookinghandler.BookingHandler,
@@ -150,10 +149,6 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 		medical.POST("/:record_id/ai_diagnoses", medicalRecordHandler.AddAIDiagnosis)
 		medical.GET("/ai_diagnoses/:id", medicalRecordHandler.GetAIDiagnosisByID)
 		medical.DELETE("/ai_diagnoses/:id", medicalRecordHandler.DeleteAIDiagnosis)
-		medical.GET("/ai_diagnoses/:id/recommended_plans", medicalRecordHandler.ListRecommendedPlans)
-		medical.POST("/ai_diagnoses/:diagnosis_id/recommended_plans", medicalRecordHandler.AddRecommendedPlan)
-		medical.DELETE("/ai_recommended_plans/:id", medicalRecordHandler.DeleteRecommendedPlan)
-
 	}
 
 	// ===== Prescription routes =====
@@ -173,15 +168,6 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 		attachment.POST("", attachmentHandler.AddAttachment)
 		attachment.GET("/:record_id/medical_records", attachmentHandler.GetAttachments)
 		attachment.DELETE("/:id", attachmentHandler.DeleteAttachment)
-	}
-
-	// ===== FollowUp routes =====
-	followup := r.Group("/followups")
-	{
-		followup.POST("/:record_id/medical_records", followUpHandler.CreateFollowUp)
-		followup.GET("/:record_id/medical_records", followUpHandler.GetFollowUps)
-		followup.PUT("/:follow_up_id", followUpHandler.UpdateFollowUp)
-		followup.DELETE("/:follow_up_id", followUpHandler.DeleteFollowUp)
 	}
 
 	// ===== Service routes =====

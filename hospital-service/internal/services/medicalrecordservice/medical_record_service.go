@@ -57,7 +57,6 @@ func (s *MedicalRecordService) CreateRecord(
 		AppointmentID: appointmentID, 
 		DoctorID:      doctorID,
 		Diagnosis:     diagnosis,
-		CreatedBy:     createdBy, 
 		CreatedAt:     time.Now(),
 		UpdatedAt:     time.Now(),
 	}
@@ -118,26 +117,4 @@ func (s *MedicalRecordService) GetAIDiagnosisByID(id string) (*medicalrecord.AID
 
 func (s *MedicalRecordService) DeleteAIDiagnosis(id string) error {
 	return s.repo.DeleteAIDiagnosis(id)
-}
-
-// ---------------- AI RecommendedPlan Management ----------------
-func (s *MedicalRecordService) ListRecommendedPlans(diagnosisID string) ([]*medicalrecord.AIRecommendedPlan, error) {
-	return s.repo.ListAIRecommendedPlansByDiagnosisID(diagnosisID)
-}
-
-func (s *MedicalRecordService) AddRecommendedPlan(diagnosisID, description, drugName, dosage, frequency string, durationDays int) (*medicalrecord.AIRecommendedPlan, error) {
-	plan := &medicalrecord.AIRecommendedPlan{
-		ID:          uuid.New().String(),
-		AIDiagnosisID : diagnosisID,
-		DurationDays: durationDays,
-		DrugName:   drugName,
-		Dosage:    dosage,
-		Frequency: frequency,
-
-	}
-	return s.repo.AddAIRecommendedPlan(plan)
-}
-
-func (s *MedicalRecordService) DeleteRecommendedPlan(id string) error {
-	return s.repo.DeleteAIRecommendedPlan(id)
 }

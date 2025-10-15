@@ -28,11 +28,8 @@ func (s *PrescriptionService) CreatePrescription(status, recordId, approvedBy st
 	p := &medicalrecord.Prescription{
 		PrescriptionID: uuid.New().String(),
 		Status:         status,
-		RecordID:       recordId,
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),
-		ApprovedBy:     approvedBy,
-		ApprovedAt:    approvedAt,
 	}
 
 	if err := s.repo.Create(p); err != nil {

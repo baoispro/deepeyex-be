@@ -109,7 +109,6 @@ func AutoMigrate(db *gorm.DB) error {
 	if err := db.AutoMigrate(
 		&medicalrecord.MedicalRecord{},
 		&medicalrecord.AIDiagnosis{},
-		&medicalrecord.AIRecommendedPlan{},
 	); err != nil {
 		return err
 	}
@@ -126,14 +125,13 @@ func AutoMigrate(db *gorm.DB) error {
 		return err
 	}
 
-	// --- 10. FollowUps ---
-	if err := db.AutoMigrate(&medicalrecord.FollowUp{}); err != nil {
-		return err
-	}
-
 	if err := db.AutoMigrate(
 		&service.DoctorService{},
 	); err != nil {
+		return err
+	}
+
+	if err := db.AutoMigrate(&medicalrecord.MedicationReminder{}); err != nil {
 		return err
 	}
 

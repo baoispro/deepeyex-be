@@ -162,12 +162,6 @@ func (h *PrescriptionHandler) UpdatePrescription(c *gin.Context) {
 	if req.Status != "" {
 		existing.Status = req.Status
 	}
-	if req.ApprovedBy != "" {
-		existing.ApprovedBy = req.ApprovedBy
-	}
-	if req.ApprovedAt != nil {
-		existing.ApprovedAt = req.ApprovedAt
-	}
 	existing.UpdatedAt = time.Now()
 
 	if err := h.service.UpdatePrecription(existing); err != nil {

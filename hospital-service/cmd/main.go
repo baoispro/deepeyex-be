@@ -61,11 +61,6 @@ import (
 	attachmentrepo "hospital-service/internal/repositories/medicalrecordrepo"
 	attachmentservice "hospital-service/internal/services/medicalrecordservice"
 
-	// FollowUp
-	followuphandler "hospital-service/internal/handlers/medicalrecordhandler"
-	followuprepo "hospital-service/internal/repositories/medicalrecordrepo"
-	followupservice "hospital-service/internal/services/medicalrecordservice"
-
 	// Service
 	servicehandler "hospital-service/internal/handlers/servicehandler"
 	servicerepo "hospital-service/internal/repositories/servicerepo"
@@ -115,7 +110,6 @@ func main() {
 	medicalRecordRepo := medicalrecordrepo.NewMedicalRecordRepository(db)
 	prescriptionRepo := prescriptionrepo.NewPrescriptionRepository(db)
 	attachmentRepo := attachmentrepo.NewAttachmentRepository(db)
-	followUpRepo := followuprepo.NewFollowUpRepository(db)
 	prescriptionitemrepo := prescriptionitemrepo.NewPrescriptionItemRepository(db)
 	serviceRepo := servicerepo.NewServiceRepo(db)
 
@@ -142,7 +136,6 @@ func main() {
 	medicalRecordService := medicalrecordservice.NewMedicalRecordService(medicalRecordRepo)
 	prescriptionService := prescriptionservice.NewPrescriptionService(prescriptionRepo)
 	attachmentService := attachmentservice.NewAttachmentService(attachmentRepo)
-	followUpService := followupservice.NewFollowUpService(followUpRepo)
 	prescriptionItemService := prescriptionitemservice.NewPrescriptionItemService(prescriptionitemrepo)
 	bookingService := bookingservice.NewBookingService(aService, orderService, wsHub) // ✅ Pass WebSocket Hub
 	vnpayService := paymentservice.NewVnpayService(cfg)
@@ -163,7 +156,6 @@ func main() {
 	medicalRecordHandler := medicalrecordhandler.NewMedicalRecordHandler(cfg, medicalRecordService)
 	prHandler := prescriptionhandler.NewPrescriptionHandler(cfg, prescriptionService)
 	attachmentHandler := attachmenthandler.NewAttachmentHandler(cfg, attachmentService)
-	followUpHandler := followuphandler.NewFollowUpHandler(cfg, followUpService)
 	prescriptionItemHander := prescriptionitemhandler.NewPrescriptionItemHandler(cfg, prescriptionItemService)
 	bookingHandler := bookinghandler.NewBookingHandler(bookingService)
 	serviceHandler := servicehandler.NewServiceHandler(cfg, serviceService)
@@ -181,7 +173,7 @@ func main() {
 	}
 
 	// Setup router
-	r := routers.SetupRouter(&cfg, pHandler, dHandler, hHandler, aHandler, tHandler, drugHandler, orderHandler, medicalRecordHandler, prHandler, attachmentHandler, followUpHandler, prescriptionItemHander, serviceHandler, bookingHandler, vnpayHandler, emailHandler, uploadhandler, callhandler, wsHandler)
+	r := routers.SetupRouter(&cfg, pHandler, dHandler, hHandler, aHandler, tHandler, drugHandler, orderHandler, medicalRecordHandler, prHandler, attachmentHandler, prescriptionItemHander, serviceHandler, bookingHandler, vnpayHandler, emailHandler, uploadhandler, callhandler, wsHandler)
 
 	log.Printf("Hospital service running on :%s", cfg.Port)
 	if err := r.Run(":" + cfg.Port); err != nil {

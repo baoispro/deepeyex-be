@@ -34,7 +34,6 @@ func (r *MedicalRecordRepo) InitRecordAndDiagnosis(
 			RecordID:  uuid.New().String(),
 			PatientID: patientID,
 			Diagnosis: diagnosisText,
-			CreatedBy: "AI",
 		}
 		if err := tx.Create(record).Error; err != nil {
 			return err
@@ -125,25 +124,4 @@ func (r *MedicalRecordRepo) GetAIDiagnosisByID(id string) (*medicalrecord.AIDiag
 // ---------------- Delete AI Diagnosis ----------------
 func (r *MedicalRecordRepo) DeleteAIDiagnosis(id string) error {
 	return r.db.Delete(&medicalrecord.AIDiagnosis{}, "id = ?", id).Error
-}
-
-// ---------------- AI Recommended Plan Management ----------------
-// ---------------- Add AI Recommended Plan ----------------
-func (r *MedicalRecordRepo) AddAIRecommendedPlan(plan *medicalrecord.AIRecommendedPlan) (*medicalrecord.AIRecommendedPlan, error) {
-	if err := r.db.Create(plan).Error; err != nil {
-		return nil, err
-	}
-	return plan, nil
-}
-
-// ---------------- List AI Recommended Plans by Diagnosis ID ----------------
-func (r *MedicalRecordRepo) ListAIRecommendedPlansByDiagnosisID(diagnosisID string) ([]*medicalrecord.AIRecommendedPlan, error) {
-	var plans []*medicalrecord.AIRecommendedPlan
-	err := r.db.Where("ai_diagnosis_id = ?", diagnosisID).Find(&plans).Error
-	return plans, err
-}
-
-// ---------------- Delete AI Recommended Plan ----------------
-func (r *MedicalRecordRepo) DeleteAIRecommendedPlan(id string) error {
-	return r.db.Delete(&medicalrecord.AIRecommendedPlan{}, "id = ?", id).Error
 }

@@ -24,6 +24,7 @@ func NewAppointmentService(repo *appointmentrepo.AppointmentRepo, timeSlotRepo *
 	return &AppointmentService{repo: repo, timeSlotRepo: timeSlotRepo}
 }
 
+// Tạo khám mới
 func (s *AppointmentService) Create(
 	patientID, doctorID, hospitalID, bookUserID string,
 	slotIDs []string, notes string, serviceName string,
@@ -34,7 +35,6 @@ func (s *AppointmentService) Create(
 	}
 
 	slots, err := s.timeSlotRepo.FindByIDs(slotIDs)
-	log.Println("Không có gì")
 
 	if err != nil {
 		log.Println("❌ [DEBUG ERROR] có lỗi xảy ra:", err)
@@ -45,7 +45,7 @@ func (s *AppointmentService) Create(
 	}
 
 	var status = enums.Pending
-	if(serviceName == "Tư vấn trực tuyến với bác sĩ") {
+	if serviceName == "Tư vấn trực tuyến với bác sĩ" {
 		status = enums.PendingOnline
 	}
 
@@ -54,21 +54,22 @@ func (s *AppointmentService) Create(
 	// Transaction bắt đầu
 	err = s.repo.DB().Transaction(func(tx *gorm.DB) error {
 		a = &appointment.Appointment{
-			AppointmentID: generateAppointmentID(),
-			PatientID:     patientID,
-			DoctorID:      doctorID,
-			HospitalID:    hospitalID,
-			BookUserId:    bookUserID,
-			Notes:         &notes,
-			ServiceName:   serviceName,
-			CreatedAt:     time.Now(),
-			UpdatedAt:     time.Now(),
-			Status:        status,
+			AppointmentID:   generateAppointmentID(),
+			PatientID:       patientID,
+			DoctorID:        doctorID,
+			HospitalID:      hospitalID,
+			BookUserId:      bookUserID,
+			Notes:           &notes,
+			ServiceName:     serviceName,
+			CreatedAt:       time.Now(),
+			UpdatedAt:       time.Now(),
+			RelatedRecordID: nil,
+			Status:          status,
 		}
 		a.AppointmentCode = fmt.Sprintf("APPT-%d-%04d", time.Now().UnixNano(), rand.Intn(10000))
 
 		if err := tx.Create(a).Error; err != nil {
-				log.Printf("❌ failed Save slot1")
+			log.Printf("❌ failed Save slot1")
 			return err
 		}
 
@@ -87,7 +88,79 @@ func (s *AppointmentService) Create(
 	})
 
 	if err != nil {
-				log.Printf("❌ failed Save slot3")
+		log.Printf("❌ failed Save slot3")
+		return nil, err
+	}
+
+	return s.repo.GetByID(a.AppointmentID)
+}
+
+// Tạo lịch tái khám
+func (s *AppointmentService) CreateFollowUp(
+	patientID, doctorID, hospitalID, bookUserID string,
+	slotIDs []string, notes string, serviceName string,
+	relatedRecordID string,
+) (*appointment.Appointment, error) {
+
+	if patientID == "" || doctorID == "" || hospitalID == "" || bookUserID == "" || len(slotIDs) == 0 || relatedRecordID == "" {
+		return nil, errors.New("missing required fields")
+	}
+
+	slots, err := s.timeSlotRepo.FindByIDs(slotIDs)
+
+	if err != nil {
+		log.Println("❌ [DEBUG ERROR] có lỗi xảy ra:", err)
+		return nil, err
+	}
+	if len(slots) != len(slotIDs) {
+		return nil, errors.New("some slots not found")
+	}
+
+	var status = enums.Pending
+	if serviceName == "Tư vấn trực tuyến với bác sĩ" {
+		status = enums.PendingOnline
+	}
+
+	var a *appointment.Appointment
+
+	// Transaction bắt đầu
+	err = s.repo.DB().Transaction(func(tx *gorm.DB) error {
+		a = &appointment.Appointment{
+			AppointmentID:   generateAppointmentID(),
+			PatientID:       patientID,
+			DoctorID:        doctorID,
+			HospitalID:      hospitalID,
+			BookUserId:      bookUserID,
+			Notes:           &notes,
+			ServiceName:     serviceName,
+			CreatedAt:       time.Now(),
+			UpdatedAt:       time.Now(),
+			RelatedRecordID: &relatedRecordID,
+			Status:          status,
+		}
+		a.AppointmentCode = fmt.Sprintf("APPT-%d-%04d", time.Now().UnixNano(), rand.Intn(10000))
+
+		if err := tx.Create(a).Error; err != nil {
+			log.Printf("❌ failed Save slot1")
+			return err
+		}
+
+		// Gán appointment cho các slot
+		for _, slot := range slots {
+			if slot.AppointmentID != nil {
+				return fmt.Errorf("slot %s is already booked", slot.SlotID)
+			}
+			slot.AppointmentID = &a.AppointmentID
+			if err := tx.Save(&slot).Error; err != nil {
+				log.Printf("❌ failed Save slot")
+				return err
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		log.Printf("❌ failed Save slot3")
 		return nil, err
 	}
 
