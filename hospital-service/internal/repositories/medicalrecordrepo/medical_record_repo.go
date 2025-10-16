@@ -107,3 +107,22 @@ func (r *MedicalRecordRepo) GetByAppointmentID(appointmentID string) (*medicalre
 	}
 	return &record, nil
 }
+
+// ---------------- Get all records by PatientID ----------------
+func (r *MedicalRecordRepo) GetByPatientID(patientID string) ([]*medicalrecord.MedicalRecord, error) {
+	var records []*medicalrecord.MedicalRecord
+	err := r.db.
+		Preload("Attachments").
+		Preload("Prescriptions").
+		Preload("AI_Diagnoses").
+		Preload("Appointment.TimeSlots").
+		Preload("Appointment.Doctor").
+		Preload("Appointment.Hospital").
+		Where("patient_id = ?", patientID).
+		Find(&records).Error
+
+	if err != nil {
+		return nil, err
+	}
+	return records, nil
+}

@@ -1,20 +1,24 @@
 package medicalrecord
 
-import "time"
+import (
+	"hospital-service/internal/models/appointment"
+	"time"
+)
 
 type MedicalRecord struct {
-	RecordID        string         `gorm:"primaryKey;size:36" json:"record_id"`
-	PatientID       string         `gorm:"size:36;not null" json:"patient_id"`
-	AppointmentID   string         `gorm:"size:36" json:"appointment_id"`
-	DoctorID        string         `gorm:"size:36;" json:"doctor_id"`
-	Diagnosis       string         `gorm:"type:text" json:"diagnosis"`
-	Notes           *string        `gorm:"type:text" json:"notes,omitempty"`
-	RelatedRecordID *string        `gorm:"size:36" json:"related_record_id"` // nếu là tái khám
-	CreatedAt       time.Time      `gorm:"autoCreateTime"`
-	UpdatedAt       time.Time      `gorm:"autoUpdateTime"`
-	AI_Diagnoses    []AIDiagnosis  `gorm:"foreignKey:RecordID;references:RecordID" json:"ai_diagnoses"`
-	Attachments     []Attachment   `gorm:"foreignKey:RecordID;references:RecordID" json:"attachments"`
-	Prescriptions   []Prescription `gorm:"foreignKey:MedicalRecordID;references:RecordID" json:"prescriptions"`
+	RecordID        string                  `gorm:"primaryKey;size:36" json:"record_id"`
+	PatientID       string                  `gorm:"size:36;not null" json:"patient_id"`
+	AppointmentID   string                  `gorm:"size:36" json:"appointment_id"`
+	DoctorID        string                  `gorm:"size:36;" json:"doctor_id"`
+	Diagnosis       string                  `gorm:"type:text" json:"diagnosis"`
+	Notes           *string                 `gorm:"type:text" json:"notes,omitempty"`
+	RelatedRecordID *string                 `gorm:"size:36" json:"related_record_id"` // nếu là tái khám
+	CreatedAt       time.Time               `gorm:"autoCreateTime"`
+	UpdatedAt       time.Time               `gorm:"autoUpdateTime"`
+	AI_Diagnoses    []AIDiagnosis           `gorm:"foreignKey:RecordID;references:RecordID" json:"ai_diagnoses"`
+	Attachments     []Attachment            `gorm:"foreignKey:RecordID;references:RecordID" json:"attachments"`
+	Prescriptions   []Prescription          `gorm:"foreignKey:MedicalRecordID;references:RecordID" json:"prescriptions"`
+	Appointment     appointment.Appointment `gorm:"foreignKey:AppointmentID;references:AppointmentID" json:"appointment,omitempty"`
 }
 
 // Request khi gọi endpoint
