@@ -53,6 +53,37 @@ func (r *HospitalRepo) List() ([]hospital.Hospital, error) {
 	return hospitals, err
 }
 
+// FindWithFilters tìm hospitals với filter động
+func (r *HospitalRepo) FindWithFilters(name, address, city, ward string) ([]hospital.Hospital, error) {
+	var hospitals []hospital.Hospital
+	query := r.db.Preload("Doctors")
+
+	// Filter theo name (partial match, case-insensitive)
+	if name != "" {
+		query = query.Where("LOWER(name) LIKE ?", "%"+strings.ToLower(name)+"%")
+	}
+
+	// Filter theo address (partial match, case-insensitive)
+	if address != "" {
+		query = query.Where("LOWER(address) LIKE ?", "%"+strings.ToLower(address)+"%")
+	}
+
+	// Filter theo city (exact match)
+	if city != "" {
+		query = query.Where("city = ?", city)
+	}
+
+	// Filter theo ward (exact match)
+	if ward != "" {
+		query = query.Where("ward = ?", ward)
+	}
+
+	if err := query.Find(&hospitals).Error; err != nil {
+		return nil, err
+	}
+	return hospitals, nil
+}
+
 // ---------------- ListCities ----------------
 func (r *HospitalRepo) ListCities() ([]string, error) {
 	var cities []string

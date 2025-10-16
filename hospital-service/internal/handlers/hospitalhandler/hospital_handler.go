@@ -218,14 +218,24 @@ func (h *HospitalHandler) DeleteHospital(c *gin.Context) {
 
 // ---------------- List Hospitals ----------------
 // @Summary List all hospitals
-// @Description Retrieve all hospitals
+// @Description Retrieve all hospitals with optional filters
 // @Tags Hospitals
 // @Produce json
+// @Param name query string false "Filter by hospital name (partial match)"
+// @Param address query string false "Filter by address (partial match)"
+// @Param city query string false "Filter by city (exact match)"
+// @Param ward query string false "Filter by ward (exact match)"
 // @Success 200 {array} hospital.Hospital
 // @Failure 500 {object} map[string]string
 // @Router /hospitals [get]
 func (h *HospitalHandler) ListHospitals(c *gin.Context) {
-	hospitals, err := h.service.ListHospitals()
+	// Lấy query params
+	name := c.Query("name")
+	address := c.Query("address")
+	city := c.Query("city")
+	ward := c.Query("ward")
+
+	hospitals, err := h.service.ListHospitals(name, address, city, ward)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return

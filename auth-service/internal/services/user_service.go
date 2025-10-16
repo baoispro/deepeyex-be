@@ -73,9 +73,9 @@ func (s *UserService) DeleteUser(id string) error {
 	return s.userRepo.Delete(id)
 }
 
-// List users
-func (s *UserService) ListUsers() ([]models.User, error) {
-	return s.userRepo.FindAll()
+// List users with optional filters
+func (s *UserService) ListUsers(name, role string) ([]models.User, error) {
+	return s.userRepo.FindWithFilters(name, role)
 }
 
 // Update password by email

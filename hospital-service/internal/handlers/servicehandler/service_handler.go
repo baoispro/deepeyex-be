@@ -89,14 +89,20 @@ func (h *ServiceHandler) GetServiceByID(c *gin.Context) {
 
 // ListAllServices - Lấy tất cả services
 // @Summary List all services
-// @Description Get all available services
+// @Description Get all available services with optional filters
 // @Tags Services
 // @Produce json
+// @Param name query string false "Filter by service name (partial match)"
+// @Param duration query int false "Filter by duration in minutes (exact match)"
 // @Success 200 {object} map[string]interface{}
 // @Failure 500 {object} map[string]string
 // @Router /services [get]
 func (h *ServiceHandler) ListAllServices(c *gin.Context) {
-	services, err := h.service.ListAllServices()
+	// Lấy query params
+	name := c.Query("name")
+	duration := c.Query("duration")
+
+	services, err := h.service.ListAllServices(name, duration)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return

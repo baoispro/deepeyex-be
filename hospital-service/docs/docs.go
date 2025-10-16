@@ -265,7 +265,7 @@ const docTemplate = `{
         },
         "/appointments": {
             "get": {
-                "description": "Retrieve a list of all appointments in the system",
+                "description": "Retrieve a list of all appointments in the system with optional filters",
                 "produces": [
                     "application/json"
                 ],
@@ -273,6 +273,26 @@ const docTemplate = `{
                     "Appointments"
                 ],
                 "summary": "List all appointments",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by patient name (partial match)",
+                        "name": "patient_name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by appointment status (PENDING/CONFIRMED/COMPLETED/CANCELLED)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by doctor ID (exact match)",
+                        "name": "doctor_id",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -850,7 +870,7 @@ const docTemplate = `{
         },
         "/doctors": {
             "get": {
-                "description": "Retrieve all doctors",
+                "description": "Retrieve all doctors with optional filters",
                 "produces": [
                     "application/json"
                 ],
@@ -858,6 +878,26 @@ const docTemplate = `{
                     "Doctors"
                 ],
                 "summary": "List all doctors",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by doctor name (partial match)",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by specialty (exact match)",
+                        "name": "specialty",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by hospital ID (exact match)",
+                        "name": "hospital_id",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1337,7 +1377,7 @@ const docTemplate = `{
         },
         "/drugs": {
             "get": {
-                "description": "Retrieve all drugs",
+                "description": "Retrieve all drugs with optional filters",
                 "produces": [
                     "application/json"
                 ],
@@ -1345,6 +1385,38 @@ const docTemplate = `{
                     "Drugs"
                 ],
                 "summary": "List all drugs",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by drug name (partial match)",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "number",
+                        "description": "Filter by minimum price",
+                        "name": "min_price",
+                        "in": "query"
+                    },
+                    {
+                        "type": "number",
+                        "description": "Filter by maximum price",
+                        "name": "max_price",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Filter by minimum stock quantity",
+                        "name": "min_stock",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Filter by maximum stock quantity",
+                        "name": "max_stock",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1849,7 +1921,7 @@ const docTemplate = `{
         },
         "/hospitals": {
             "get": {
-                "description": "Retrieve all hospitals",
+                "description": "Retrieve all hospitals with optional filters",
                 "produces": [
                     "application/json"
                 ],
@@ -1857,6 +1929,32 @@ const docTemplate = `{
                     "Hospitals"
                 ],
                 "summary": "List all hospitals",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by hospital name (partial match)",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by address (partial match)",
+                        "name": "address",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by city (exact match)",
+                        "name": "city",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by ward (exact match)",
+                        "name": "ward",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2888,7 +2986,7 @@ const docTemplate = `{
         },
         "/orders": {
             "get": {
-                "description": "Retrieve all orders in the system",
+                "description": "Retrieve all orders in the system with optional filters",
                 "produces": [
                     "application/json"
                 ],
@@ -2896,6 +2994,20 @@ const docTemplate = `{
                     "Orders"
                 ],
                 "summary": "List all orders",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by order status (PENDING/CONFIRMED/COMPLETED/CANCELLED)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by order date (format: YYYY-MM-DD, e.g. 2024-01-15)",
+                        "name": "order_date",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -3203,7 +3315,7 @@ const docTemplate = `{
         },
         "/patients": {
             "get": {
-                "description": "Retrieve all patients",
+                "description": "Retrieve all patients with optional filters",
                 "produces": [
                     "application/json"
                 ],
@@ -3211,6 +3323,26 @@ const docTemplate = `{
                     "Patients"
                 ],
                 "summary": "List all patients",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by patient name (partial match)",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by gender (exact match: male/female/other)",
+                        "name": "gender",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by birth month and year (format: YYYY-MM, e.g. 1990-05)",
+                        "name": "birth_date",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -3990,7 +4122,7 @@ const docTemplate = `{
         },
         "/services": {
             "get": {
-                "description": "Get all available services",
+                "description": "Get all available services with optional filters",
                 "produces": [
                     "application/json"
                 ],
@@ -3998,6 +4130,20 @@ const docTemplate = `{
                     "Services"
                 ],
                 "summary": "List all services",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by service name (partial match)",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Filter by duration in minutes (exact match)",
+                        "name": "duration",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",

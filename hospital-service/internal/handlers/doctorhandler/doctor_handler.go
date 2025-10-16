@@ -227,14 +227,22 @@ func (h *DoctorHandler) DeleteDoctor(c *gin.Context) {
 
 // ---------------- List Doctors ----------------
 // @Summary List all doctors
-// @Description Retrieve all doctors
+// @Description Retrieve all doctors with optional filters
 // @Tags Doctors
 // @Produce json
+// @Param name query string false "Filter by doctor name (partial match)"
+// @Param specialty query string false "Filter by specialty (exact match)"
+// @Param hospital_id query string false "Filter by hospital ID (exact match)"
 // @Success 200 {array} doctor.Doctor
 // @Failure 500 {object} map[string]string
 // @Router /doctors [get]
 func (h *DoctorHandler) ListDoctors(c *gin.Context) {
-	doctors, err := h.service.ListDoctors()
+	// Lấy query params
+	name := c.Query("name")
+	specialty := c.Query("specialty")
+	hospitalID := c.Query("hospital_id")
+
+	doctors, err := h.service.ListDoctors(name, specialty, hospitalID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return

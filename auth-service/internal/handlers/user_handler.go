@@ -32,6 +32,11 @@ type updateUserReq struct {
 	Role        *string `json:"role,omitempty" example:"patient"`  // patient/doctor/admin
 }
 
+type resetPasswordReq struct {
+	Email    string `json:"email" binding:"required,email" example:"alice@example.com"`
+	Password string `json:"password" binding:"required" example:"newsecret"`
+}
+
 // @Summary Create user
 // @Tags Users
 // @Accept json
@@ -136,10 +141,16 @@ func (h *UserHandler) Delete(c *gin.Context) {
 // @Summary List users
 // @Tags Users
 // @Produce json
+// @Param name query string false "Filter by username (partial match)"
+// @Param role query string false "Filter by role (exact match: patient/doctor/admin)"
 // @Success 200 {object} utils.APIResponse
 // @Router /private/users [get]
 func (h *UserHandler) List(c *gin.Context) {
-	users, err := h.service.ListUsers()
+	// Lấy query params
+	name := c.Query("name")
+	role := c.Query("role")
+
+	users, err := h.service.ListUsers(name, role)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return
@@ -151,16 +162,13 @@ func (h *UserHandler) List(c *gin.Context) {
 // @Tags Users
 // @Accept json
 // @Produce json
-// @Param request body struct{Email string `json:"email" example:"alice@example.com"`; Password string `json:"password" example:"newsecret"`} true "Email and new password"
+// @Param request body resetPasswordReq true "Email and new password"
 // @Success 200 {object} utils.APIResponse
 // @Failure 400 {object} utils.APIResponse
 // @Failure 500 {object} utils.APIResponse
 // @Router /public/reset-password [post]
 func (h *UserHandler) UpdatePasswordByEmail(c *gin.Context) {
-	var req struct {
-		Email    string `json:"email" binding:"required,email" example:"alice@example.com"`
-		Password string `json:"password" binding:"required" example:"newsecret"`
-	}
+	var req resetPasswordReq
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))

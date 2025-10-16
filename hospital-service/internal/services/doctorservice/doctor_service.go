@@ -79,8 +79,8 @@ func (s *DoctorService) DeleteDoctor(id string) error {
 }
 
 // ---------------- ListDoctors ----------------
-func (s *DoctorService) ListDoctors() ([]doctor.Doctor, error) {
-	return s.doctorRepo.List()
+func (s *DoctorService) ListDoctors(name, specialty, hospitalID string) ([]doctor.Doctor, error) {
+	return s.doctorRepo.FindWithFilters(name, specialty, hospitalID)
 }
 
 // ---------------- FindByHospitalID ----------------

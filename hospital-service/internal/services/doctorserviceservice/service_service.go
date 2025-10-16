@@ -48,8 +48,8 @@ func (s *ServiceService) GetServiceByID(serviceID string) (*service.Service, err
 }
 
 // ListAllServices - Lấy tất cả services
-func (s *ServiceService) ListAllServices() ([]service.Service, error) {
-	return s.repo.ListAllServices()
+func (s *ServiceService) ListAllServices(name, duration string) ([]service.Service, error) {
+	return s.repo.FindWithFilters(name, duration)
 }
 
 // UpdateService - Cập nhật service

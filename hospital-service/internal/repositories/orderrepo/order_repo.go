@@ -2,6 +2,8 @@ package orderrepo
 
 import (
 	"hospital-service/internal/models/order"
+	"strings"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -57,6 +59,33 @@ func (r *OrderRepo) FindByPatientID(patientID string) ([]order.Order, error) {
 func (r *OrderRepo) ListAll() ([]order.Order, error) {
 	var orders []order.Order
 	if err := r.db.Preload("OrderItems.Drug").Preload("Patient").Find(&orders).Error; err != nil {
+		return nil, err
+	}
+	return orders, nil
+}
+
+// FindWithFilters tìm orders với filter động
+func (r *OrderRepo) FindWithFilters(status, orderDate string) ([]order.Order, error) {
+	var orders []order.Order
+	query := r.db.Preload("OrderItems.Drug").Preload("Patient")
+
+	// Filter theo status (exact match)
+	if status != "" {
+		query = query.Where("status = ?", strings.ToUpper(status))
+	}
+
+	// Filter theo order date (format: YYYY-MM-DD)
+	if orderDate != "" {
+		// Parse date và filter theo ngày (bỏ qua giờ)
+		if parsedDate, err := time.Parse("2006-01-02", orderDate); err == nil {
+			// Filter từ 00:00:00 đến 23:59:59 của ngày đó
+			startOfDay := parsedDate
+			endOfDay := parsedDate.Add(24 * time.Hour).Add(-1 * time.Second)
+			query = query.Where("created_at >= ? AND created_at <= ?", startOfDay, endOfDay)
+		}
+	}
+
+	if err := query.Find(&orders).Error; err != nil {
 		return nil, err
 	}
 	return orders, nil

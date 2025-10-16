@@ -155,14 +155,22 @@ func (h *AppointmentHandler) UpdateAppointmentDetail(c *gin.Context) {
 
 // ---------------- List All Appointments ----------------
 // @Summary List all appointments
-// @Description Retrieve a list of all appointments in the system
+// @Description Retrieve a list of all appointments in the system with optional filters
 // @Tags Appointments
 // @Produce json
+// @Param patient_name query string false "Filter by patient name (partial match)"
+// @Param status query string false "Filter by appointment status (PENDING/CONFIRMED/COMPLETED/CANCELLED)"
+// @Param doctor_id query string false "Filter by doctor ID (exact match)"
 // @Success 200 {array} appointment.Appointment
 // @Failure 500 {object} map[string]string
 // @Router /appointments [get]
 func (h *AppointmentHandler) ListAllAppointments(c *gin.Context) {
-	appointments, err := h.service.ListAll()
+	// Lấy query params
+	patientName := c.Query("patient_name")
+	status := c.Query("status")
+	doctorID := c.Query("doctor_id")
+
+	appointments, err := h.service.ListAll(patientName, status, doctorID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return

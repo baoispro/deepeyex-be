@@ -2,6 +2,7 @@ package appointmentrepo
 
 import (
 	"hospital-service/internal/models/appointment"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -85,6 +86,37 @@ func (r *AppointmentRepo) ListAll() ([]appointment.Appointment, error) {
 		Preload("TimeSlots.Doctor").
 		Find(&appointments).Error
 	if err != nil {
+		return nil, err
+	}
+	return appointments, nil
+}
+
+// FindWithFilters tìm appointments với filter động
+func (r *AppointmentRepo) FindWithFilters(patientName, status, doctorID string) ([]appointment.Appointment, error) {
+	var appointments []appointment.Appointment
+	query := r.db.
+		Preload("Patient").
+		Preload("TimeSlots").
+		Preload("TimeSlots.Doctor")
+
+	// Filter theo patient name (partial match, case-insensitive)
+	// Cần JOIN với bảng patients
+	if patientName != "" {
+		query = query.Joins("JOIN patients ON patients.patient_id = appointments.patient_id").
+			Where("LOWER(patients.full_name) LIKE ?", "%"+strings.ToLower(patientName)+"%")
+	}
+
+	// Filter theo status (exact match)
+	if status != "" {
+		query = query.Where("appointments.status = ?", strings.ToUpper(status))
+	}
+
+	// Filter theo doctor_id (exact match)
+	if doctorID != "" {
+		query = query.Where("appointments.doctor_id = ?", doctorID)
+	}
+
+	if err := query.Find(&appointments).Error; err != nil {
 		return nil, err
 	}
 	return appointments, nil

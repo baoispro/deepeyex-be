@@ -1214,7 +1214,21 @@ paths:
       - AI Diagnoses
   /appointments:
     get:
-      description: Retrieve a list of all appointments in the system
+      description: Retrieve a list of all appointments in the system with optional
+        filters
+      parameters:
+      - description: Filter by patient name (partial match)
+        in: query
+        name: patient_name
+        type: string
+      - description: Filter by appointment status (PENDING/CONFIRMED/COMPLETED/CANCELLED)
+        in: query
+        name: status
+        type: string
+      - description: Filter by doctor ID (exact match)
+        in: query
+        name: doctor_id
+        type: string
       produces:
       - application/json
       responses:
@@ -1601,7 +1615,20 @@ paths:
       - Calls
   /doctors:
     get:
-      description: Retrieve all doctors
+      description: Retrieve all doctors with optional filters
+      parameters:
+      - description: Filter by doctor name (partial match)
+        in: query
+        name: name
+        type: string
+      - description: Filter by specialty (exact match)
+        in: query
+        name: specialty
+        type: string
+      - description: Filter by hospital ID (exact match)
+        in: query
+        name: hospital_id
+        type: string
       produces:
       - application/json
       responses:
@@ -1925,7 +1952,28 @@ paths:
       - Doctors
   /drugs:
     get:
-      description: Retrieve all drugs
+      description: Retrieve all drugs with optional filters
+      parameters:
+      - description: Filter by drug name (partial match)
+        in: query
+        name: name
+        type: string
+      - description: Filter by minimum price
+        in: query
+        name: min_price
+        type: number
+      - description: Filter by maximum price
+        in: query
+        name: max_price
+        type: number
+      - description: Filter by minimum stock quantity
+        in: query
+        name: min_stock
+        type: integer
+      - description: Filter by maximum stock quantity
+        in: query
+        name: max_stock
+        type: integer
       produces:
       - application/json
       responses:
@@ -2264,7 +2312,24 @@ paths:
       - Email
   /hospitals:
     get:
-      description: Retrieve all hospitals
+      description: Retrieve all hospitals with optional filters
+      parameters:
+      - description: Filter by hospital name (partial match)
+        in: query
+        name: name
+        type: string
+      - description: Filter by address (partial match)
+        in: query
+        name: address
+        type: string
+      - description: Filter by city (exact match)
+        in: query
+        name: city
+        type: string
+      - description: Filter by ward (exact match)
+        in: query
+        name: ward
+        type: string
       produces:
       - application/json
       responses:
@@ -2962,7 +3027,16 @@ paths:
       - MedicalRecords
   /orders:
     get:
-      description: Retrieve all orders in the system
+      description: Retrieve all orders in the system with optional filters
+      parameters:
+      - description: Filter by order status (PENDING/CONFIRMED/COMPLETED/CANCELLED)
+        in: query
+        name: status
+        type: string
+      - description: 'Filter by order date (format: YYYY-MM-DD, e.g. 2024-01-15)'
+        in: query
+        name: order_date
+        type: string
       produces:
       - application/json
       responses:
@@ -3170,7 +3244,20 @@ paths:
       - Orders
   /patients:
     get:
-      description: Retrieve all patients
+      description: Retrieve all patients with optional filters
+      parameters:
+      - description: Filter by patient name (partial match)
+        in: query
+        name: name
+        type: string
+      - description: 'Filter by gender (exact match: male/female/other)'
+        in: query
+        name: gender
+        type: string
+      - description: 'Filter by birth month and year (format: YYYY-MM, e.g. 1990-05)'
+        in: query
+        name: birth_date
+        type: string
       produces:
       - application/json
       responses:
@@ -3692,7 +3779,16 @@ paths:
       - Prescriptions
   /services:
     get:
-      description: Get all available services
+      description: Get all available services with optional filters
+      parameters:
+      - description: Filter by service name (partial match)
+        in: query
+        name: name
+        type: string
+      - description: Filter by duration in minutes (exact match)
+        in: query
+        name: duration
+        type: integer
       produces:
       - application/json
       responses:

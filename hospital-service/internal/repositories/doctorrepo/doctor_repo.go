@@ -3,6 +3,7 @@ package doctorrepo
 import (
 	"hospital-service/internal/models/appointment"
 	"hospital-service/internal/models/doctor"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -53,6 +54,32 @@ func (r *DoctorRepo) Delete(id string) error {
 func (r *DoctorRepo) List() ([]doctor.Doctor, error) {
 	var doctors []doctor.Doctor
 	if err := r.db.Find(&doctors).Error; err != nil {
+		return nil, err
+	}
+	return doctors, nil
+}
+
+// FindWithFilters tìm doctors với filter động
+func (r *DoctorRepo) FindWithFilters(name, specialty, hospitalID string) ([]doctor.Doctor, error) {
+	var doctors []doctor.Doctor
+	query := r.db
+
+	// Filter theo name (partial match, case-insensitive)
+	if name != "" {
+		query = query.Where("LOWER(full_name) LIKE ?", "%"+strings.ToLower(name)+"%")
+	}
+
+	// Filter theo specialty (exact match)
+	if specialty != "" {
+		query = query.Where("specialty = ?", specialty)
+	}
+
+	// Filter theo hospital_id (exact match)
+	if hospitalID != "" {
+		query = query.Where("hospital_id = ?", hospitalID)
+	}
+
+	if err := query.Find(&doctors).Error; err != nil {
 		return nil, err
 	}
 	return doctors, nil

@@ -82,8 +82,8 @@ func (s *PatientService) DeletePatient(id string) error {
 }
 
 // ---------------- ListPatients ----------------
-func (s *PatientService) ListPatients() ([]patient.Patient, error) {
-	return s.patientRepo.List()
+func (s *PatientService) ListPatients(name, gender, birthDate string) ([]patient.Patient, error) {
+	return s.patientRepo.FindWithFilters(name, gender, birthDate)
 }
 
 // ---------------- Helper ----------------
