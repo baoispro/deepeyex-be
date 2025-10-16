@@ -146,7 +146,7 @@ func main() {
 	emailService := emailservice.NewEmailService(cfg)
 	uploadservice := uploadservice.NewUploadService(s3Client)
 	aidiagnosisService := medicalrecordservice.NewAIDiagnosisService(aidiagnosisRepo, s3Client)
-	fullRecordService := fullrecordservice.NewFullRecordService(medicalRecordService, attachmentService, prescriptionService)
+	fullRecordService := fullrecordservice.NewFullRecordService(medicalRecordService, attachmentService, prescriptionService, aService)
 
 	// Initialize cron service
 	cronService := cronservice.NewCronService(tService)
