@@ -2,7 +2,9 @@ package fullrecordservice
 
 import (
 	"errors"
+	"hospital-service/internal/enums"
 	"hospital-service/internal/models/medicalrecord"
+	"hospital-service/internal/services/appointmentservice"
 	"hospital-service/internal/services/medicalrecordservice"
 	"time"
 )
@@ -11,17 +13,20 @@ type FullRecordService struct {
 	medicalRecordService *medicalrecordservice.MedicalRecordService
 	attachmentService    *medicalrecordservice.AttachmentService
 	prescriptionService  *medicalrecordservice.PrescriptionService
+	appointmentService   *appointmentservice.AppointmentService
 }
 
 func NewFullRecordService(
 	recordService *medicalrecordservice.MedicalRecordService,
 	attachmentService *medicalrecordservice.AttachmentService,
 	prescriptionService *medicalrecordservice.PrescriptionService,
+	appointmentService *appointmentservice.AppointmentService,
 ) *FullRecordService {
 	return &FullRecordService{
 		medicalRecordService: recordService,
 		attachmentService:    attachmentService,
 		prescriptionService:  prescriptionService,
+		appointmentService:   appointmentService,
 	}
 }
 
@@ -92,6 +97,15 @@ func (s *FullRecordService) CreateFullRecord(req *FullRecordCreateRequest) (*med
 		}
 	}
 
+	// ✅ 4️⃣ Update appointment status thành COMPLETED (nếu có appointment_id)
+	if req.AppointmentID != "" {
+		if err := s.appointmentService.UpdateStatus(req.AppointmentID, enums.Completed); err != nil {
+			// Log error nhưng không fail toàn bộ request
+			// Vì medical record đã được tạo thành công
+			// Có thể log hoặc return warning
+		}
+	}
+
 	return record, nil
 }
 
@@ -145,6 +159,14 @@ func (s *FullRecordService) CompleteRecord(req *CompleteRecordRequest) (*medical
 
 		if err := s.prescriptionService.CreatePrescription(req.Prescription); err != nil {
 			return nil, err
+		}
+	}
+
+	// ✅ 4️⃣ Update appointment status thành COMPLETED (nếu record có appointment_id)
+	if record.AppointmentID != "" {
+		if err := s.appointmentService.UpdateStatus(record.AppointmentID, enums.Completed); err != nil {
+			// Log error nhưng không fail toàn bộ request
+			// Vì medical record đã được update thành công
 		}
 	}
 
