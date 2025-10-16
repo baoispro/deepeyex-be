@@ -356,6 +356,54 @@ const docTemplate = `{
                 }
             }
         },
+        "/appointments/follow-up": {
+            "post": {
+                "description": "Create a new follow-up appointment linked to an existing medical record (relatedRecordID)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Appointments"
+                ],
+                "summary": "Create a follow-up appointment",
+                "parameters": [
+                    {
+                        "description": "Follow-up appointment payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/appointmenthandler.CreateFollowUpRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/appointment.Appointment"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/appointments/online": {
             "get": {
                 "description": "Get all online appointments (status = PendingOnline) by bookUserID or doctorID",
@@ -428,6 +476,46 @@ const docTemplate = `{
                         "name": "patient_id",
                         "in": "path",
                         "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/appointment.Appointment"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/appointments/today": {
+            "get": {
+                "description": "Retrieve all appointments for today, optionally filtered by doctor_id, sorted by earliest timeslot and doctor ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Appointments"
+                ],
+                "summary": "Get today's appointments",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Doctor ID to filter appointments",
+                        "name": "doctor_id",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -639,7 +727,7 @@ const docTemplate = `{
             "post": {
                 "description": "Upload attachment cho một medical record",
                 "consumes": [
-                    "application/json"
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -650,18 +738,36 @@ const docTemplate = `{
                 "summary": "Thêm file đính kèm vào medical record",
                 "parameters": [
                     {
-                        "description": "Attachment Data",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/medicalrecord.Attachment"
-                        }
+                        "type": "string",
+                        "description": "Record ID",
+                        "name": "record_id",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "File để upload",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "File type (image/pdf/...)",
+                        "name": "file_type",
+                        "in": "formData",
+                        "required": true
                     }
                 ],
                 "responses": {
                     "201": {
                         "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/medicalrecord.Attachment"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -669,8 +775,8 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "400": {
-                        "description": "Bad Request",
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1919,6 +2025,208 @@ const docTemplate = `{
                 }
             }
         },
+        "/full-records/complete": {
+            "put": {
+                "description": "Update an existing record with diagnosis, notes, attachments, and prescription",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Medical Records"
+                ],
+                "summary": "Complete existing medical record",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Record ID",
+                        "name": "record_id",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Diagnosis",
+                        "name": "diagnosis",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Notes",
+                        "name": "notes",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Update Doctor ID",
+                        "name": "update_doctor",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Update Patient ID",
+                        "name": "update_patient",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Prescription JSON string",
+                        "name": "prescription",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Attachment files (multiple)",
+                        "name": "files",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "File types (comma-separated)",
+                        "name": "file_types",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/medicalrecord.MedicalRecord"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/full-records/full": {
+            "post": {
+                "description": "Create a new medical record with attachments and prescription",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Medical Records"
+                ],
+                "summary": "Create full medical record",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Patient ID",
+                        "name": "patient_id",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Doctor ID",
+                        "name": "doctor_id",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Diagnosis",
+                        "name": "diagnosis",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Appointment ID",
+                        "name": "appointment_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Notes",
+                        "name": "notes",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Related Record ID",
+                        "name": "related_record_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Prescription JSON string",
+                        "name": "prescription",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Attachment files (multiple)",
+                        "name": "files",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "File types (comma-separated, e.g. X-RAY,LAB_RESULT)",
+                        "name": "file_types",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/medicalrecord.MedicalRecord"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/hospitals": {
             "get": {
                 "description": "Retrieve all hospitals with optional filters",
@@ -2582,76 +2890,22 @@ const docTemplate = `{
                 }
             }
         },
-        "/medical_records/ai_diagnoses/{id}": {
+        "/medical_records/check": {
             "get": {
-                "description": "Get the details of a specific AI diagnosis by its ID",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Check whether a MedicalRecord exists for the given appointment.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "AI_Diagnoses"
+                    "MedicalRecords"
                 ],
-                "summary": "Get AI Diagnosis by ID",
+                "summary": "Check if a medical record exists for an appointment",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "AI Diagnosis ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/medicalrecord.AIDiagnosis"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete a specific AI diagnosis by its ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "AI_Diagnoses"
-                ],
-                "summary": "Delete AI Diagnosis by ID",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "AI Diagnosis ID",
-                        "name": "id",
-                        "in": "path",
+                        "description": "Appointment ID",
+                        "name": "appointment_id",
+                        "in": "query",
                         "required": true
                     }
                 ],
@@ -2660,9 +2914,7 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "400": {
@@ -2877,108 +3129,6 @@ const docTemplate = `{
                             "additionalProperties": {
                                 "type": "string"
                             }
-                        }
-                    }
-                }
-            }
-        },
-        "/medical_records/{record_id}/ai_diagnoses": {
-            "get": {
-                "description": "Get a list of AI diagnoses for a specific medical record",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "AI_Diagnoses"
-                ],
-                "summary": "List AI Diagnoses by Record ID",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Medical Record ID",
-                        "name": "record_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/medicalrecord.AIDiagnosis"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Add a new AI diagnosis to a specific medical record",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "AI_Diagnoses"
-                ],
-                "summary": "Add AI Diagnosis to Medical Record",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Medical Record ID",
-                        "name": "record_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "AI Diagnosis payload",
-                        "name": "payload",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/medicalrecordhandler.CreateAIDiagnosisRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/medicalrecord.AIDiagnosis"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
                         }
                     }
                 }
@@ -3671,58 +3821,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/prescription_items": {
-            "post": {
-                "description": "Add a new prescription item to an existing prescription",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "PrescriptionItems"
-                ],
-                "summary": "Create a prescription item",
-                "parameters": [
-                    {
-                        "description": "Prescription Item payload",
-                        "name": "prescription_item",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/medicalrecord.PrescriptionItem"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/medicalrecord.PrescriptionItem"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/prescription_items/{item_id}": {
             "put": {
                 "description": "Update details of a specific prescription item",
@@ -3807,58 +3905,6 @@ const docTemplate = `{
                             "additionalProperties": {
                                 "type": "string"
                             }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/prescriptions": {
-            "post": {
-                "description": "Create a prescription linked to a medical record",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Prescriptions"
-                ],
-                "summary": "Create a new prescription",
-                "parameters": [
-                    {
-                        "description": "Prescription payload",
-                        "name": "payload",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/medicalrecordhandler.createPrescriptionReq"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/medicalrecord.Prescription"
                         }
                     },
                     "400": {
@@ -5283,6 +5329,47 @@ const docTemplate = `{
                 }
             }
         },
+        "appointmenthandler.CreateFollowUpRequest": {
+            "type": "object",
+            "required": [
+                "book_user_id",
+                "doctor_id",
+                "hospital_id",
+                "patient_id",
+                "related_record_id",
+                "service_name",
+                "slot_ids"
+            ],
+            "properties": {
+                "book_user_id": {
+                    "type": "string"
+                },
+                "doctor_id": {
+                    "type": "string"
+                },
+                "hospital_id": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "patient_id": {
+                    "type": "string"
+                },
+                "related_record_id": {
+                    "type": "string"
+                },
+                "service_name": {
+                    "type": "string"
+                },
+                "slot_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "appointmenthandler.UpdateAppointmentStatusRequest": {
             "type": "object",
             "required": [
@@ -6181,34 +6268,6 @@ const docTemplate = `{
                 }
             }
         },
-        "medicalrecordhandler.CreateAIDiagnosisRequest": {
-            "type": "object",
-            "required": [
-                "confidence",
-                "disease_code",
-                "main_image_url"
-            ],
-            "properties": {
-                "confidence": {
-                    "type": "number"
-                },
-                "disease_code": {
-                    "type": "string"
-                },
-                "eye_type": {
-                    "description": "\"LEFT\" | \"RIGHT\" | \"BOTH\"",
-                    "type": "string"
-                },
-                "main_image_url": {
-                    "description": "URL hình ảnh chẩn đoán",
-                    "type": "string"
-                },
-                "notes": {
-                    "description": "Ghi chú",
-                    "type": "string"
-                }
-            }
-        },
         "medicalrecordhandler.CreateMedicalRecordRequest": {
             "type": "object",
             "required": [
@@ -6232,28 +6291,10 @@ const docTemplate = `{
                 "doctor_id": {
                     "type": "string"
                 },
+                "note": {
+                    "type": "string"
+                },
                 "patient_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "medicalrecordhandler.createPrescriptionReq": {
-            "type": "object",
-            "required": [
-                "record_id",
-                "status"
-            ],
-            "properties": {
-                "approved_at": {
-                    "type": "string"
-                },
-                "approved_by": {
-                    "type": "string"
-                },
-                "record_id": {
-                    "type": "string"
-                },
-                "status": {
                     "type": "string"
                 }
             }

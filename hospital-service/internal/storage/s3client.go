@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"io"
 	"mime/multipart"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -54,6 +55,24 @@ func (s *S3Client) UploadFile(fileHeader *multipart.FileHeader, key string) (str
 	}
 
 	// Trả về public URL (giả sử bucket public hoặc có CloudFront)
+	url := "https://" + s.bucket + ".s3." + s.region + ".amazonaws.com/" + key
+	return url, nil
+}
+
+// UploadFileWithReader upload từ io.Reader (dùng cho base64 decode)
+func (s *S3Client) UploadFileWithReader(reader io.Reader, key string, size int64, contentType string) (string, error) {
+	_, err := s.client.PutObject(context.TODO(), &s3.PutObjectInput{
+		Bucket:        aws.String(s.bucket),
+		Key:           aws.String(key),
+		Body:          reader,
+		ContentType:   aws.String(contentType),
+		ContentLength: aws.Int64(size),
+	})
+	if err != nil {
+		return "", err
+	}
+
+	// Trả về public URL
 	url := "https://" + s.bucket + ".s3." + s.region + ".amazonaws.com/" + key
 	return url, nil
 }

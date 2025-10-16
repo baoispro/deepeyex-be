@@ -70,7 +70,9 @@ func (r *MedicalRecordRepo) Create(record *medicalrecord.MedicalRecord) error {
 // ---------------- Get record by ID ----------------
 func (r *MedicalRecordRepo) GetByID(id string) (*medicalrecord.MedicalRecord, error) {
 	var record medicalrecord.MedicalRecord
-	err := r.db.
+	err := r.db.Preload("Attachments").
+		Preload("Prescriptions").
+		Preload("AI_Diagnoses").
 		First(&record, "record_id = ?", id).Error
 	return &record, err
 }
@@ -97,7 +99,7 @@ func (r *MedicalRecordRepo) Delete(id string) error {
 // ---------------- Get record by AppointmentID ----------------
 func (r *MedicalRecordRepo) GetByAppointmentID(appointmentID string) (*medicalrecord.MedicalRecord, error) {
 	var record medicalrecord.MedicalRecord
-	err := r.db.Preload("AI_Diagnoses.RecommendedPlans").
+	err := r.db.
 		Preload("Attachments").
 		Preload("Prescriptions").
 		Preload("AI_Diagnoses").
