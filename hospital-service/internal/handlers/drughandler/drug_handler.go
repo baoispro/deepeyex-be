@@ -187,14 +187,26 @@ func (h *DrugHandler) DeleteDrug(c *gin.Context) {
 
 // ---------------- List Drugs ----------------
 // @Summary List all drugs
-// @Description Retrieve all drugs
+// @Description Retrieve all drugs with optional filters
 // @Tags Drugs
 // @Produce json
+// @Param name query string false "Filter by drug name (partial match)"
+// @Param min_price query number false "Filter by minimum price"
+// @Param max_price query number false "Filter by maximum price"
+// @Param min_stock query int false "Filter by minimum stock quantity"
+// @Param max_stock query int false "Filter by maximum stock quantity"
 // @Success 200 {array} drug.Drug
 // @Failure 500 {object} map[string]string
 // @Router /drugs [get]
 func (h *DrugHandler) ListDrugs(c *gin.Context) {
-	list, err := h.service.ListDrugs()
+	// Lấy query params
+	name := c.Query("name")
+	minPrice := c.Query("min_price")
+	maxPrice := c.Query("max_price")
+	minStock := c.Query("min_stock")
+	maxStock := c.Query("max_stock")
+
+	list, err := h.service.ListDrugs(name, minPrice, maxPrice, minStock, maxStock)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return

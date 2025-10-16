@@ -2,6 +2,7 @@ package patientrepo
 
 import (
 	"hospital-service/internal/models/patient"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -51,6 +52,37 @@ func (r *PatientRepo) Delete(id string) error {
 func (r *PatientRepo) List() ([]patient.Patient, error) {
 	var patients []patient.Patient
 	if err := r.db.Find(&patients).Error; err != nil {
+		return nil, err
+	}
+	return patients, nil
+}
+
+// FindWithFilters tìm patients với filter động
+func (r *PatientRepo) FindWithFilters(name, gender, birthDate string) ([]patient.Patient, error) {
+	var patients []patient.Patient
+	query := r.db
+
+	// Filter theo name (partial match, case-insensitive)
+	if name != "" {
+		query = query.Where("LOWER(full_name) LIKE ?", "%"+strings.ToLower(name)+"%")
+	}
+
+	// Filter theo gender (exact match)
+	if gender != "" {
+		query = query.Where("gender = ?", gender)
+	}
+
+	// Filter theo birth date (format: YYYY-MM)
+	if birthDate != "" {
+		parts := strings.Split(birthDate, "-")
+		if len(parts) == 2 {
+			year := parts[0]
+			month := parts[1]
+			query = query.Where("EXTRACT(YEAR FROM dob) = ? AND EXTRACT(MONTH FROM dob) = ?", year, month)
+		}
+	}
+
+	if err := query.Find(&patients).Error; err != nil {
 		return nil, err
 	}
 	return patients, nil

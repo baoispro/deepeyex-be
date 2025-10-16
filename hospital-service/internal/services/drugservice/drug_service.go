@@ -62,8 +62,8 @@ func (s *DrugService) GetDrug(id string) (*drug.Drug, error) {
 }
 
 // ---------------- ListDrugs ----------------
-func (s *DrugService) ListDrugs() ([]drug.Drug, error) {
-	return s.repo.ListAll()
+func (s *DrugService) ListDrugs(name, minPrice, maxPrice, minStock, maxStock string) ([]drug.Drug, error) {
+	return s.repo.FindWithFilters(name, minPrice, maxPrice, minStock, maxStock)
 }
 
 // ---------------- UpdateDrug ----------------

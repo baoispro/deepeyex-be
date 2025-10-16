@@ -196,14 +196,22 @@ func (h *PatientHandler) DeletePatient(c *gin.Context) {
 
 // ---------------- List Patients ----------------
 // @Summary List all patients
-// @Description Retrieve all patients
+// @Description Retrieve all patients with optional filters
 // @Tags Patients
 // @Produce json
+// @Param name query string false "Filter by patient name (partial match)"
+// @Param gender query string false "Filter by gender (exact match: male/female/other)"
+// @Param birth_date query string false "Filter by birth month and year (format: YYYY-MM, e.g. 1990-05)"
 // @Success 200 {array} patient.Patient
 // @Failure 500 {object} map[string]string
 // @Router /patients [get]
 func (h *PatientHandler) ListPatients(c *gin.Context) {
-	patients, err := h.service.ListPatients()
+	// Lấy query params
+	name := c.Query("name")
+	gender := c.Query("gender")
+	birthDate := c.Query("birth_date")
+
+	patients, err := h.service.ListPatients(name, gender, birthDate)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return

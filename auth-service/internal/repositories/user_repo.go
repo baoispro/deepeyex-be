@@ -70,6 +70,27 @@ func (r *UserRepo) FindAll() ([]models.User, error) {
 	return users, nil
 }
 
+// FindWithFilters tìm users với filter động
+func (r *UserRepo) FindWithFilters(name, role string) ([]models.User, error) {
+	var users []models.User
+	query := r.db
+
+	// Filter theo name (partial match, case-insensitive)
+	if name != "" {
+		query = query.Where("LOWER(username) LIKE ?", "%"+name+"%")
+	}
+
+	// Filter theo role (exact match)
+	if role != "" {
+		query = query.Where("role = ?", role)
+	}
+
+	if err := query.Find(&users).Error; err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
 func (r *UserRepo) Count() (int64, error) {
 	var count int64
 	if err := r.db.Model(&models.User{}).Count(&count).Error; err != nil {

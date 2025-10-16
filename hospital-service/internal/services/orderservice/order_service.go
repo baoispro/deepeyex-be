@@ -169,8 +169,8 @@ func (s *OrderService) GetOrder(id string) (*order.Order, error) {
 }
 
 // ---------------- ListOrders ----------------
-func (s *OrderService) ListOrders() ([]order.Order, error) {
-	return s.repo.ListAll()
+func (s *OrderService) ListOrders(status, orderDate string) ([]order.Order, error) {
+	return s.repo.FindWithFilters(status, orderDate)
 }
 
 // ---------------- UpdateOrderStatus ----------------

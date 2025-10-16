@@ -80,8 +80,8 @@ func (s *HospitalService) DeleteHospital(id string) error {
 }
 
 // ---------------- ListHospitals ----------------
-func (s *HospitalService) ListHospitals() ([]hospital.Hospital, error) {
-	return s.hospitalRepo.List()
+func (s *HospitalService) ListHospitals(name, address, city, ward string) ([]hospital.Hospital, error) {
+	return s.hospitalRepo.FindWithFilters(name, address, city, ward)
 }
 
 // ---------------- ListCities ----------------

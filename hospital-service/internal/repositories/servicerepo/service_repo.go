@@ -2,6 +2,8 @@ package servicerepo
 
 import (
 	"hospital-service/internal/models/service"
+	"strconv"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -36,6 +38,29 @@ func (r *ServiceRepo) ListAllServices() ([]service.Service, error) {
 	var services []service.Service
 	err := r.db.Find(&services).Error
 	return services, err
+}
+
+// FindWithFilters - Tìm services với filter động
+func (r *ServiceRepo) FindWithFilters(name, duration string) ([]service.Service, error) {
+	var services []service.Service
+	query := r.db
+
+	// Filter theo name (partial match, case-insensitive)
+	if name != "" {
+		query = query.Where("LOWER(name) LIKE ?", "%"+strings.ToLower(name)+"%")
+	}
+
+	// Filter theo duration (exact match)
+	if duration != "" {
+		if dur, err := strconv.Atoi(duration); err == nil {
+			query = query.Where("duration = ?", dur)
+		}
+	}
+
+	if err := query.Find(&services).Error; err != nil {
+		return nil, err
+	}
+	return services, nil
 }
 
 // UpdateService - Cập nhật service

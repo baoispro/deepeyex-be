@@ -179,14 +179,20 @@ func (h *OrderHandler) UpdateOrderAppointment(c *gin.Context) {
 
 // ---------------- List All Orders ----------------
 // @Summary List all orders
-// @Description Retrieve all orders in the system
+// @Description Retrieve all orders in the system with optional filters
 // @Tags Orders
 // @Produce json
+// @Param status query string false "Filter by order status (PENDING/CONFIRMED/COMPLETED/CANCELLED)"
+// @Param order_date query string false "Filter by order date (format: YYYY-MM-DD, e.g. 2024-01-15)"
 // @Success 200 {array} order.Order
 // @Failure 500 {object} map[string]string
 // @Router /orders [get]
 func (h *OrderHandler) ListAllOrders(c *gin.Context) {
-	orders, err := h.service.ListOrders()
+	// Lấy query params
+	status := c.Query("status")
+	orderDate := c.Query("order_date")
+
+	orders, err := h.service.ListOrders(status, orderDate)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return

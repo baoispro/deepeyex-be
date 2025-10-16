@@ -2,6 +2,8 @@ package drugrepo
 
 import (
 	"hospital-service/internal/models/drug"
+	"strconv"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -35,6 +37,46 @@ func (r *DrugRepo) ListAll() ([]drug.Drug, error) {
 		return nil, err
 	}
 	return ds, nil
+}
+
+// FindWithFilters tìm drugs với filter động
+func (r *DrugRepo) FindWithFilters(name, minPrice, maxPrice, minStock, maxStock string) ([]drug.Drug, error) {
+	var drugs []drug.Drug
+	query := r.db
+
+	// Filter theo name (partial match, case-insensitive)
+	if name != "" {
+		query = query.Where("LOWER(name) LIKE ?", "%"+strings.ToLower(name)+"%")
+	}
+
+	// Filter theo price range
+	if minPrice != "" {
+		if price, err := strconv.ParseFloat(minPrice, 64); err == nil {
+			query = query.Where("price >= ?", price)
+		}
+	}
+	if maxPrice != "" {
+		if price, err := strconv.ParseFloat(maxPrice, 64); err == nil {
+			query = query.Where("price <= ?", price)
+		}
+	}
+
+	// Filter theo stock quantity range
+	if minStock != "" {
+		if stock, err := strconv.Atoi(minStock); err == nil {
+			query = query.Where("stock_quantity >= ?", stock)
+		}
+	}
+	if maxStock != "" {
+		if stock, err := strconv.Atoi(maxStock); err == nil {
+			query = query.Where("stock_quantity <= ?", stock)
+		}
+	}
+
+	if err := query.Find(&drugs).Error; err != nil {
+		return nil, err
+	}
+	return drugs, nil
 }
 
 // Update cập nhật thuốc

@@ -206,8 +206,8 @@ func (s *AppointmentService) UpdateDetail(id string, updatedData *appointment.Ap
 
 // ---------------- ListAll ----------------
 // Lấy danh sách tất cả lịch khám (dùng cho admin)
-func (s *AppointmentService) ListAll() ([]appointment.Appointment, error) {
-	return s.repo.ListAll()
+func (s *AppointmentService) ListAll(patientName, status, doctorID string) ([]appointment.Appointment, error) {
+	return s.repo.FindWithFilters(patientName, status, doctorID)
 }
 
 // ---------------- Delete ----------------
