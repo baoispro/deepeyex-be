@@ -16,32 +16,52 @@ type AttachmentHandler struct {
 	cfg     config.Config
 }
 
-func NewAttachmentHandler(cfg config.Config ,s *medicalrecordservice.AttachmentService) *AttachmentHandler {
+func NewAttachmentHandler(cfg config.Config, s *medicalrecordservice.AttachmentService) *AttachmentHandler {
 	return &AttachmentHandler{service: s, cfg: cfg}
 }
+
 // AddAttachment godoc
 // @Summary Thêm file đính kèm vào medical record
 // @Description Upload attachment cho một medical record
 // @Tags Attachments
-// @Accept json
+// @Accept multipart/form-data
 // @Produce json
-// @Param data body medicalrecord.Attachment true "Attachment Data"
-// @Success 201 {object} map[string]string
+// @Param record_id formData string true "Record ID"
+// @Param file formData file true "File để upload"
+// @Param file_type formData string true "File type (image/pdf/...)"
+// @Success 201 {object} medicalrecord.Attachment
 // @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
 // @Router /attachments [post]
 func (h *AttachmentHandler) AddAttachment(c *gin.Context) {
-	var req medicalrecord.Attachment
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
+	recordID := c.PostForm("record_id")
+	fileType := c.PostForm("file_type")
+
+	if recordID == "" || fileType == "" {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "record_id and file_type are required"))
 		return
 	}
 
-	if err := h.service.AddAttachment(&req); err != nil {
-		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
+	// Lấy file upload
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "file is required"))
 		return
 	}
 
-	c.JSON(http.StatusCreated, utils.SuccessResponse(http.StatusCreated, "Attachment added successfully", req))
+	att := &medicalrecord.Attachment{
+		RecordID: recordID,
+		FileType: fileType,
+	}
+
+	// Gọi service upload lên S3 và lưu DB
+	savedAtt, err := h.service.AddAttachment(att, file)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusCreated, utils.SuccessResponse(http.StatusCreated, "Attachment added successfully", savedAtt))
 }
 
 // GetAttachments godoc
@@ -57,7 +77,7 @@ func (h *AttachmentHandler) AddAttachment(c *gin.Context) {
 func (h *AttachmentHandler) GetAttachments(c *gin.Context) {
 	recordID := c.Param("record_id")
 	if recordID == "" {
-		c.JSON(http.StatusBadRequest,utils.ErrorResponse(http.StatusBadRequest, "record_id is required"))
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "record_id is required"))
 		return
 	}
 

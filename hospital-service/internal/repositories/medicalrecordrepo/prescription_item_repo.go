@@ -16,7 +16,7 @@ func NewPrescriptionItemRepository(db *gorm.DB) *PrescriptionItemRepo {
 }
 
 // ---------------- Create ----------------
-func (r *PrescriptionItemRepo) Create(p *medicalrecord.Prescription) error {
+func (r *PrescriptionItemRepo) Create(p *medicalrecord.PrescriptionItem) error {
 	return r.db.Create(p).Error
 }
 

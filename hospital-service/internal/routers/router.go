@@ -8,6 +8,7 @@ import (
 	"hospital-service/internal/handlers/doctorhandler"
 	"hospital-service/internal/handlers/drughandler"
 	"hospital-service/internal/handlers/emailhandler"
+	"hospital-service/internal/handlers/fullrecordhandler"
 	"hospital-service/internal/handlers/hospitalhandler"
 	"hospital-service/internal/handlers/medicalrecordhandler"
 	"hospital-service/internal/handlers/orderhandler"
@@ -38,6 +39,7 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	callhandler *callhandler.StringeeHandler,
 	wsHandler *websockethandler.WebSocketHandler,
 	aidiagnosisHandler *medicalrecordhandler.AIDiagnosisHandler,
+	fullRecordHandler *fullrecordhandler.FullRecordHandler,
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -90,10 +92,12 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 		appointments.GET("/:appointment_id", aHandler.GetAppointmentByID)
 		appointments.GET("/patient/:patient_id", aHandler.GetAppointmentsByPatient)
 		appointments.GET("/doctor/:doctor_id", aHandler.GetAppointmentsByDoctor)
+		appointments.POST("/follow-up", aHandler.CreateFollowUpAppointment)
 		appointments.PUT("/:appointment_id/status", aHandler.UpdateAppointmentStatus)
 		appointments.PUT("/:appointment_id/detail", aHandler.UpdateAppointmentDetail)
 		appointments.GET("", aHandler.ListAllAppointments)
 		appointments.GET("/online", aHandler.GetOnlineAppointments)
+		appointments.GET("/today", aHandler.GetTodayAppointments)
 		appointments.DELETE("/:appointment_id", aHandler.DeleteAppointment)
 	}
 
@@ -140,22 +144,19 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	// ===== MedicalRecord routes =====
 	medical := r.Group("/medical_records")
 	{
-		medical.POST("", medicalRecordHandler.CreateMedicalRecord)                    // Create
-		medical.GET("", medicalRecordHandler.ListMedicalRecords)                      // List all
-		medical.GET("/:record_id", medicalRecordHandler.GetMedicalRecord)             // Get by ID
-		medical.GET("/:record_id/ai_diagnoses", medicalRecordHandler.ListAIDiagnoses) // List AI Diagnoses by MedicalRecord ID
-		medical.PUT("/:record_id", medicalRecordHandler.UpdateMedicalRecord)          // Update
+		medical.POST("", medicalRecordHandler.CreateMedicalRecord) // Create
+		medical.GET("", medicalRecordHandler.ListMedicalRecords)
+		medical.GET("/check", medicalRecordHandler.CheckMedicalRecord)
+		medical.GET("/:record_id", medicalRecordHandler.GetMedicalRecord)    // Get by ID
+		medical.PUT("/:record_id", medicalRecordHandler.UpdateMedicalRecord) // Update
 		medical.DELETE("/:record_id", medicalRecordHandler.DeleteMedicalRecord)
 		medical.POST("/init", medicalRecordHandler.InitMedicalRecordAndDiagnosis)
-		medical.POST("/:record_id/ai_diagnoses", medicalRecordHandler.AddAIDiagnosis)
-		medical.GET("/ai_diagnoses/:id", medicalRecordHandler.GetAIDiagnosisByID)
-		medical.DELETE("/ai_diagnoses/:id", medicalRecordHandler.DeleteAIDiagnosis)
 	}
 
 	// ===== Prescription routes =====
 	prescription := r.Group("/prescriptions")
 	{
-		prescription.POST("", prescriptionHandler.CreatePrescription)
+		// prescription.POST("", prescriptionHandler.CreatePrescription)
 		prescription.GET("/:prescription_id", prescriptionHandler.GetPrescriptionByID)
 		prescription.GET("/medical_records/:record_id", prescriptionHandler.ListPrescriptionsByMedicalRecordID)
 		prescription.PUT("/:prescription_id", prescriptionHandler.UpdatePrescription)
@@ -232,13 +233,22 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 		ws.GET("/status/:doctor_id", wsHandler.GetDoctorConnectionStatus) // Check doctor connection status
 	}
 
-	// ===== Call routes =====
+	// ===== AI routes =====
 	ai := r.Group("/ai-diagnoses")
 	{
 		ai.POST("", aidiagnosisHandler.Create)
 		ai.GET("", aidiagnosisHandler.FindAllPending)
 		ai.GET("/patient/:patient_id", aidiagnosisHandler.FindByPatientID)
 		ai.PUT("/:id/verify", aidiagnosisHandler.Verify)
+	}
+
+	// ===== me routes =====
+	fr := r.Group("/full-records")
+	{
+		// 🩺 Tạo mới full record (record + attachment + prescription)
+		fr.POST("/full", fullRecordHandler.CreateFullRecord)
+		// 🩻 Hoàn thiện record đã có (thêm diagnosis, notes, attachments, prescription)
+		fr.PUT("/complete", fullRecordHandler.CompleteRecord)
 	}
 
 	// Swagger

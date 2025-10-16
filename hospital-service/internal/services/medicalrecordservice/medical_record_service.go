@@ -7,9 +7,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
-
-
 
 type MedicalRecordService struct {
 	repo *medicalrecordrepo.MedicalRecordRepo
@@ -42,30 +41,33 @@ func (s *MedicalRecordService) InitRecordAndDiagnosis(req medicalrecord.InitReco
 	}, nil
 }
 
-
 func (s *MedicalRecordService) CreateRecord(
-	patientID, doctorID, diagnosis, createdBy, appointmentID string,
+	patientID, doctorID, diagnosis, appointmentID string,
+	notes *string,
+	relatedRecordID *string,
 ) (*medicalrecord.MedicalRecord, error) {
 
-	if patientID == "" || doctorID == "" || diagnosis == "" || createdBy == "" {
-		return nil, errors.New("missing required fields: patient_id, doctor_id, diagnosis, created_by")
+	if patientID == "" || doctorID == "" || diagnosis == "" {
+		return nil, errors.New("missing required fields: patient_id, doctor_id, diagnosis")
 	}
 
 	record := &medicalrecord.MedicalRecord{
-		RecordID:      uuid.New().String(),
-		PatientID:     patientID,
-		AppointmentID: appointmentID, 
-		DoctorID:      doctorID,
-		Diagnosis:     diagnosis,
-		CreatedAt:     time.Now(),
-		UpdatedAt:     time.Now(),
+		RecordID:        uuid.New().String(),
+		PatientID:       patientID,
+		AppointmentID:   appointmentID,
+		DoctorID:        doctorID,
+		Diagnosis:       diagnosis,
+		Notes:           notes,
+		RelatedRecordID: relatedRecordID,
+		CreatedAt:       time.Now(),
+		UpdatedAt:       time.Now(),
 	}
 
 	if err := s.repo.Create(record); err != nil {
 		return nil, err
 	}
 
-	return record, nil
+	return s.repo.GetByID(record.RecordID) // preload relations nếu cần
 }
 
 func (s *MedicalRecordService) GetRecord(id string) (*medicalrecord.MedicalRecord, error) {
@@ -85,36 +87,22 @@ func (s *MedicalRecordService) DeleteRecord(id string) error {
 	return s.repo.Delete(id)
 }
 
-
-// ---------------- AIDiagnosis Management ----------------
-func (s *MedicalRecordService) ListAIDiagnoses(recordID string) ([]*medicalrecord.AIDiagnosis, error) {
-	return s.repo.ListAIDiagnosesByRecordID(recordID)
-}
-
-func (s *MedicalRecordService) AddAIDiagnosisByRecordID(
-	recordID, diseaseCode string,
-	confidence float64,
-	mainImageURL string,
-	eyeType, notes *string,
-) (*medicalrecord.AIDiagnosis, error) {
-	diagnosis := &medicalrecord.AIDiagnosis{
-		ID:           uuid.New().String(),
-		RecordID:     &recordID,
-		DiseaseCode:  diseaseCode,
-		Confidence:   confidence,
-		MainImageURL: mainImageURL, // ✅ Thêm
-		EyeType:      eyeType,      // ✅ Thêm
-		Notes:        notes,        // ✅ Thêm
-		CreatedAt:    time.Now(),
+func (s *MedicalRecordService) CheckRecordByAppointment(appointmentID string) (*medicalrecord.MedicalRecord, bool, error) {
+	// appointment_id bắt buộc
+	if appointmentID == "" {
+		return nil, false, errors.New("appointment_id is required")
 	}
 
-	return s.repo.AddAIDiagnosis(diagnosis)
-}
+	record, err := s.repo.GetByAppointmentID(appointmentID)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, false, err
+	}
 
-func (s *MedicalRecordService) GetAIDiagnosisByID(id string) (*medicalrecord.AIDiagnosis, error) {
-	return s.repo.GetAIDiagnosisByID(id)
-}
+	if record != nil {
+		// Nếu đã có record → update
+		return record, true, nil
+	}
 
-func (s *MedicalRecordService) DeleteAIDiagnosis(id string) error {
-	return s.repo.DeleteAIDiagnosis(id)
+	// Chưa có record → tạo mới
+	return nil, false, nil
 }

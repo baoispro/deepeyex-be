@@ -15,7 +15,6 @@ func NewMedicalRecordRepository(db *gorm.DB) *MedicalRecordRepo {
 	return &MedicalRecordRepo{db: db}
 }
 
-
 // InitRecordAndDiagnosis: tạo MedicalRecord và AIDiagnosis trong cùng 1 transaction
 func (r *MedicalRecordRepo) InitRecordAndDiagnosis(
 	patientID, diseaseCode, diagnosisText string,
@@ -71,9 +70,7 @@ func (r *MedicalRecordRepo) Create(record *medicalrecord.MedicalRecord) error {
 // ---------------- Get record by ID ----------------
 func (r *MedicalRecordRepo) GetByID(id string) (*medicalrecord.MedicalRecord, error) {
 	var record medicalrecord.MedicalRecord
-	err := r.db.Preload("AI_Diagnoses.RecommendedPlans").
-		Preload("Attachments").
-		Preload("FollowUps").
+	err := r.db.
 		First(&record, "record_id = ?", id).Error
 	return &record, err
 }
@@ -83,7 +80,6 @@ func (r *MedicalRecordRepo) List() ([]*medicalrecord.MedicalRecord, error) {
 	var records []*medicalrecord.MedicalRecord
 	err := r.db.Preload("AI_Diagnoses.RecommendedPlans").
 		Preload("Attachments").
-		Preload("FollowUps").
 		Find(&records).Error
 	return records, err
 }
@@ -98,30 +94,16 @@ func (r *MedicalRecordRepo) Delete(id string) error {
 	return r.db.Delete(&medicalrecord.MedicalRecord{}, "record_id = ?", id).Error
 }
 
-
-// ---------------------------- AI Diagnosis Management ----------------------------
-// ---------------- Add AI Diagnosis ----------------
-func (r *MedicalRecordRepo) AddAIDiagnosis(diag *medicalrecord.AIDiagnosis) (*medicalrecord.AIDiagnosis, error) {
-	if err := r.db.Create(diag).Error; err != nil {
+// ---------------- Get record by AppointmentID ----------------
+func (r *MedicalRecordRepo) GetByAppointmentID(appointmentID string) (*medicalrecord.MedicalRecord, error) {
+	var record medicalrecord.MedicalRecord
+	err := r.db.Preload("AI_Diagnoses.RecommendedPlans").
+		Preload("Attachments").
+		Preload("Prescriptions").
+		Preload("AI_Diagnoses").
+		First(&record, "appointment_id = ?", appointmentID).Error
+	if err != nil {
 		return nil, err
 	}
-	return diag, nil
-}
-// ---------------- List AI Diagnoses by RecordID ----------------
-func (r *MedicalRecordRepo) ListAIDiagnosesByRecordID(recordID string) ([]*medicalrecord.AIDiagnosis, error) {
-	var diagnoses []*medicalrecord.AIDiagnosis
-	err := r.db.Where("record_id = ?", recordID).Preload("RecommendedPlans").Find(&diagnoses).Error
-	return diagnoses, err
-}
-
-// ---------------- GET AI Diagnosis by ID ----------------
-func (r *MedicalRecordRepo) GetAIDiagnosisByID(id string) (*medicalrecord.AIDiagnosis, error) {
-	var diag medicalrecord.AIDiagnosis
-	err := r.db.Preload("RecommendedPlans").First(&diag, "id = ?", id).Error
-	return &diag, err
-}
-
-// ---------------- Delete AI Diagnosis ----------------
-func (r *MedicalRecordRepo) DeleteAIDiagnosis(id string) error {
-	return r.db.Delete(&medicalrecord.AIDiagnosis{}, "id = ?", id).Error
+	return &record, nil
 }

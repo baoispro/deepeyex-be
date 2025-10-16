@@ -21,6 +21,17 @@ type UpdateAppointmentStatusRequest struct {
 	Status enums.AppointmentStatus `json:"status" binding:"required"`
 }
 
+type CreateFollowUpRequest struct {
+	PatientID       string   `json:"patient_id" binding:"required"`
+	DoctorID        string   `json:"doctor_id" binding:"required"`
+	HospitalID      string   `json:"hospital_id" binding:"required"`
+	BookUserID      string   `json:"book_user_id" binding:"required"`
+	SlotIDs         []string `json:"slot_ids" binding:"required"`
+	Notes           string   `json:"notes"`
+	ServiceName     string   `json:"service_name" binding:"required"`
+	RelatedRecordID string   `json:"related_record_id" binding:"required"`
+}
+
 type createAppointmentReq struct {
 	PatientID  string `json:"patient_id" binding:"required"`
 	DoctorID   string `json:"doctor_id" binding:"required"`
@@ -226,4 +237,63 @@ func (h *AppointmentHandler) GetOnlineAppointments(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Online appointments retrieved successfully", appointments))
+}
+
+// @Summary Get today's appointments
+// @Description Retrieve all appointments for today, optionally filtered by doctor_id, sorted by earliest timeslot and doctor ID
+// @Tags Appointments
+// @Produce json
+// @Param doctor_id query string false "Doctor ID to filter appointments"
+// @Success 200 {array} appointment.Appointment
+// @Failure 500 {object} map[string]string
+// @Router /appointments/today [get]
+func (h *AppointmentHandler) GetTodayAppointments(c *gin.Context) {
+	doctorID := c.Query("doctor_id") // Lấy doctor_id từ query param, có thể để trống
+	if doctorID == "" {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "doctor_id is required"))
+		return
+	}
+	appointments, err := h.service.GetTodayAppointments(doctorID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Today's appointments retrieved successfully", appointments))
+}
+
+// ---------------- Create Follow-Up Appointment ----------------
+// @Summary Create a follow-up appointment
+// @Description Create a new follow-up appointment linked to an existing medical record (relatedRecordID)
+// @Tags Appointments
+// @Accept json
+// @Produce json
+// @Param payload body CreateFollowUpRequest true "Follow-up appointment payload"
+// @Success 201 {object} appointment.Appointment
+// @Failure 400 {object} map[string]interface{} "Bad Request"
+// @Failure 500 {object} map[string]interface{} "Internal Server Error"
+// @Router /appointments/follow-up [post]
+func (h *AppointmentHandler) CreateFollowUpAppointment(c *gin.Context) {
+	var req CreateFollowUpRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
+		return
+	}
+
+	appt, err := h.service.CreateFollowUp(
+		req.PatientID,
+		req.DoctorID,
+		req.HospitalID,
+		req.BookUserID,
+		req.SlotIDs,
+		req.Notes,
+		req.ServiceName,
+		req.RelatedRecordID,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusCreated, utils.SuccessResponse(http.StatusCreated, "Follow-up appointment created successfully", appt))
 }
