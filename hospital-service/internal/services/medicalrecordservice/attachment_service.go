@@ -4,29 +4,54 @@ import (
 	"errors"
 	"hospital-service/internal/models/medicalrecord"
 	"hospital-service/internal/repositories/medicalrecordrepo"
+	"hospital-service/internal/storage"
+	"time"
+
+	"github.com/google/uuid"
 )
 
 type AttachmentService struct {
 	attachmentRepo *medicalrecordrepo.AttachmentRepo
+	storage        *storage.S3Client
 }
 
 // NewAttachmentService khởi tạo service
-func NewAttachmentService(attachmentRepo *medicalrecordrepo.AttachmentRepo) *AttachmentService {
+func NewAttachmentService(attachmentRepo *medicalrecordrepo.AttachmentRepo, storage *storage.S3Client) *AttachmentService {
 	return &AttachmentService{
 		attachmentRepo: attachmentRepo,
+		storage:        storage,
 	}
 }
 
 // ---------------------- AddAttachment ----------------------
-func (s *AttachmentService) AddAttachment(att *medicalrecord.Attachment) error {
+func (s *AttachmentService) AddAttachment(att *medicalrecord.Attachment, file interface{}) (*medicalrecord.Attachment, error) {
 	if att.RecordID == "" {
-		return errors.New("record_id is required")
+		return nil, errors.New("record_id is required")
 	}
-	if att.FileURL == "" {
-		return errors.New("file_url is required")
+	if att.FileType == "" {
+		return nil, errors.New("file_type is required")
+	}
+	if file == nil {
+		return nil, errors.New("file is required")
 	}
 
-	return s.attachmentRepo.AddAttachment(att)
+	// upload file lên S3
+	fileHeader := file.(*storage.FileHeader)
+	key := "attachments/" + uuid.NewString() + "_" + fileHeader.Filename
+	url, err := s.storage.UploadFile(fileHeader, key)
+	if err != nil {
+		return nil, err
+	}
+
+	att.FileURL = url
+	att.ID = uuid.NewString()
+	att.CreatedAt = time.Now()
+
+	if err := s.attachmentRepo.AddAttachment(att); err != nil {
+		return nil, err
+	}
+
+	return att, nil
 }
 
 // ---------------------- GetAttachmentsByRecordID ----------------------

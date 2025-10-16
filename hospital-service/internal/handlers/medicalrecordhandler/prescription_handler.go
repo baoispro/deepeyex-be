@@ -38,32 +38,32 @@ type updatePrescriptionReq struct {
 	ApprovedAt *time.Time `json:"approved_at"`
 }
 
-// -------------------- Create Prescription --------------------
-// @Summary Create a new prescription
-// @Description Create a prescription linked to a medical record
+// CreatePrescription godoc
+// @Summary Thêm toa thuốc
+// @Description Tạo một toa thuốc mới cho patient / medical record
 // @Tags Prescriptions
 // @Accept json
 // @Produce json
-// @Param payload body createPrescriptionReq true "Prescription payload"
+// @Param data body medicalrecordservice.PrescriptionRequest true "Prescription Data"
 // @Success 201 {object} medicalrecord.Prescription
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /prescriptions [post]
-func (h *PrescriptionHandler) CreatePrescription(c *gin.Context) {
-	var req createPrescriptionReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
-		return
-	}
+// func (h *PrescriptionHandler) CreatePrescription(c *gin.Context) {
+// 	var req medicalrecordservice.PrescriptionRequest
+// 	if err := c.ShouldBindJSON(&req); err != nil {
+// 		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
+// 		return
+// 	}
 
-	prescription, err := h.service.CreatePrescription(req.Status, req.RecordID, req.ApprovedBy, req.ApprovedAt)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
-		return
-	}
+// 	prescription, err := h.service.CreatePrescription(&req)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
+// 		return
+// 	}
 
-	c.JSON(http.StatusCreated, utils.SuccessResponse(http.StatusCreated, "Prescription created successfully", prescription))
-}
+// 	c.JSON(http.StatusCreated, utils.SuccessResponse(http.StatusCreated, "Prescription created successfully", prescription))
+// }
 
 // -------------------- Get Prescription By ID --------------------
 // @Summary Get prescription by ID

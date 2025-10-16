@@ -17,11 +17,13 @@ type MedicalRecordHandler struct {
 }
 
 type CreateMedicalRecordRequest struct {
-	PatientID     string `json:"patient_id" binding:"required"`
-	DoctorID      string `json:"doctor_id" binding:"required"`
-	AppointmentID string `json:"appointment_id,omitempty"` // Optional
-	Diagnosis     string `json:"diagnosis" binding:"required"`
-	CreatedBy     string `json:"created_by" binding:"required"` // "DOCTOR" | "SYSTEM" | "AI"
+	PatientID       string  `json:"patient_id" binding:"required"`
+	DoctorID        string  `json:"doctor_id" binding:"required"`
+	AppointmentID   string  `json:"appointment_id,omitempty"` // Optional
+	Diagnosis       string  `json:"diagnosis" binding:"required"`
+	CreatedBy       string  `json:"created_by" binding:"required"` // "DOCTOR" | "SYSTEM" | "AI"
+	Note            *string `json:"note,omitempty"`
+	relatedRecordID *string `json:"related_record_id,omitempty"`
 }
 
 type CreateAIDiagnosisRequest struct {
@@ -32,8 +34,7 @@ type CreateAIDiagnosisRequest struct {
 	Notes        *string `json:"notes,omitempty"`                   // Ghi chú
 }
 
-
-func NewMedicalRecordHandler(cfg config.Config ,service *medicalrecordservice.MedicalRecordService) *MedicalRecordHandler {
+func NewMedicalRecordHandler(cfg config.Config, service *medicalrecordservice.MedicalRecordService) *MedicalRecordHandler {
 	return &MedicalRecordHandler{service: service, cfg: cfg}
 }
 
@@ -56,7 +57,7 @@ func (h *MedicalRecordHandler) CreateMedicalRecord(c *gin.Context) {
 		return
 	}
 
-	record, err := h.service.CreateRecord(req.PatientID, req.DoctorID, req.Diagnosis, req.CreatedBy, req.AppointmentID)
+	record, err := h.service.CreateRecord(req.PatientID, req.DoctorID, req.Diagnosis, req.AppointmentID, req.Note, req.relatedRecordID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return
@@ -64,7 +65,6 @@ func (h *MedicalRecordHandler) CreateMedicalRecord(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, utils.SuccessResponse(http.StatusCreated, "Medical record created successfully", record))
 }
-
 
 // ---------------- Get MedicalRecord by ID ----------------
 // @Summary Get medical record by ID
@@ -161,131 +161,6 @@ func (h *MedicalRecordHandler) DeleteMedicalRecord(c *gin.Context) {
 	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Medical record deleted successfully", nil))
 }
 
-// @Summary Add AI Diagnosis to Medical Record
-// @Description Add a new AI diagnosis to a specific medical record
-// @Tags AI_Diagnoses
-// @Accept json
-// @Produce json
-// @Param record_id path string true "Medical Record ID"
-// @Param payload body CreateAIDiagnosisRequest true "AI Diagnosis payload"
-// @Success 201 {object} medicalrecord.AIDiagnosis
-// @Failure 400 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
-// @Router /medical_records/{record_id}/ai_diagnoses [post]
-func (h *MedicalRecordHandler) AddAIDiagnosis(c *gin.Context) {
-	recordID := c.Param("record_id")
-
-	var req CreateAIDiagnosisRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
-		return
-	}
-
-	diagnosis, err := h.service.AddAIDiagnosisByRecordID(
-		recordID,
-		req.DiseaseCode,
-		req.Confidence,
-		req.MainImageURL, // ✅ Thêm
-		req.EyeType,      // ✅ Thêm
-		req.Notes,        // ✅ Thêm
-	)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
-		return
-	}
-
-	c.JSON(http.StatusCreated, utils.SuccessResponse(http.StatusCreated, "AI Diagnosis created successfully", diagnosis))
-}
-
-// @Summary List AI Diagnoses by Record ID
-// @Description Get a list of AI diagnoses for a specific medical record
-// @Tags AI_Diagnoses
-// @Accept json
-// @Produce json
-// @Param record_id path string true "Medical Record ID"
-// @Success 200 {array} medicalrecord.AIDiagnosis
-// @Failure 400 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
-// @Router /medical_records/{record_id}/ai_diagnoses [get]
-func (h *MedicalRecordHandler) ListAIDiagnoses(c *gin.Context) {
-	recordID := c.Param("record_id")
-
-	if recordID == "" {
-		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "record_id is required"))
-		return
-	}
-
-	diagnoses, err := h.service.ListAIDiagnoses(recordID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
-		return
-	}
-
-	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "AI Diagnoses retrieved successfully", diagnoses))
-}
-
-// @Summary Get AI Diagnosis by ID
-// @Description Get the details of a specific AI diagnosis by its ID
-// @Tags AI_Diagnoses
-// @Accept json
-// @Produce json
-// @Param id path string true "AI Diagnosis ID"
-// @Success 200 {object} medicalrecord.AIDiagnosis
-// @Failure 400 {object} map[string]interface{}
-// @Failure 404 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
-// @Router /medical_records/ai_diagnoses/{id} [get]
-func (h *MedicalRecordHandler) GetAIDiagnosisByID(c *gin.Context) {
-	id := c.Param("id")
-
-	if id == "" {
-		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "diagnosis_id is required"))
-		return
-	}
-
-	diagnosis, err := h.service.GetAIDiagnosisByID(id)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
-		return
-	}
-
-	if diagnosis == nil {
-		c.JSON(http.StatusNotFound, utils.ErrorResponse(http.StatusNotFound, "AI Diagnosis not found"))
-		return
-	}
-
-	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "AI Diagnosis retrieved successfully", diagnosis))
-}
-
-
-// ---------------- Delete AI Diagnosis ----------------
-// @Summary Delete AI Diagnosis by ID
-// @Description Delete a specific AI diagnosis by its ID
-// @Tags AI_Diagnoses
-// @Accept json
-// @Produce json
-// @Param id path string true "AI Diagnosis ID"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
-// @Router /medical_records/ai_diagnoses/{id} [delete]
-func (h *MedicalRecordHandler) DeleteAIDiagnosis(c *gin.Context) {
-	id := c.Param("id")
-
-	if id == "" {
-		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "diagnosis_id is required"))
-		return
-	}
-
-	if err := h.service.DeleteAIDiagnosis(id); err != nil {
-		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
-		return
-	}
-
-	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "AI Diagnosis deleted successfully", nil))
-}
-
-
 // ---------------- Init MedicalRecord and AI Diagnosis ----------------
 // @Summary Init Medical Record and AI Diagnosis
 // @Description Create a new medical record and attach an AI diagnosis in a single request
@@ -315,4 +190,46 @@ func (h *MedicalRecordHandler) InitMedicalRecordAndDiagnosis(c *gin.Context) {
 
 	// Success
 	c.JSON(http.StatusCreated, utils.SuccessResponse(http.StatusCreated, "Medical record and AI diagnosis created successfully", result))
+}
+
+// ---------------- Check or Prepare MedicalRecord ----------------
+// @Summary Check if a medical record exists for an appointment
+// @Description Check whether a MedicalRecord exists for the given appointment.
+//
+//	Returns existing record for update or empty data for create form.
+//
+// @Tags MedicalRecords
+// @Produce json
+// @Param appointment_id query string true "Appointment ID"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{} "Bad Request"
+// @Failure 500 {object} map[string]interface{} "Internal Server Error"
+// @Router /medical_records/check [get]
+func (h *MedicalRecordHandler) CheckMedicalRecord(c *gin.Context) {
+	appointmentID := c.Query("appointment_id")
+	if appointmentID == "" {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "appointment_id is required"))
+		return
+	}
+
+	record, isUpdate, err := h.service.CheckRecordByAppointment(appointmentID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Không thể kiểm tra MedicalRecord: "+err.Error()))
+		return
+	}
+
+	if isUpdate {
+		// Trả về record hiện có để frontend hiển thị update form
+		c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "MedicalRecord tồn tại, chuẩn bị update", gin.H{
+			"action": "update",
+			"record": record,
+		}))
+		return
+	}
+
+	// Trả về empty data để frontend hiển thị create form
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Chưa có MedicalRecord, chuẩn bị tạo mới", gin.H{
+		"action": "create",
+		"record": []interface{}{},
+	}))
 }

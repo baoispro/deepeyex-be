@@ -35,30 +35,30 @@ func NewPrescriptionItemHandler(cfg config.Config, service *medicalrecordservice
 // @Failure 500 {object} map[string]string
 // @Router /prescription_items [post]
 //
-func (h *PrescriptionItemHandler) CreatePrescriptionItem(c *gin.Context) {
-	var req struct {
-		PrescriptionID string `json:"prescription_id" binding:"required"`
-		DrugName       string `json:"drug_name" binding:"required"`
-		Dosage         string `json:"dosage" binding:"required"`
-		Frequency      string `json:"frequency" binding:"required"`
-		DurationDays   int    `json:"duration_days"`
-	}
+// func (h *PrescriptionItemHandler) CreatePrescriptionItem(c *gin.Context) {
+// 	var req struct {
+// 		PrescriptionID string `json:"prescription_id" binding:"required"`
+// 		DrugName       string `json:"drug_name" binding:"required"`
+// 		Dosage         string `json:"dosage" binding:"required"`
+// 		Frequency      string `json:"frequency" binding:"required"`
+// 		DurationDays   int    `json:"duration_days"`
+// 	}
 
-	// Validate JSON payload
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
-		return
-	}
+// 	// Validate JSON payload
+// 	if err := c.ShouldBindJSON(&req); err != nil {
+// 		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
+// 		return
+// 	}
 
-	// Gọi service
-	item, err := h.service.CreatePrescriptionItem(req.PrescriptionID, req.DrugName, req.Dosage, req.Frequency, req.DurationDays)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
-		return
-	}
+// 	// Gọi service
+// 	item, err := h.service.CreatePrescriptionItem(req.PrescriptionID, req.DrugName, req.Dosage, req.Frequency, req.DurationDays)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
+// 		return
+// 	}
 
-	c.JSON(http.StatusCreated, utils.SuccessResponse(http.StatusCreated, "Prescription item created successfully", item))
-}
+// 	c.JSON(http.StatusCreated, utils.SuccessResponse(http.StatusCreated, "Prescription item created successfully", item))
+// }
 
 //
 // -------------------- Update Prescription Item --------------------

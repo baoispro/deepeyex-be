@@ -7,7 +7,6 @@ import (
 	"gorm.io/gorm"
 )
 
-
 type PrescriptionRepo struct {
 	db *gorm.DB
 }
@@ -17,8 +16,8 @@ func NewPrescriptionRepository(db *gorm.DB) *PrescriptionRepo {
 }
 
 // ---------------- Create ----------------
-func (r *PrescriptionRepo) Create(p *medicalrecord.Prescription) error {
-	return r.db.Create(p).Error
+func (r *PrescriptionRepo) Create(prescription *medicalrecord.Prescription) error {
+	return r.db.Create(prescription).Error
 }
 
 // --------------- Get Prescription By ID ----------------

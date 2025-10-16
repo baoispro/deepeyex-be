@@ -63,7 +63,6 @@ func (r *AppointmentRepo) FindByDoctorID(doctorID string) ([]appointment.Appoint
 	return appointments, nil
 }
 
-
 // ---------------- Update ----------------
 // Cập nhật thông tin Appointment
 func (r *AppointmentRepo) Update(a *appointment.Appointment) error {
@@ -89,7 +88,6 @@ func (r *AppointmentRepo) ListAll() ([]appointment.Appointment, error) {
 	}
 	return appointments, nil
 }
-
 
 // Kiểm tra xem bác sĩ có appointment trong khoảng thời gian đó không
 func (r *AppointmentRepo) ExistsByDoctorAndDateRange(doctorID string, start, end time.Time) (bool, error) {
@@ -128,4 +126,17 @@ func (r *AppointmentRepo) ReassignDoctor(doctorID, newDoctorID string, start, en
 				Where("time_slots.start_time < ? AND time_slots.end_time > ?", end, start)).
 			Update("doctor_id", newDoctorID).Error
 	})
+}
+
+func (r *AppointmentRepo) FindTodayAppointmentsByDoctor(doctorID string) ([]appointment.Appointment, error) {
+	var appointments []appointment.Appointment
+
+	err := r.db.Preload("TimeSlots", func(db *gorm.DB) *gorm.DB {
+		return db.Order("start_time ASC")
+	}).Joins("JOIN time_slots ON time_slots.appointment_id = appointments.appointment_id").
+		Where("DATE(time_slots.start_time) = CURRENT_DATE AND appointments.doctor_id = ?", doctorID).
+		Order("appointments.doctor_id ASC").
+		Find(&appointments).Error
+
+	return appointments, err
 }

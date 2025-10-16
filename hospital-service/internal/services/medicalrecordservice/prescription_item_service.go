@@ -16,30 +16,30 @@ func NewPrescriptionItemService(repo *medicalrecordrepo.PrescriptionItemRepo) *P
 }
 
 // ---------------- Create ----------------
-func (s *PrescriptionItemService) CreatePrescriptionItem(prescriptionID, drugName, dosage, frequency string, durationDays int) (*medicalrecord.PrescriptionItem, error) {
-	// Validate các trường bắt buộc
-	if prescriptionID == "" || drugName == "" || dosage == "" || frequency == "" {
-		return nil, errors.New("missing required fields: prescription_id, drug_name, dosage, frequency")
-	}
+// func (s *PrescriptionItemService) CreatePrescriptionItem(prescriptionID, drugName, dosage, frequency string, durationDays int) (*medicalrecord.PrescriptionItem, error) {
+// 	// Validate các trường bắt buộc
+// 	if prescriptionID == "" || drugName == "" || dosage == "" || frequency == "" {
+// 		return nil, errors.New("missing required fields: prescription_id, drug_name, dosage, frequency")
+// 	}
 
-	item := &medicalrecord.PrescriptionItem{
-		PrescriptionID: prescriptionID,
-		DrugName:       drugName,
-		Dosage:         dosage,
-		Frequency:      frequency,
-		DurationDays:   durationDays,
-	}
+// 	item := &medicalrecord.PrescriptionItem{
+// 		PrescriptionID: prescriptionID,
+// 		DrugName:       drugName,
+// 		Dosage:         dosage,
+// 		Frequency:      frequency,
+// 		DurationDays:   durationDays,
+// 	}
 
-	// Tạo mới trong DB
-	err := s.repo.Create(&medicalrecord.Prescription{
-		PrescriptionID: prescriptionID,
-		Items:          []medicalrecord.PrescriptionItem{*item},
-	})
-	if err != nil {
-		return nil, err
-	}
-	return item, nil
-}
+// 	// Tạo mới trong DB
+// 	err := s.repo.Create(&medicalrecord.Prescription{
+// 		PrescriptionID: prescriptionID,
+// 		Items:          []medicalrecord.PrescriptionItem{*item},
+// 	})
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return item, nil
+// }
 
 // ---------------- Update ----------------
 func (s *PrescriptionItemService) UpdatePrescriptionItem(item *medicalrecord.PrescriptionItem) error {

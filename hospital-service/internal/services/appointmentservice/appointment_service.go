@@ -3,7 +3,6 @@ package appointmentservice
 import (
 	"errors"
 	"fmt"
-	"log"
 	"math/rand"
 	"time"
 
@@ -37,7 +36,6 @@ func (s *AppointmentService) Create(
 	slots, err := s.timeSlotRepo.FindByIDs(slotIDs)
 
 	if err != nil {
-		log.Println("❌ [DEBUG ERROR] có lỗi xảy ra:", err)
 		return nil, err
 	}
 	if len(slots) != len(slotIDs) {
@@ -69,7 +67,6 @@ func (s *AppointmentService) Create(
 		a.AppointmentCode = fmt.Sprintf("APPT-%d-%04d", time.Now().UnixNano(), rand.Intn(10000))
 
 		if err := tx.Create(a).Error; err != nil {
-			log.Printf("❌ failed Save slot1")
 			return err
 		}
 
@@ -80,7 +77,6 @@ func (s *AppointmentService) Create(
 			}
 			slot.AppointmentID = &a.AppointmentID
 			if err := tx.Save(&slot).Error; err != nil {
-				log.Printf("❌ failed Save slot")
 				return err
 			}
 		}
@@ -88,7 +84,6 @@ func (s *AppointmentService) Create(
 	})
 
 	if err != nil {
-		log.Printf("❌ failed Save slot3")
 		return nil, err
 	}
 
@@ -109,7 +104,6 @@ func (s *AppointmentService) CreateFollowUp(
 	slots, err := s.timeSlotRepo.FindByIDs(slotIDs)
 
 	if err != nil {
-		log.Println("❌ [DEBUG ERROR] có lỗi xảy ra:", err)
 		return nil, err
 	}
 	if len(slots) != len(slotIDs) {
@@ -141,7 +135,6 @@ func (s *AppointmentService) CreateFollowUp(
 		a.AppointmentCode = fmt.Sprintf("APPT-%d-%04d", time.Now().UnixNano(), rand.Intn(10000))
 
 		if err := tx.Create(a).Error; err != nil {
-			log.Printf("❌ failed Save slot1")
 			return err
 		}
 
@@ -152,7 +145,6 @@ func (s *AppointmentService) CreateFollowUp(
 			}
 			slot.AppointmentID = &a.AppointmentID
 			if err := tx.Save(&slot).Error; err != nil {
-				log.Printf("❌ failed Save slot")
 				return err
 			}
 		}
@@ -160,7 +152,6 @@ func (s *AppointmentService) CreateFollowUp(
 	})
 
 	if err != nil {
-		log.Printf("❌ failed Save slot3")
 		return nil, err
 	}
 
@@ -256,6 +247,11 @@ func (s *AppointmentService) GetOnlineAppointments(bookUserID, doctorID string) 
 	}
 
 	return result, nil
+}
+
+// Lấy danh sách appointment hôm nay với slot đã sắp xếp
+func (s *AppointmentService) GetTodayAppointments(doctorID string) ([]appointment.Appointment, error) {
+	return s.repo.FindTodayAppointmentsByDoctor(doctorID)
 }
 
 // ---------------- Helper ----------------
