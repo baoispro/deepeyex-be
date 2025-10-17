@@ -3,6 +3,7 @@ package medicalrecordrepo
 import (
 	"hospital-service/internal/models/appointment"
 	"hospital-service/internal/models/medicalrecord"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -17,39 +18,21 @@ func NewMedicalRecordRepository(db *gorm.DB) *MedicalRecordRepo {
 }
 
 // InitRecordAndDiagnosis: tạo MedicalRecord và AIDiagnosis trong cùng 1 transaction
-func (r *MedicalRecordRepo) InitRecordAndDiagnosis(
-	patientID, diseaseCode, diagnosisText string,
-	confidence float64,
-	mainImageURL string,
-	eyeType, notes *string,
-) (*medicalrecord.MedicalRecord, *medicalrecord.AIDiagnosis, error) {
-	var (
-		record *medicalrecord.MedicalRecord
-		aiDiag *medicalrecord.AIDiagnosis
-	)
+func (r *MedicalRecordRepo) InitRecord(patientID, appointmentID, doctorID string) (*medicalrecord.MedicalRecord, error) {
+	var record *medicalrecord.MedicalRecord
 
 	err := r.db.Transaction(func(tx *gorm.DB) error {
-		// Step 1: Tạo MedicalRecord
+		// Step 1: Tạo MedicalRecord mới
 		record = &medicalrecord.MedicalRecord{
-			RecordID:  uuid.New().String(),
-			PatientID: patientID,
-			Diagnosis: diagnosisText,
-		}
-		if err := tx.Create(record).Error; err != nil {
-			return err
+			RecordID:      uuid.New().String(),
+			PatientID:     patientID,
+			AppointmentID: appointmentID,
+			DoctorID:      doctorID,
+			CreatedAt:     time.Now(),
+			UpdatedAt:     time.Now(),
 		}
 
-		// Step 2: Tạo AIDiagnosis với hình ảnh
-		aiDiag = &medicalrecord.AIDiagnosis{
-			ID:           uuid.New().String(),
-			RecordID:     &record.RecordID,
-			DiseaseCode:  diseaseCode,
-			Confidence:   confidence,
-			MainImageURL: mainImageURL, // ✅ Thêm
-			EyeType:      eyeType,      // ✅ Thêm
-			Notes:        notes,        // ✅ Thêm
-		}
-		if err := tx.Create(aiDiag).Error; err != nil {
+		if err := tx.Create(record).Error; err != nil {
 			return err
 		}
 
@@ -57,10 +40,10 @@ func (r *MedicalRecordRepo) InitRecordAndDiagnosis(
 	})
 
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return record, aiDiag, nil
+	return record, nil
 }
 
 // ---------------- Create record ----------------

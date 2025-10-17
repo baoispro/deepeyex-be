@@ -137,7 +137,7 @@ func main() {
 	orderService := orderservice.NewOrderService(orderRepo, drugRepo, s3Client)
 	serviceService := doctorserviceservice.NewServiceService(serviceRepo)
 
-	medicalRecordService := medicalrecordservice.NewMedicalRecordService(medicalRecordRepo)
+	medicalRecordService := medicalrecordservice.NewMedicalRecordService(medicalRecordRepo, aidiagnosisRepo)
 	prescriptionService := prescriptionservice.NewPrescriptionService(prescriptionRepo, prescriptionitemrepo, medicationReminderRepo)
 	attachmentService := attachmentservice.NewAttachmentService(attachmentRepo, s3Client)
 	prescriptionItemService := prescriptionitemservice.NewPrescriptionItemService(prescriptionitemrepo)

@@ -23,19 +23,13 @@ type MedicalRecord struct {
 
 // Request khi gọi endpoint
 type InitRecordAndDiagnosisRequest struct {
-	PatientID    string  `json:"patient_id" binding:"required" example:"abc123"`
-	DiseaseCode  string  `json:"disease_code" binding:"required" example:"D001"`
-	Confidence   float64 `json:"confidence" binding:"required" example:"0.89"`
-	Diagnosis    string  `json:"diagnosis" example:"AI preliminary diagnosis"`
-	MainImageURL string  `json:"main_image_url" binding:"required" example:"https://s3.../image.jpg"` // URL hình ảnh chẩn đoán
-	EyeType      *string `json:"eye_type,omitempty" example:"RIGHT"`                                  // "LEFT" | "RIGHT" | "BOTH"
-	Notes        *string `json:"notes,omitempty" example:"Patient complained about blurry vision"`    // Ghi chú thêm
+	PatientID     string `json:"patient_id" binding:"required" example:"abc123"`
+	AppointmentID string `json:"appointment_id,omitempty" example:"appt456"` // có thể null
+	DoctorID      string `json:"doctor_id,omitempty" example:"doc789"`       // có thể null
+	AIDiagnosisID string `json:"ai_diagnosis_id,omitempty" example:"diag101"` // có thể null
 }
 
 // Response trả về cả Record và Diagnosis
 type InitRecordAndDiagnosisResponse struct {
 	RecordID  string      `json:"record_id"`
-	PatientID string      `json:"patient_id"`
-	CreatedAt time.Time   `json:"created_at"`
-	Diagnosis AIDiagnosis `json:"ai_diagnosis"`
 }

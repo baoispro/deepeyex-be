@@ -12,32 +12,35 @@ import (
 
 type MedicalRecordService struct {
 	repo *medicalrecordrepo.MedicalRecordRepo
+	repoAI * medicalrecordrepo.AIDiagnosisRepo
 }
 
-func NewMedicalRecordService(repo *medicalrecordrepo.MedicalRecordRepo) *MedicalRecordService {
-	return &MedicalRecordService{repo: repo}
+func NewMedicalRecordService(repo *medicalrecordrepo.MedicalRecordRepo, repoAI * medicalrecordrepo.AIDiagnosisRepo ) *MedicalRecordService {
+	return &MedicalRecordService{repo: repo, repoAI: repoAI}
 }
 
 // ---------------- MedicalRecord Management ----------------
 func (s *MedicalRecordService) InitRecordAndDiagnosis(req medicalrecord.InitRecordAndDiagnosisRequest) (*medicalrecord.InitRecordAndDiagnosisResponse, error) {
-	record, aiDiag, err := s.repo.InitRecordAndDiagnosis(
-		req.PatientID,
-		req.DiseaseCode,
-		req.Diagnosis,
-		req.Confidence,
-		req.MainImageURL, // ✅ Thêm hình ảnh
-		req.EyeType,      // ✅ Thêm loại mắt
-		req.Notes,        // ✅ Thêm ghi chú
-	)
+	// Gọi repo tạo record mới
+	record, err := s.repo.InitRecord(req.PatientID, req.AppointmentID, req.DoctorID)
 	if err != nil {
 		return nil, err
 	}
 
+	if req.AIDiagnosisID != "" {
+		aiDiag, err := s.repoAI.FindByID(req.AIDiagnosisID)
+		if err != nil {
+			return nil, err
+		}
+		aiDiag.RecordID = &record.RecordID
+		if err := s.repoAI.Update(aiDiag); err != nil {
+			return nil, err
+		}
+	}
+
+	// Trả về response
 	return &medicalrecord.InitRecordAndDiagnosisResponse{
-		RecordID:  record.RecordID,
-		PatientID: record.PatientID,
-		CreatedAt: record.CreatedAt,
-		Diagnosis: *aiDiag,
+		RecordID: record.RecordID,
 	}, nil
 }
 
