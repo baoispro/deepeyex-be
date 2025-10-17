@@ -147,6 +147,7 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 		medical.POST("", medicalRecordHandler.CreateMedicalRecord) // Create
 		medical.GET("", medicalRecordHandler.ListMedicalRecords)
 		medical.GET("/check", medicalRecordHandler.CheckMedicalRecord)
+		medical.GET("/patient", medicalRecordHandler.GetRecordsByPatient)
 		medical.GET("/:record_id", medicalRecordHandler.GetMedicalRecord)    // Get by ID
 		medical.PUT("/:record_id", medicalRecordHandler.UpdateMedicalRecord) // Update
 		medical.DELETE("/:record_id", medicalRecordHandler.DeleteMedicalRecord)

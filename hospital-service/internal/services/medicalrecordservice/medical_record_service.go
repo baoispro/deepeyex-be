@@ -106,3 +106,17 @@ func (s *MedicalRecordService) CheckRecordByAppointment(appointmentID string) (*
 	// Chưa có record → tạo mới
 	return nil, false, nil
 }
+
+// ---------------- Get all MedicalRecords by PatientID ----------------
+func (s *MedicalRecordService) GetRecordsByPatient(patientID string) ([]*medicalrecord.MedicalRecord, error) {
+	if patientID == "" {
+		return nil, errors.New("patient_id is required")
+	}
+
+	records, err := s.repo.GetByPatientID(patientID)
+	if err != nil {
+		return nil, err
+	}
+
+	return records, nil
+}
