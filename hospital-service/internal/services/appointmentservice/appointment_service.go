@@ -170,6 +170,15 @@ func (s *AppointmentService) GetByPatientID(patientID string) ([]appointment.App
 	return s.repo.FindByPatientID(patientID)
 }
 
+// ---------------- GetByPatientIDWithFilters ----------------
+// Lấy lịch khám theo patient_id với filters và sorting
+func (s *AppointmentService) GetByPatientIDWithFilters(patientID, status, date, sortBy string) ([]appointment.Appointment, error) {
+	if patientID == "" {
+		return nil, errors.New("patient_id is required")
+	}
+	return s.repo.FindByPatientIDWithFilters(patientID, status, date, sortBy)
+}
+
 // ---------------- GetByDoctorID ----------------
 // Lấy tất cả lịch khám theo doctor_id
 func (s *AppointmentService) GetByDoctorID(doctorID string) ([]appointment.Appointment, error) {
@@ -252,6 +261,72 @@ func (s *AppointmentService) GetOnlineAppointments(bookUserID, doctorID string) 
 // Lấy danh sách appointment hôm nay với slot đã sắp xếp
 func (s *AppointmentService) GetTodayAppointments(doctorID string) ([]appointment.Appointment, error) {
 	return s.repo.FindTodayAppointmentsByDoctor(doctorID)
+}
+
+// ---------------- CancelAppointment ----------------
+// Hủy lịch khám với ràng buộc thời gian (không cho hủy nếu còn < 12 tiếng)
+func (s *AppointmentService) CancelAppointment(id string) error {
+	// Lấy appointment với TimeSlots
+	appt, err := s.repo.GetByID(id)
+	if err != nil {
+		return fmt.Errorf("appointment not found: %v", err)
+	}
+
+	// Kiểm tra nếu appointment đã bị hủy hoặc đã hoàn thành
+	if appt.Status == enums.Canceled {
+		return errors.New("appointment is already canceled")
+	}
+	if appt.Status == enums.Completed || appt.Status == enums.CompletedOnline {
+		return errors.New("cannot cancel completed appointment")
+	}
+
+	// Kiểm tra TimeSlots
+	if len(appt.TimeSlots) == 0 {
+		return errors.New("appointment has no time slots")
+	}
+
+	// Tìm slot có StartTime sớm nhất
+	earliestSlot := appt.TimeSlots[0]
+	for _, slot := range appt.TimeSlots {
+		if slot.StartTime.Before(earliestSlot.StartTime) {
+			earliestSlot = slot
+		}
+	}
+
+	// Kiểm tra thời gian: nếu còn < 12 tiếng thì không cho hủy
+	now := time.Now()
+	timeUntilAppointment := earliestSlot.StartTime.Sub(now)
+	const minCancelDuration = 12 * time.Hour
+
+	if timeUntilAppointment < minCancelDuration {
+		return fmt.Errorf("cannot cancel appointment within 12 hours of appointment time (%.1f hours remaining)", timeUntilAppointment.Hours())
+	}
+
+	// Transaction: Update status và giải phóng slots
+	err = s.repo.DB().Transaction(func(tx *gorm.DB) error {
+		// Update appointment status
+		appt.Status = enums.Canceled
+		appt.UpdatedAt = time.Now()
+		if err := tx.Save(appt).Error; err != nil {
+			return fmt.Errorf("failed to update appointment status: %v", err)
+		}
+
+		// Giải phóng các time slots
+		for _, slot := range appt.TimeSlots {
+			slot.AppointmentID = nil
+			if err := tx.Save(&slot).Error; err != nil {
+				return fmt.Errorf("failed to release slot %s: %v", slot.SlotID, err)
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to cancel appointment: %v", err)
+	}
+
+	return nil
 }
 
 // ---------------- Helper ----------------

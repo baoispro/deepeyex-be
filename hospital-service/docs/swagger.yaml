@@ -603,44 +603,26 @@ definitions:
     type: object
   medicalrecord.InitRecordAndDiagnosisRequest:
     properties:
-      confidence:
-        example: 0.89
-        type: number
-      diagnosis:
-        example: AI preliminary diagnosis
+      ai_diagnosis_id:
+        description: có thể null
+        example: diag101
         type: string
-      disease_code:
-        example: D001
+      appointment_id:
+        description: có thể null
+        example: appt456
         type: string
-      eye_type:
-        description: '"LEFT" | "RIGHT" | "BOTH"'
-        example: RIGHT
-        type: string
-      main_image_url:
-        description: URL hình ảnh chẩn đoán
-        example: https://s3.../image.jpg
-        type: string
-      notes:
-        description: Ghi chú thêm
-        example: Patient complained about blurry vision
+      doctor_id:
+        description: có thể null
+        example: doc789
         type: string
       patient_id:
         example: abc123
         type: string
     required:
-    - confidence
-    - disease_code
-    - main_image_url
     - patient_id
     type: object
   medicalrecord.InitRecordAndDiagnosisResponse:
     properties:
-      ai_diagnosis:
-        $ref: '#/definitions/medicalrecord.AIDiagnosis'
-      created_at:
-        type: string
-      patient_id:
-        type: string
       record_id:
         type: string
     type: object
@@ -650,6 +632,8 @@ definitions:
         items:
           $ref: '#/definitions/medicalrecord.AIDiagnosis'
         type: array
+      appointment:
+        $ref: '#/definitions/appointment.Appointment'
       appointment_id:
         type: string
       attachments:
@@ -1295,6 +1279,46 @@ paths:
       summary: Get appointment by ID
       tags:
       - Appointments
+  /appointments/{appointment_id}/cancel:
+    put:
+      description: Cancel an appointment with time restriction (cannot cancel within
+        12 hours of appointment time)
+      parameters:
+      - description: Appointment ID
+        in: path
+        name: appointment_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Cancel an appointment
+      tags:
+      - Appointments
   /appointments/{appointment_id}/detail:
     put:
       consumes:
@@ -1465,12 +1489,25 @@ paths:
       - Appointments
   /appointments/patient/{patient_id}:
     get:
-      description: Retrieve all appointments belonging to a specific patient
+      description: Retrieve all appointments belonging to a specific patient with
+        optional filters and sorting
       parameters:
       - description: Patient ID
         in: path
         name: patient_id
         required: true
+        type: string
+      - description: Filter by appointment status (PENDING/CONFIRMED/COMPLETED/CANCELED/PENDING_ONLINE/CONFIRMED_ONLINE/COMPLETED_ONLINE)
+        in: query
+        name: status
+        type: string
+      - description: 'Filter by appointment date (format: YYYY-MM-DD)'
+        in: query
+        name: date
+        type: string
+      - description: 'Sort by created date (newest/oldest, default: newest)'
+        in: query
+        name: sort
         type: string
       produces:
       - application/json
@@ -1481,13 +1518,19 @@ paths:
             items:
               $ref: '#/definitions/appointment.Appointment'
             type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "500":
           description: Internal Server Error
           schema:
             additionalProperties:
               type: string
             type: object
-      summary: Get appointments by patient ID
+      summary: Get appointments by patient ID with filters
       tags:
       - Appointments
   /appointments/today:
@@ -3124,6 +3167,37 @@ paths:
       summary: Init Medical Record and AI Diagnosis
       tags:
       - MedicalRecords
+  /medical_records/patient:
+    get:
+      description: Returns a list of MedicalRecords along with related Attachments,
+        Prescriptions, AI Diagnoses, and Appointment info.
+      parameters:
+      - description: Patient ID
+        in: query
+        name: patient_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get all medical records for a patient
+      tags:
+      - MedicalRecords
   /orders:
     get:
       description: Retrieve all orders in the system with optional filters
@@ -3806,6 +3880,52 @@ paths:
               type: string
             type: object
       summary: List prescriptions for a medical record
+      tags:
+      - Prescriptions
+  /prescriptions/patient/{patient_id}:
+    get:
+      description: Retrieve all prescriptions for a given patient ID with optional
+        filters and sorting
+      parameters:
+      - description: Patient ID
+        in: path
+        name: patient_id
+        required: true
+        type: string
+      - description: Filter by prescription status (PENDING/APPROVED/REJECTED)
+        in: query
+        name: status
+        type: string
+      - description: 'Filter by creation date (format: YYYY-MM-DD)'
+        in: query
+        name: date
+        type: string
+      - description: 'Sort by created date (newest/oldest, default: newest)'
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/medicalrecord.Prescription'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List prescriptions by patient ID with filters
       tags:
       - Prescriptions
   /services:

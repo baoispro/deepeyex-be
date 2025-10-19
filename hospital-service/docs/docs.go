@@ -461,14 +461,14 @@ const docTemplate = `{
         },
         "/appointments/patient/{patient_id}": {
             "get": {
-                "description": "Retrieve all appointments belonging to a specific patient",
+                "description": "Retrieve all appointments belonging to a specific patient with optional filters and sorting",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Appointments"
                 ],
-                "summary": "Get appointments by patient ID",
+                "summary": "Get appointments by patient ID with filters",
                 "parameters": [
                     {
                         "type": "string",
@@ -476,6 +476,24 @@ const docTemplate = `{
                         "name": "patient_id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by appointment status (PENDING/CONFIRMED/COMPLETED/CANCELED/PENDING_ONLINE/CONFIRMED_ONLINE/COMPLETED_ONLINE)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by appointment date (format: YYYY-MM-DD)",
+                        "name": "date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort by created date (newest/oldest, default: newest)",
+                        "name": "sort",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -485,6 +503,15 @@ const docTemplate = `{
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/appointment.Appointment"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
                             }
                         }
                     },
@@ -598,6 +625,65 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/appointments/{appointment_id}/cancel": {
+            "put": {
+                "description": "Cancel an appointment with time restriction (cannot cancel within 12 hours of appointment time)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Appointments"
+                ],
+                "summary": "Cancel an appointment",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Appointment ID",
+                        "name": "appointment_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -2982,6 +3068,50 @@ const docTemplate = `{
                 }
             }
         },
+        "/medical_records/patient": {
+            "get": {
+                "description": "Returns a list of MedicalRecords along with related Attachments, Prescriptions, AI Diagnoses, and Appointment info.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MedicalRecords"
+                ],
+                "summary": "Get all medical records for a patient",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Patient ID",
+                        "name": "patient_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/medical_records/{record_id}": {
             "get": {
                 "description": "Retrieve a medical record by record ID, including AI diagnoses and recommended plans",
@@ -3954,6 +4084,74 @@ const docTemplate = `{
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/medicalrecord.Prescription"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/prescriptions/patient/{patient_id}": {
+            "get": {
+                "description": "Retrieve all prescriptions for a given patient ID with optional filters and sorting",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Prescriptions"
+                ],
+                "summary": "List prescriptions by patient ID with filters",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Patient ID",
+                        "name": "patient_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by prescription status (PENDING/APPROVED/REJECTED)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by creation date (format: YYYY-MM-DD)",
+                        "name": "date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort by created date (newest/oldest, default: newest)",
+                        "name": "sort",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/medicalrecord.Prescription"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
                             }
                         }
                     },
@@ -6088,38 +6286,23 @@ const docTemplate = `{
         "medicalrecord.InitRecordAndDiagnosisRequest": {
             "type": "object",
             "required": [
-                "confidence",
-                "disease_code",
-                "main_image_url",
                 "patient_id"
             ],
             "properties": {
-                "confidence": {
-                    "type": "number",
-                    "example": 0.89
-                },
-                "diagnosis": {
+                "ai_diagnosis_id": {
+                    "description": "có thể null",
                     "type": "string",
-                    "example": "AI preliminary diagnosis"
+                    "example": "diag101"
                 },
-                "disease_code": {
+                "appointment_id": {
+                    "description": "có thể null",
                     "type": "string",
-                    "example": "D001"
+                    "example": "appt456"
                 },
-                "eye_type": {
-                    "description": "\"LEFT\" | \"RIGHT\" | \"BOTH\"",
+                "doctor_id": {
+                    "description": "có thể null",
                     "type": "string",
-                    "example": "RIGHT"
-                },
-                "main_image_url": {
-                    "description": "URL hình ảnh chẩn đoán",
-                    "type": "string",
-                    "example": "https://s3.../image.jpg"
-                },
-                "notes": {
-                    "description": "Ghi chú thêm",
-                    "type": "string",
-                    "example": "Patient complained about blurry vision"
+                    "example": "doc789"
                 },
                 "patient_id": {
                     "type": "string",
@@ -6130,15 +6313,6 @@ const docTemplate = `{
         "medicalrecord.InitRecordAndDiagnosisResponse": {
             "type": "object",
             "properties": {
-                "ai_diagnosis": {
-                    "$ref": "#/definitions/medicalrecord.AIDiagnosis"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "patient_id": {
-                    "type": "string"
-                },
                 "record_id": {
                     "type": "string"
                 }
@@ -6152,6 +6326,9 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/medicalrecord.AIDiagnosis"
                     }
+                },
+                "appointment": {
+                    "$ref": "#/definitions/appointment.Appointment"
                 },
                 "appointment_id": {
                     "type": "string"

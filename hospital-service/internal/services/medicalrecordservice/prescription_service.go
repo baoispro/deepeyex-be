@@ -47,6 +47,7 @@ type CreatePrescriptionRequest struct {
 	Source          string                    `json:"source"` // AI or DOCTOR
 	Description     *string                   `json:"description,omitempty"`
 	Items           []PrescriptionItemRequest `json:"items"`
+	Status          string                    `json:"status"`
 }
 
 // ---------------- CreatePrescription ----------------
@@ -63,7 +64,7 @@ func (s *PrescriptionService) CreatePrescription(req *CreatePrescriptionRequest)
 		PatientID:       req.PatientID,
 		Source:          req.Source,
 		Description:     req.Description,
-		Status:          "PENDING",
+		Status:          req.Status,
 		CreatedAt:       time.Now(),
 		UpdatedAt:       time.Now(),
 	}
@@ -142,6 +143,22 @@ func (s *PrescriptionService) GetPrescriptionByID(id string) (*medicalrecord.Pre
 
 func (s *PrescriptionService) GetPrescriptionsByMedicalRecordID(medicalRecordID string) ([]*medicalrecord.Prescription, error) {
 	return s.repo.GetPrescriptionsByMedicalRecordID(medicalRecordID)
+}
+
+// ---------------- GetPrescriptionsByPatientID ----------------
+func (s *PrescriptionService) GetPrescriptionsByPatientID(patientID string) ([]*medicalrecord.Prescription, error) {
+	if patientID == "" {
+		return nil, errors.New("patient_id is required")
+	}
+	return s.repo.GetPrescriptionsByPatientID(patientID)
+}
+
+// ---------------- GetPrescriptionsByPatientIDWithFilters ----------------
+func (s *PrescriptionService) GetPrescriptionsByPatientIDWithFilters(patientID, status, date, sortBy string) ([]*medicalrecord.Prescription, error) {
+	if patientID == "" {
+		return nil, errors.New("patient_id is required")
+	}
+	return s.repo.FindByPatientIDWithFilters(patientID, status, date, sortBy)
 }
 
 func (s *PrescriptionService) Approve(id, doctorID string) error {

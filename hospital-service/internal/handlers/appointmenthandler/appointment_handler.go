@@ -67,17 +67,42 @@ func (h *AppointmentHandler) GetAppointmentByID(c *gin.Context) {
 }
 
 // ---------------- Get Appointments By Patient ----------------
-// @Summary Get appointments by patient ID
-// @Description Retrieve all appointments belonging to a specific patient
+// @Summary Get appointments by patient ID with filters
+// @Description Retrieve all appointments belonging to a specific patient with optional filters and sorting
 // @Tags Appointments
 // @Produce json
 // @Param patient_id path string true "Patient ID"
+// @Param status query string false "Filter by appointment status (PENDING/CONFIRMED/COMPLETED/CANCELED/PENDING_ONLINE/CONFIRMED_ONLINE/COMPLETED_ONLINE)"
+// @Param date query string false "Filter by appointment date (format: YYYY-MM-DD)"
+// @Param sort query string false "Sort by created date (newest/oldest, default: newest)"
 // @Success 200 {array} appointment.Appointment
+// @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /appointments/patient/{patient_id} [get]
 func (h *AppointmentHandler) GetAppointmentsByPatient(c *gin.Context) {
 	patientID := c.Param("patient_id")
 
+	// Lấy query params
+	status := c.Query("status")
+	date := c.Query("date")
+	sortBy := c.Query("sort")
+
+	// Nếu có bất kỳ filter/sort params nào thì dùng method có filters
+	if status != "" || date != "" || sortBy != "" {
+		// Set default sort nếu không được cung cấp
+		if sortBy == "" {
+			sortBy = "newest"
+		}
+		appointments, err := h.service.GetByPatientIDWithFilters(patientID, status, date, sortBy)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
+			return
+		}
+		c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Appointments retrieved successfully", appointments))
+		return
+	}
+
+	// Nếu không có filter thì dùng method cũ (backward compatible)
 	appointments, err := h.service.GetByPatientID(patientID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
@@ -296,4 +321,37 @@ func (h *AppointmentHandler) CreateFollowUpAppointment(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, utils.SuccessResponse(http.StatusCreated, "Follow-up appointment created successfully", appt))
+}
+
+// ---------------- Cancel Appointment ----------------
+// @Summary Cancel an appointment
+// @Description Cancel an appointment with time restriction (cannot cancel within 12 hours of appointment time)
+// @Tags Appointments
+// @Produce json
+// @Param appointment_id path string true "Appointment ID"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /appointments/{appointment_id}/cancel [put]
+func (h *AppointmentHandler) CancelAppointment(c *gin.Context) {
+	appointmentID := c.Param("appointment_id")
+
+	if err := h.service.CancelAppointment(appointmentID); err != nil {
+		statusCode := http.StatusInternalServerError
+		// Nếu là lỗi validation thời gian hoặc trạng thái thì trả về 400
+		if err.Error() == "appointment is already canceled" ||
+			err.Error() == "cannot cancel completed appointment" ||
+			err.Error() == "appointment has no time slots" ||
+			err.Error()[0:35] == "cannot cancel appointment within 12" {
+			statusCode = http.StatusBadRequest
+		} else if err.Error()[0:21] == "appointment not found" {
+			statusCode = http.StatusNotFound
+		}
+
+		c.JSON(statusCode, utils.ErrorResponse(statusCode, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Appointment canceled successfully", nil))
 }
