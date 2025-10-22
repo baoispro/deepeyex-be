@@ -97,6 +97,7 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 		appointments.POST("/follow-up", aHandler.CreateFollowUpAppointment)
 		appointments.PUT("/:appointment_id/status", aHandler.UpdateAppointmentStatus)
 		appointments.PUT("/:appointment_id/detail", aHandler.UpdateAppointmentDetail)
+		appointments.PUT("/:appointment_id/cancel", aHandler.CancelAppointment)
 		appointments.GET("", aHandler.ListAllAppointments)
 		appointments.GET("/online", aHandler.GetOnlineAppointments)
 		appointments.GET("/today", aHandler.GetTodayAppointments)
@@ -160,8 +161,9 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	prescription := r.Group("/prescriptions")
 	{
 		// prescription.POST("", prescriptionHandler.CreatePrescription)
-		prescription.GET("/:prescription_id", prescriptionHandler.GetPrescriptionByID)
+		prescription.GET("/patient/:patient_id", prescriptionHandler.GetPrescriptionsByPatientID)
 		prescription.GET("/medical_records/:record_id", prescriptionHandler.ListPrescriptionsByMedicalRecordID)
+		prescription.GET("/:prescription_id", prescriptionHandler.GetPrescriptionByID)
 		prescription.PUT("/:prescription_id", prescriptionHandler.UpdatePrescription)
 		prescription.PUT("/:prescription_id/approve", prescriptionHandler.ApprovePrescription)
 		prescription.DELETE("/:prescription_id", prescriptionHandler.DeletePrescription)

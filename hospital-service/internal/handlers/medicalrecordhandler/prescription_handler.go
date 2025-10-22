@@ -103,6 +103,52 @@ func (h *PrescriptionHandler) ListPrescriptionsByMedicalRecordID(c *gin.Context)
 	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Prescriptions retrieved successfully", prescriptions))
 }
 
+// -------------------- List Prescriptions By Patient ID --------------------
+// @Summary List prescriptions by patient ID with filters
+// @Description Retrieve all prescriptions for a given patient ID with optional filters and sorting
+// @Tags Prescriptions
+// @Produce json
+// @Param patient_id path string true "Patient ID"
+// @Param status query string false "Filter by prescription status (PENDING/APPROVED/REJECTED)"
+// @Param date query string false "Filter by creation date (format: YYYY-MM-DD)"
+// @Param sort query string false "Sort by created date (newest/oldest, default: newest)"
+// @Success 200 {array} medicalrecord.Prescription
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /prescriptions/patient/{patient_id} [get]
+func (h *PrescriptionHandler) GetPrescriptionsByPatientID(c *gin.Context) {
+	patientID := c.Param("patient_id")
+
+	// Lấy query params
+	status := c.Query("status")
+	date := c.Query("date")
+	sortBy := c.Query("sort")
+
+	// Nếu có bất kỳ filter/sort params nào thì dùng method có filters
+	if status != "" || date != "" || sortBy != "" {
+		// Set default sort nếu không được cung cấp
+		if sortBy == "" {
+			sortBy = "newest"
+		}
+		prescriptions, err := h.service.GetPrescriptionsByPatientIDWithFilters(patientID, status, date, sortBy)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
+			return
+		}
+		c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Prescriptions retrieved successfully", prescriptions))
+		return
+	}
+
+	// Nếu không có filter thì dùng method cơ bản
+	prescriptions, err := h.service.GetPrescriptionsByPatientID(patientID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Prescriptions retrieved successfully", prescriptions))
+}
+
 // -------------------- Approve Prescription --------------------
 // @Summary Approve a prescription
 // @Description Doctor approves a prescription

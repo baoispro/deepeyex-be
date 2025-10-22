@@ -52,6 +52,54 @@ func (r *AppointmentRepo) FindByPatientID(patientID string) ([]appointment.Appoi
 	return appointments, nil
 }
 
+// ---------------- FindByPatientIDWithFilters ----------------
+// Lấy appointments theo patient_id với filters và sorting
+func (r *AppointmentRepo) FindByPatientIDWithFilters(patientID, status, date, sortBy string) ([]appointment.Appointment, error) {
+	var appointments []appointment.Appointment
+
+	query := r.db.Where("appointments.patient_id = ?", patientID).
+		Preload("TimeSlots", func(db *gorm.DB) *gorm.DB {
+			return db.Order("start_time ASC")
+		}).
+		Preload("TimeSlots.Doctor").
+		Preload("Patient").
+		Preload("Doctor").
+		Preload("Hospital")
+
+	// Filter theo status
+	if status != "" {
+		query = query.Where("appointments.status = ?", strings.ToUpper(status))
+	}
+
+	// Filter theo ngày khám (từ TimeSlots)
+	if date != "" {
+		// Parse date string (expected format: YYYY-MM-DD)
+		parsedDate, err := time.Parse("2006-01-02", date)
+		if err == nil {
+			// Join với time_slots và filter theo ngày
+			query = query.Joins("JOIN time_slots ON time_slots.appointment_id = appointments.appointment_id").
+				Where("DATE(time_slots.start_time) = ?", parsedDate.Format("2006-01-02"))
+		}
+	}
+
+	// Sort theo created_at
+	switch strings.ToLower(sortBy) {
+	case "newest":
+		query = query.Order("appointments.created_at DESC")
+	case "oldest":
+		query = query.Order("appointments.created_at ASC")
+	default:
+		// Default: sort theo ngày tạo mới nhất
+		query = query.Order("appointments.created_at DESC")
+	}
+
+	if err := query.Find(&appointments).Error; err != nil {
+		return nil, err
+	}
+
+	return appointments, nil
+}
+
 // ---------------- FindByDoctorID ----------------
 // Lấy tất cả các Appointment theo doctor_id
 func (r *AppointmentRepo) FindByDoctorID(doctorID string) ([]appointment.Appointment, error) {
