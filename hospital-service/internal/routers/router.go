@@ -11,6 +11,7 @@ import (
 	"hospital-service/internal/handlers/fullrecordhandler"
 	"hospital-service/internal/handlers/hospitalhandler"
 	"hospital-service/internal/handlers/medicalrecordhandler"
+	"hospital-service/internal/handlers/notificationhandler"
 	"hospital-service/internal/handlers/orderhandler"
 	"hospital-service/internal/handlers/patienthandler"
 	"hospital-service/internal/handlers/paymenthandler"
@@ -40,6 +41,7 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	wsHandler *websockethandler.WebSocketHandler,
 	aidiagnosisHandler *medicalrecordhandler.AIDiagnosisHandler,
 	fullRecordHandler *fullrecordhandler.FullRecordHandler,
+	handler *notificationhandler.NotificationHandler,
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -232,6 +234,10 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 		ws.GET("", wsHandler.ServeWS)                                     // WebSocket connection endpoint
 		ws.GET("/connected", wsHandler.GetConnectedDoctors)               // Get list of connected doctors
 		ws.GET("/status/:doctor_id", wsHandler.GetDoctorConnectionStatus) // Check doctor connection status
+		// ====== Patient WebSocket ======
+		ws.GET("/patient", wsHandler.ServeWSPatient)                                // WebSocket connection endpoint (patient)
+		ws.GET("/patient/connected", wsHandler.GetConnectedPatients)                // Get list of connected patients
+		ws.GET("/patient/status/:patient_id", wsHandler.GetPatientConnectionStatus) // Check patient connection status
 	}
 
 	// ===== AI routes =====
@@ -243,13 +249,23 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 		ai.PUT("/:id/verify", aidiagnosisHandler.Verify)
 	}
 
-	// ===== me routes =====
 	fr := r.Group("/full-records")
 	{
 		// 🩺 Tạo mới full record (record + attachment + prescription)
 		fr.POST("/full", fullRecordHandler.CreateFullRecord)
 		// 🩻 Hoàn thiện record đã có (thêm diagnosis, notes, attachments, prescription)
 		fr.PUT("/complete", fullRecordHandler.CompleteRecord)
+	}
+
+	noti := r.Group("/notifications")
+	{
+		noti.POST("", handler.CreateNotification)
+		noti.GET("", handler.GetAllNotifications)
+		noti.PUT("/:id/read", handler.MarkNotificationRead)
+		noti.PUT("/user/:userId/read-all", handler.MarkAllNotificationsRead)
+		noti.DELETE("/:id", handler.DeleteNotification)
+		noti.DELETE("/all", handler.DeleteAllNotifications)
+		noti.GET("/unread", handler.CountUnreadNotifications)
 	}
 
 	// Swagger

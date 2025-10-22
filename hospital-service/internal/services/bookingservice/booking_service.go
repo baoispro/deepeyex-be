@@ -7,6 +7,7 @@ import (
 	"hospital-service/internal/models/appointment"
 	"hospital-service/internal/models/order"
 	"hospital-service/internal/services/appointmentservice"
+	"hospital-service/internal/services/notificationservice"
 	"hospital-service/internal/services/orderservice"
 	"hospital-service/internal/websocket"
 )
@@ -34,13 +35,15 @@ type BookingService struct {
 	appointmentService *appointmentservice.AppointmentService
 	orderService       *orderservice.OrderService
 	wsHub              *websocket.Hub // ✅ Thêm WebSocket Hub
+	notificationSvc    *notificationservice.NotificationService
 }
 
-func NewBookingService(apptSvc *appointmentservice.AppointmentService, ordSvc *orderservice.OrderService, wsHub *websocket.Hub) *BookingService {
+func NewBookingService(apptSvc *appointmentservice.AppointmentService, ordSvc *orderservice.OrderService, wsHub *websocket.Hub, notiSvc *notificationservice.NotificationService,) *BookingService {
 	return &BookingService{
 		appointmentService: apptSvc,
 		orderService:       ordSvc,
 		wsHub:              wsHub,
+		notificationSvc:    notiSvc,
 	}
 }
 
@@ -68,6 +71,21 @@ func (s *BookingService) CreateBooking(req BookingRequest) (*BookingResponse, er
 		go s.notifyDoctorNewAppointment(appt, ord)
 	}
 
+	if s.wsHub != nil {
+		go s.notifyPatientNewAppointment(appt, ord)
+	}
+
+	if s.notificationSvc != nil {
+		go func() {
+			_, _ = s.notificationSvc.CreateNotification(
+				appt.PatientID,
+				"Lịch hẹn đã được tạo",
+				fmt.Sprintf("Bạn đã đặt lịch hẹn với bác sĩ %s.", req.DoctorID),
+				fmt.Sprintf("/patient/appointments/%s", appt.AppointmentID),
+			)
+		}()
+	}
+
 	return &BookingResponse{
 		Appointment: appt,
 		Order:       ord,
@@ -83,4 +101,15 @@ func (s *BookingService) notifyDoctorNewAppointment(appt *appointment.Appointmen
 	}
 
 	s.wsHub.BroadcastToDoctor(appt.DoctorID, websocket.NewAppointment, payload)
+}
+
+// notifyDoctorNewAppointment gửi notification đến bác sĩ khi có lịch hẹn mới
+func (s *BookingService) notifyPatientNewAppointment(appt *appointment.Appointment, ord *order.Order) {
+	payload := map[string]interface{}{
+		"appointment": appt,
+		"order":       ord,
+		"message":     "Bạn có lịch hẹn mới",
+	}
+
+	s.wsHub.BroadcastToPatient(appt.PatientID, websocket.NewAppointment, payload)
 }

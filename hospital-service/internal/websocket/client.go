@@ -33,6 +33,8 @@ type Client struct {
 
 	// Doctor ID của client này
 	DoctorID string
+
+	PatientID string
 }
 
 // NewClient tạo client mới
@@ -42,6 +44,15 @@ func NewClient(hub *Hub, conn *websocket.Conn, doctorID string) *Client {
 		conn:     conn,
 		send:     make(chan []byte, 256),
 		DoctorID: doctorID,
+	}
+}
+
+func NewClientPatient(hub *Hub, conn *websocket.Conn, patientID string) *Client {
+	return &Client{
+		hub:      hub,
+		conn:     conn,
+		send:     make(chan []byte, 256),
+		PatientID: patientID,
 	}
 }
 

@@ -9,12 +9,15 @@ import (
 	"hospital-service/internal/handlers/bookinghandler"
 	"hospital-service/internal/handlers/callhandler"
 	"hospital-service/internal/handlers/fullrecordhandler"
+	"hospital-service/internal/handlers/notificationhandler"
 	patienthandler "hospital-service/internal/handlers/patienthandler"
 	"hospital-service/internal/handlers/paymenthandler"
 	"hospital-service/internal/handlers/uploadhandler"
+	"hospital-service/internal/repositories/notificationrepo"
 	patientrepo "hospital-service/internal/repositories/patientrepo"
 	"hospital-service/internal/services/bookingservice"
 	"hospital-service/internal/services/fullrecordservice"
+	"hospital-service/internal/services/notificationservice"
 	patientservice "hospital-service/internal/services/patientservice"
 	"hospital-service/internal/services/paymentservice"
 	"hospital-service/internal/services/uploadservice"
@@ -116,6 +119,7 @@ func main() {
 	serviceRepo := servicerepo.NewServiceRepo(db)
 	aidiagnosisRepo := medicalrecordrepo.NewAIDiagnosisRepo(db)
 	medicationReminderRepo := medicalrecordrepo.NewMedicationReminderRepository(db)
+	notificationRepo := notificationrepo.NewNotificationRepo(db)
 
 	s3Client, err := storage.NewS3Client(
 		cfg.S3Bucket,
@@ -128,6 +132,7 @@ func main() {
 	}
 
 	// Initialize services
+	notificationService := notificationservice.NewNotificationService(notificationRepo, wsHub)
 	pService := patientservice.NewPatientService(pRepo, s3Client)
 	dService := doctorservice.NewDoctorService(dRepo, s3Client)
 	hService := hospitalservice.NewHospitalService(hRepo, s3Client)
@@ -136,12 +141,11 @@ func main() {
 	drugService := drugservice.NewDrugService(drugRepo, s3Client)
 	orderService := orderservice.NewOrderService(orderRepo, drugRepo, s3Client)
 	serviceService := doctorserviceservice.NewServiceService(serviceRepo)
-
 	medicalRecordService := medicalrecordservice.NewMedicalRecordService(medicalRecordRepo, aidiagnosisRepo)
 	prescriptionService := prescriptionservice.NewPrescriptionService(prescriptionRepo, prescriptionitemrepo, medicationReminderRepo)
 	attachmentService := attachmentservice.NewAttachmentService(attachmentRepo, s3Client)
 	prescriptionItemService := prescriptionitemservice.NewPrescriptionItemService(prescriptionitemrepo)
-	bookingService := bookingservice.NewBookingService(aService, orderService, wsHub) // ✅ Pass WebSocket Hub
+	bookingService := bookingservice.NewBookingService(aService, orderService, wsHub, notificationService) // ✅ Pass WebSocket Hub
 	vnpayService := paymentservice.NewVnpayService(cfg)
 	emailService := emailservice.NewEmailService(cfg)
 	uploadservice := uploadservice.NewUploadService(s3Client)
@@ -172,6 +176,7 @@ func main() {
 	wsHandler := websockethandler.NewWebSocketHandler(wsHub) // ✅ WebSocket Handler
 	aidiagnosisHandler := medicalrecordhandler.NewAIDiagnosisHandler(aidiagnosisService)
 	fullRecordHandler := fullrecordhandler.NewFullRecordHandler(fullRecordService)
+	notificationHandler := notificationhandler.NewNotificationHandler(notificationService)
 
 	// Start cron service
 	if err := cronService.Start(); err != nil {
@@ -181,7 +186,7 @@ func main() {
 	}
 
 	// Setup router
-	r := routers.SetupRouter(&cfg, pHandler, dHandler, hHandler, aHandler, tHandler, drugHandler, orderHandler, medicalRecordHandler, prHandler, attachmentHandler, prescriptionItemHander, serviceHandler, bookingHandler, vnpayHandler, emailHandler, uploadhandler, callhandler, wsHandler, aidiagnosisHandler, fullRecordHandler)
+	r := routers.SetupRouter(&cfg, pHandler, dHandler, hHandler, aHandler, tHandler, drugHandler, orderHandler, medicalRecordHandler, prHandler, attachmentHandler, prescriptionItemHander, serviceHandler, bookingHandler, vnpayHandler, emailHandler, uploadhandler, callhandler, wsHandler, aidiagnosisHandler, fullRecordHandler, notificationHandler)
 
 	log.Printf("Hospital service running on :%s", cfg.Port)
 	if err := r.Run(":" + cfg.Port); err != nil {

@@ -7,6 +7,7 @@ import (
 	"hospital-service/internal/models/drug"
 	"hospital-service/internal/models/hospital"
 	"hospital-service/internal/models/medicalrecord"
+	"hospital-service/internal/models/notification"
 	"hospital-service/internal/models/order"
 	"hospital-service/internal/models/patient"
 	"hospital-service/internal/models/service"
@@ -132,6 +133,10 @@ func AutoMigrate(db *gorm.DB) error {
 	}
 
 	if err := db.AutoMigrate(&medicalrecord.MedicationReminder{}); err != nil {
+		return err
+	}
+
+	if err := db.AutoMigrate(&notification.Notification{}); err != nil {
 		return err
 	}
 
