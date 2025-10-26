@@ -101,6 +101,14 @@ definitions:
     - service_name
     - slot_ids
     type: object
+  appointmenthandler.EmergencyCancelRequest:
+    properties:
+      reason:
+        description: Lý do hủy gấp
+        type: string
+    required:
+    - reason
+    type: object
   appointmenthandler.UpdateAppointmentStatusRequest:
     properties:
       status:
@@ -727,6 +735,8 @@ definitions:
         type: string
       patient_id:
         type: string
+      related_record_id:
+        type: string
     required:
     - created_by
     - diagnosis
@@ -1352,6 +1362,56 @@ paths:
               type: string
             type: object
       summary: Update appointment details
+      tags:
+      - Appointments
+  /appointments/{appointment_id}/emergency-cancel:
+    put:
+      consumes:
+      - application/json
+      description: Cancel an appointment urgently (no time restriction) and automatically
+        transfer to a replacement doctor with same specialty and hospital. Use when
+        doctor has emergency surgery, urgent case, sudden illness, etc.
+      parameters:
+      - description: Appointment ID
+        in: path
+        name: appointment_id
+        required: true
+        type: string
+      - description: Emergency cancel reason (e.g., 'Ca phẫu thuật gấp', 'Bác sĩ bị
+          ốm đột xuất', 'Cấp cứu')
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/appointmenthandler.EmergencyCancelRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Emergency cancel appointment with automatic doctor replacement
       tags:
       - Appointments
   /appointments/{appointment_id}/status:
@@ -3198,6 +3258,231 @@ paths:
       summary: Get all medical records for a patient
       tags:
       - MedicalRecords
+  /notifications:
+    get:
+      description: List all notifications for a user
+      parameters:
+      - description: User ID
+        in: query
+        name: userID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get all notifications of a user
+      tags:
+      - Notifications
+    post:
+      consumes:
+      - application/json
+      description: Create a notification for a user
+      parameters:
+      - description: User ID
+        in: query
+        name: userID
+        required: true
+        type: string
+      - description: Title
+        in: query
+        name: title
+        required: true
+        type: string
+      - description: Message
+        in: query
+        name: message
+        required: true
+        type: string
+      - description: Target URL
+        in: query
+        name: targetURL
+        type: string
+      produces:
+      - application/json
+      responses:
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new notification
+      tags:
+      - Notifications
+  /notifications/{id}:
+    delete:
+      description: Delete notification
+      parameters:
+      - description: Notification ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete a notification by ID
+      tags:
+      - Notifications
+  /notifications/{id}/read:
+    put:
+      description: Mark notification as read by ID
+      parameters:
+      - description: Notification ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Mark a notification as read
+      tags:
+      - Notifications
+  /notifications/all:
+    delete:
+      description: Delete all notifications for a user
+      parameters:
+      - description: User ID
+        in: query
+        name: userID
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete all notifications of a user
+      tags:
+      - Notifications
+  /notifications/unread:
+    get:
+      description: Count number of unread notifications for a user
+      parameters:
+      - description: User ID
+        in: query
+        name: userID
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              format: int64
+              type: integer
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Count unread notifications
+      tags:
+      - Notifications
+  /notifications/user/{userId}/read-all:
+    put:
+      description: Mark all notifications of a user as read
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Mark all notifications as read
+      tags:
+      - Notifications
   /orders:
     get:
       description: Retrieve all orders in the system with optional filters
@@ -4608,6 +4893,64 @@ paths:
       summary: Get list of connected doctors
       tags:
       - WebSocket
+  /ws/patient:
+    get:
+      description: Patients connect to this endpoint to receive health or appointment
+        updates
+      parameters:
+      - description: Patient ID
+        in: query
+        name: patient_id
+        required: true
+        type: string
+      responses:
+        "101":
+          description: Switching Protocols
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.APIResponse'
+      summary: WebSocket endpoint for patients to receive real-time notifications
+      tags:
+      - WebSocket - Patient
+  /ws/patient/connected:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get list of connected patients
+      tags:
+      - WebSocket - Patient
+  /ws/patient/status/{patient_id}:
+    get:
+      parameters:
+      - description: Patient ID
+        in: path
+        name: patient_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Check patient connection status
+      tags:
+      - WebSocket - Patient
   /ws/status/{doctor_id}:
     get:
       description: Check if a specific doctor is currently connected

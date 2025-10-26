@@ -32,6 +32,10 @@ type CreateFollowUpRequest struct {
 	RelatedRecordID string   `json:"related_record_id" binding:"required"`
 }
 
+type EmergencyCancelRequest struct {
+	Reason string `json:"reason" binding:"required"` // Lý do hủy gấp
+}
+
 type createAppointmentReq struct {
 	PatientID  string `json:"patient_id" binding:"required"`
 	DoctorID   string `json:"doctor_id" binding:"required"`
@@ -354,4 +358,51 @@ func (h *AppointmentHandler) CancelAppointment(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Appointment canceled successfully", nil))
+}
+
+// ---------------- Emergency Cancel Appointment ----------------
+// @Summary Emergency cancel appointment with automatic doctor replacement
+// @Description Cancel an appointment urgently (no time restriction) and automatically transfer to a replacement doctor with same specialty and hospital. Use when doctor has emergency surgery, urgent case, sudden illness, etc.
+// @Tags Appointments
+// @Accept json
+// @Produce json
+// @Param appointment_id path string true "Appointment ID"
+// @Param payload body EmergencyCancelRequest true "Emergency cancel reason (e.g., 'Ca phẫu thuật gấp', 'Bác sĩ bị ốm đột xuất', 'Cấp cứu')"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /appointments/{appointment_id}/emergency-cancel [put]
+func (h *AppointmentHandler) EmergencyCancelAppointment(c *gin.Context) {
+	appointmentID := c.Param("appointment_id")
+
+	var req EmergencyCancelRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
+		return
+	}
+
+	if err := h.service.EmergencyCancelAppointment(appointmentID, req.Reason); err != nil {
+		statusCode := http.StatusInternalServerError
+		// Nếu là lỗi validation hoặc trạng thái thì trả về 400
+		errMsg := err.Error()
+		if errMsg == "appointment is already canceled" ||
+			errMsg == "cannot cancel completed appointment" ||
+			errMsg == "appointment has no time slots" ||
+			errMsg == "no available replacement doctor found with same specialty and hospital" ||
+			errMsg[:25] == "no available slot found" ||
+			errMsg[:30] == "no available replacement doctor" {
+			statusCode = http.StatusBadRequest
+		} else if err.Error()[0:21] == "appointment not found" {
+			statusCode = http.StatusNotFound
+		}
+
+		c.JSON(statusCode, utils.ErrorResponse(statusCode, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Appointment emergency canceled and automatically transferred to replacement doctor", gin.H{
+		"reason": req.Reason,
+		"note":   "Patient will be notified about the change",
+	}))
 }

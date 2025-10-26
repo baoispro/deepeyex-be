@@ -98,6 +98,7 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 		appointments.PUT("/:appointment_id/status", aHandler.UpdateAppointmentStatus)
 		appointments.PUT("/:appointment_id/detail", aHandler.UpdateAppointmentDetail)
 		appointments.PUT("/:appointment_id/cancel", aHandler.CancelAppointment)
+		appointments.PUT("/:appointment_id/emergency-cancel", aHandler.EmergencyCancelAppointment)
 		appointments.GET("", aHandler.ListAllAppointments)
 		appointments.GET("/online", aHandler.GetOnlineAppointments)
 		appointments.GET("/today", aHandler.GetTodayAppointments)

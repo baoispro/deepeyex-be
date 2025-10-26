@@ -8,7 +8,9 @@ import (
 
 	"hospital-service/internal/enums"
 	"hospital-service/internal/models/appointment"
+	"hospital-service/internal/models/doctor"
 	"hospital-service/internal/repositories/appointmentrepo"
+	"hospital-service/internal/repositories/doctorrepo"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -17,10 +19,11 @@ import (
 type AppointmentService struct {
 	repo         *appointmentrepo.AppointmentRepo
 	timeSlotRepo *appointmentrepo.TimeSlotRepo
+	doctorRepo   *doctorrepo.DoctorRepo
 }
 
-func NewAppointmentService(repo *appointmentrepo.AppointmentRepo, timeSlotRepo *appointmentrepo.TimeSlotRepo) *AppointmentService {
-	return &AppointmentService{repo: repo, timeSlotRepo: timeSlotRepo}
+func NewAppointmentService(repo *appointmentrepo.AppointmentRepo, timeSlotRepo *appointmentrepo.TimeSlotRepo, doctorRepo *doctorrepo.DoctorRepo) *AppointmentService {
+	return &AppointmentService{repo: repo, timeSlotRepo: timeSlotRepo, doctorRepo: doctorRepo}
 }
 
 // Tạo khám mới
@@ -327,6 +330,159 @@ func (s *AppointmentService) CancelAppointment(id string) error {
 	}
 
 	return nil
+}
+
+// ---------------- EmergencyCancelAppointment ----------------
+// Hủy appointment gấp và tự động chuyển sang bác sĩ thay thế
+func (s *AppointmentService) EmergencyCancelAppointment(appointmentID, reason string) error {
+	// Lấy appointment với TimeSlots
+	appt, err := s.repo.GetByID(appointmentID)
+	if err != nil {
+		return fmt.Errorf("appointment not found: %v", err)
+	}
+
+	// Kiểm tra nếu appointment đã bị hủy hoặc đã hoàn thành
+	if appt.Status == enums.Canceled {
+		return errors.New("appointment is already canceled")
+	}
+	if appt.Status == enums.Completed || appt.Status == enums.CompletedOnline {
+		return errors.New("cannot cancel completed appointment")
+	}
+
+	// Kiểm tra TimeSlots
+	if len(appt.TimeSlots) == 0 {
+		return errors.New("appointment has no time slots")
+	}
+
+	// Tìm slot có StartTime sớm nhất để kiểm tra thời gian
+	earliestSlot := appt.TimeSlots[0]
+	for _, slot := range appt.TimeSlots {
+		if slot.StartTime.Before(earliestSlot.StartTime) {
+			earliestSlot = slot
+		}
+	}
+
+	// Với emergency cancel, cho phép hủy mọi lúc (không giới hạn thời gian)
+	// Vì có thể có ca phẫu thuật, cấp cứu gấp, bác sĩ bị ốm đột xuất, etc.
+
+	// Transaction: Tìm bác sĩ thay thế và chuyển appointment
+	err = s.repo.DB().Transaction(func(tx *gorm.DB) error {
+		// Tìm bác sĩ cùng chuyên khoa và bệnh viện có slot trống
+		altDoctor, err := s.findReplacementDoctor(appt.DoctorID, earliestSlot.StartTime, earliestSlot.EndTime)
+		if err != nil {
+			return fmt.Errorf("failed to find replacement doctor: %v", err)
+		}
+		if altDoctor == nil {
+			return errors.New("no available replacement doctor found with same specialty and hospital")
+		}
+
+		// Tìm slot phù hợp của bác sĩ thay thế
+		replacementSlot, err := s.findReplacementSlot(altDoctor.DoctorID, earliestSlot.StartTime, earliestSlot.EndTime)
+		if err != nil {
+			return fmt.Errorf("failed to find replacement slot: %v", err)
+		}
+		if replacementSlot == nil {
+			return fmt.Errorf("no available slot found for replacement doctor %s (%s) at %s-%s",
+				altDoctor.DoctorID, altDoctor.FullName,
+				earliestSlot.StartTime.Format("15:04"), earliestSlot.EndTime.Format("15:04"))
+		}
+
+		// Cập nhật appointment sang bác sĩ mới
+		appt.DoctorID = altDoctor.DoctorID
+		appt.Status = enums.Confirmed // Giữ nguyên status hoặc có thể set thành PENDING
+		appt.UpdatedAt = time.Now()
+		if err := tx.Save(appt).Error; err != nil {
+			return fmt.Errorf("failed to update appointment: %v", err)
+		}
+
+		// Cập nhật slot cũ (giải phóng)
+		for _, slot := range appt.TimeSlots {
+			slot.AppointmentID = nil
+			if err := tx.Save(&slot).Error; err != nil {
+				return fmt.Errorf("failed to release slot %s: %v", slot.SlotID, err)
+			}
+		}
+
+		// Gán appointment cho slot mới
+		replacementSlot.AppointmentID = &appt.AppointmentID
+		if err := tx.Save(replacementSlot).Error; err != nil {
+			return fmt.Errorf("failed to assign appointment to replacement slot: %v", err)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to emergency cancel appointment: %v", err)
+	}
+
+	return nil
+}
+
+// Helper: Tìm bác sĩ thay thế
+func (s *AppointmentService) findReplacementDoctor(originalDoctorID string, startTime, endTime time.Time) (*doctor.Doctor, error) {
+	// Tìm bác sĩ cùng chuyên khoa và bệnh viện
+	replacementDoctor, err := s.doctorRepo.FindBestReplacementDoctor(originalDoctorID, startTime, endTime)
+	if err != nil {
+		return nil, err
+	}
+
+	return replacementDoctor, nil
+}
+
+// Helper: Tìm slot thay thế
+func (s *AppointmentService) findReplacementSlot(doctorID string, startTime, endTime time.Time) (*appointment.TimeSlot, error) {
+	// Tìm slot cùng giờ
+	slots, err := s.timeSlotRepo.FindByDoctorIDAndDateRange(doctorID, startTime, endTime)
+	if err != nil {
+		return nil, err
+	}
+
+	// Tìm slot trống cùng giờ
+	for _, slot := range slots {
+		if slot.AppointmentID == nil || *slot.AppointmentID == "" {
+			if slot.StartTime.Equal(startTime) && slot.EndTime.Equal(endTime) {
+				return &slot, nil
+			}
+		}
+	}
+
+	// Nếu không có slot cùng giờ, tìm slot cùng ca
+	for _, slot := range slots {
+		if slot.AppointmentID == nil || *slot.AppointmentID == "" {
+			if s.isSameShift(startTime, slot.StartTime) {
+				return &slot, nil
+			}
+		}
+	}
+
+	return nil, nil
+}
+
+// Helper: Kiểm tra cùng ca
+func (s *AppointmentService) isSameShift(time1, time2 time.Time) bool {
+	hour1 := time1.Hour()
+	hour2 := time2.Hour()
+
+	// Ca sáng: 6-12h
+	if hour1 >= 6 && hour1 < 12 && hour2 >= 6 && hour2 < 12 {
+		return true
+	}
+	// Ca chiều: 12-18h
+	if hour1 >= 12 && hour1 < 18 && hour2 >= 12 && hour2 < 18 {
+		return true
+	}
+	// Ca tối: 18-24h
+	if hour1 >= 18 && hour1 < 24 && hour2 >= 18 && hour2 < 24 {
+		return true
+	}
+	// Ca đêm: 0-6h
+	if ((hour1 >= 0 && hour1 < 6) || (hour1 >= 18 && hour1 < 24)) &&
+		((hour2 >= 0 && hour2 < 6) || (hour2 >= 18 && hour2 < 24)) {
+		return true
+	}
+
+	return false
 }
 
 // ---------------- Helper ----------------

@@ -136,7 +136,7 @@ func main() {
 	pService := patientservice.NewPatientService(pRepo, s3Client)
 	dService := doctorservice.NewDoctorService(dRepo, s3Client)
 	hService := hospitalservice.NewHospitalService(hRepo, s3Client)
-	aService := appointmentservice.NewAppointmentService(aRepo, tRepo)
+	aService := appointmentservice.NewAppointmentService(aRepo, tRepo, dRepo)
 	tService := appointmentservice.NewTimeSlotService(tRepo, dRepo, aRepo)
 	drugService := drugservice.NewDrugService(drugRepo, s3Client)
 	orderService := orderservice.NewOrderService(orderRepo, drugRepo, s3Client)
