@@ -95,6 +95,8 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 		appointments.GET("/patient/:patient_id", aHandler.GetAppointmentsByPatient)
 		appointments.GET("/doctor/:doctor_id", aHandler.GetAppointmentsByDoctor)
 		appointments.POST("/follow-up", aHandler.CreateFollowUpAppointment)
+		appointments.POST("/pending-follow-up", aHandler.CreatePendingFollowUpAppointment)
+		appointments.POST("/confirm-follow-up", aHandler.ConfirmPendingFollowUpAppointment)
 		appointments.PUT("/:appointment_id/status", aHandler.UpdateAppointmentStatus)
 		appointments.PUT("/:appointment_id/detail", aHandler.UpdateAppointmentDetail)
 		appointments.PUT("/:appointment_id/cancel", aHandler.CancelAppointment)
@@ -217,6 +219,7 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 		email.POST("/appointment-reminder", emailHandler.SendAppointmentReminder)
 		email.POST("/prescription", emailHandler.SendPrescription)
 		email.POST("/order-confirmation", emailHandler.SendOrderConfirmation)
+		email.POST("/send-cancel-notification", emailHandler.SendCancelNotification)
 	}
 
 	// ===== Upload routes =====

@@ -110,6 +110,7 @@ func main() {
 	hRepo := hospitalrepo.NewHospitalRepo(db)
 	aRepo := appointmentrepo.NewAppointmentRepo(db)
 	tRepo := timeslotrepo.NewTimeSlotRepo(db)
+	pendingFollowUpRepo := appointmentrepo.NewPendingFollowUpRepo(db)
 	drugRepo := drugrepo.NewDrugRepo(db)
 	orderRepo := orderrepo.NewOrderRepo(db)
 	medicalRecordRepo := medicalrecordrepo.NewMedicalRecordRepository(db)
@@ -136,7 +137,10 @@ func main() {
 	pService := patientservice.NewPatientService(pRepo, s3Client)
 	dService := doctorservice.NewDoctorService(dRepo, s3Client)
 	hService := hospitalservice.NewHospitalService(hRepo, s3Client)
-	aService := appointmentservice.NewAppointmentService(aRepo, tRepo, dRepo)
+	aService := appointmentservice.NewAppointmentService(cfg, aRepo, tRepo, dRepo, wsHub)
+	// Set dependencies for pending follow-up functionality
+	aService.SetPatientRepo(pRepo)
+	aService.SetPendingRepo(pendingFollowUpRepo)
 	tService := appointmentservice.NewTimeSlotService(tRepo, dRepo, aRepo)
 	drugService := drugservice.NewDrugService(drugRepo, s3Client)
 	orderService := orderservice.NewOrderService(orderRepo, drugRepo, s3Client)
@@ -147,7 +151,9 @@ func main() {
 	prescriptionItemService := prescriptionitemservice.NewPrescriptionItemService(prescriptionitemrepo)
 	bookingService := bookingservice.NewBookingService(aService, orderService, wsHub, notificationService) // ✅ Pass WebSocket Hub
 	vnpayService := paymentservice.NewVnpayService(cfg)
-	emailService := emailservice.NewEmailService(cfg)
+	emailService := emailservice.NewEmailService(cfg, wsHub, notificationService)
+	// Set email service for appointment service
+	aService.SetEmailService(emailService)
 	uploadservice := uploadservice.NewUploadService(s3Client)
 	aidiagnosisService := medicalrecordservice.NewAIDiagnosisService(aidiagnosisRepo, s3Client)
 	fullRecordService := fullrecordservice.NewFullRecordService(medicalRecordService, attachmentService, prescriptionService, aService)

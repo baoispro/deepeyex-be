@@ -218,7 +218,7 @@ func (r *AppointmentRepo) FindTodayAppointmentsByDoctor(doctorID string) ([]appo
 			return db.Order("start_time ASC")
 		}).
 		Joins("JOIN time_slots ON time_slots.appointment_id = appointments.appointment_id").
-		Where("DATE(time_slots.start_time) = CURRENT_DATE AND appointments.doctor_id = ? AND appointments.status != ?", doctorID, "COMPLETED").
+		Where("DATE(time_slots.start_time) = CURRENT_DATE AND appointments.doctor_id = ? AND appointments.status NOT IN ?", doctorID, []string{"COMPLETED", "CANCELED"}).
 		Order("appointments.doctor_id ASC").
 		Find(&appointments).Error
 
