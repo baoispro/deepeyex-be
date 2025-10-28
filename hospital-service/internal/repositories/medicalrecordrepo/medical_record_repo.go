@@ -64,7 +64,7 @@ func (r *MedicalRecordRepo) GetByID(id string) (*medicalrecord.MedicalRecord, er
 // ---------------- List all records ----------------
 func (r *MedicalRecordRepo) List() ([]*medicalrecord.MedicalRecord, error) {
 	var records []*medicalrecord.MedicalRecord
-	err := r.db.Preload("AI_Diagnoses.RecommendedPlans").
+	err := r.db.
 		Preload("Attachments").
 		Find(&records).Error
 	return records, err
@@ -96,6 +96,26 @@ func (r *MedicalRecordRepo) GetByAppointmentID(appointmentID string) (*medicalre
 
 // ---------------- Get all records by PatientID ----------------
 func (r *MedicalRecordRepo) GetByPatientID(patientID string) ([]*medicalrecord.MedicalRecord, error) {
+	var records []*medicalrecord.MedicalRecord
+	
+	// Đơn giản hóa - chỉ lấy records theo patient_id, sắp xếp theo ngày tạo giảm dần
+	err := r.db.
+		Preload("Attachments").
+		Preload("Prescriptions.Items").  // Preload cả Items của Prescriptions
+		Preload("AI_Diagnoses").
+		Where("patient_id = ?", patientID).
+		Order("created_at DESC").  // Sắp xếp theo ngày tạo giảm dần (mới nhất trước)
+		Find(&records).Error
+
+	if err != nil {
+		return nil, err
+	}
+	
+	return records, nil
+}
+
+// ---------------- Get all records by PatientID ----------------
+func (r *MedicalRecordRepo) GetByPatientIDFe(patientID string) ([]*medicalrecord.MedicalRecord, error) {
 	var records []*medicalrecord.MedicalRecord
 	subQuery := r.db.
 		Model(&appointment.Appointment{}).

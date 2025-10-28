@@ -32,6 +32,8 @@ type Config struct {
 	VnpReturnUrl string
 
 	ResendAPIKey string
+
+	FrontendURL string // Frontend URL for confirmation links
 }
 
 func Load() Config {
@@ -59,6 +61,8 @@ func Load() Config {
 		VnpReturnUrl: mustEnv("VNP_RETURNURL"),
 
 		ResendAPIKey: mustEnv("RESEND_API_KEY"),
+
+		FrontendURL: getEnv("FRONTEND_URL", "http://localhost:3000/vi"),
 	}
 }
 

@@ -23,7 +23,7 @@ type CreateMedicalRecordRequest struct {
 	Diagnosis       string  `json:"diagnosis" binding:"required"`
 	CreatedBy       string  `json:"created_by" binding:"required"` // "DOCTOR" | "SYSTEM" | "AI"
 	Note            *string `json:"note,omitempty"`
-	relatedRecordID *string `json:"related_record_id,omitempty"`
+	RelatedRecordID *string `json:"related_record_id,omitempty"`
 }
 
 type CreateAIDiagnosisRequest struct {
@@ -57,7 +57,7 @@ func (h *MedicalRecordHandler) CreateMedicalRecord(c *gin.Context) {
 		return
 	}
 
-	record, err := h.service.CreateRecord(req.PatientID, req.DoctorID, req.Diagnosis, req.AppointmentID, req.Note, req.relatedRecordID)
+	record, err := h.service.CreateRecord(req.PatientID, req.DoctorID, req.Diagnosis, req.AppointmentID, req.Note, req.RelatedRecordID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
 		return
@@ -246,12 +246,42 @@ func (h *MedicalRecordHandler) CheckMedicalRecord(c *gin.Context) {
 // @Router /medical_records/patient [get]
 func (h *MedicalRecordHandler) GetRecordsByPatient(c *gin.Context) {
 	patientID := c.Query("patient_id")
+	
 	if patientID == "" {
 		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "patient_id is required"))
 		return
 	}
 
 	records, err := h.service.GetRecordsByPatient(patientID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Không thể lấy MedicalRecords: "+err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Lấy danh sách MedicalRecords thành công", gin.H{
+		"records": records,
+	}))
+}
+
+// ---------------- Get all MedicalRecords by PatientID ----------------
+// @Summary Get all medical records for a patient
+// @Description Returns a list of MedicalRecords along with related Attachments, Prescriptions, AI Diagnoses, and Appointment info.
+// @Tags MedicalRecords
+// @Produce json
+// @Param patient_id query string true "Patient ID"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{} "Bad Request"
+// @Failure 500 {object} map[string]interface{} "Internal Server Error"
+// @Router /medical_records/patient_fe [get]
+func (h *MedicalRecordHandler) GetRecordsByPatientFe(c *gin.Context) {
+	patientID := c.Query("patient_id")
+	
+	if patientID == "" {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "patient_id is required"))
+		return
+	}
+
+	records, err := h.service.GetRecordsByPatientFe(patientID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Không thể lấy MedicalRecords: "+err.Error()))
 		return

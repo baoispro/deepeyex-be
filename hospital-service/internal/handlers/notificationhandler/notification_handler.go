@@ -26,7 +26,6 @@ func NewNotificationHandler(service *notificationservice.NotificationService) *N
 // @Param title query string true "Title"
 // @Param message query string true "Message"
 // @Param targetURL query string false "Target URL"
-// @Success 201 {object} notificationservice.Notification
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /notifications [post]
@@ -56,7 +55,6 @@ func (h *NotificationHandler) CreateNotification(c *gin.Context) {
 // @Tags Notifications
 // @Produce json
 // @Param userID query string true "User ID"
-// @Success 200 {array} notificationservice.Notification
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /notifications [get]

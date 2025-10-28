@@ -3,6 +3,8 @@ package emailservice
 import (
 	"fmt"
 	"hospital-service/internal/config"
+	"hospital-service/internal/services/notificationservice"
+	"hospital-service/internal/websocket"
 
 	"github.com/resend/resend-go/v2"
 )
@@ -10,14 +12,19 @@ import (
 type EmailService struct {
 	client *resend.Client
 	cfg    config.Config
+	wsHub  *websocket.Hub
+	notificationSvc    *notificationservice.NotificationService
+
 }
 
 // NewEmailService khởi tạo email service mới
-func NewEmailService(cfg config.Config) *EmailService {
+func NewEmailService(cfg config.Config, wsHub *websocket.Hub, notificationSvc *notificationservice.NotificationService) *EmailService {
 	client := resend.NewClient(cfg.ResendAPIKey)
 	return &EmailService{
 		client: client,
 		cfg:    cfg,
+		wsHub:  wsHub,
+		notificationSvc: notificationSvc,
 	}
 }
 
@@ -515,4 +522,185 @@ func formatCurrency(value float64) string {
 	}
 	
 	return result
+}
+
+// SendAppointmentCancelNotification gửi email thông báo hủy lịch khám
+func (s *EmailService) SendAppointmentCancelNotification(toEmail, patientName, doctorName, appointmentDate, appointmentTime, reason, patientID string) error {
+	html := fmt.Sprintf(`
+		<!DOCTYPE html>
+		<html>
+		<head>
+			<meta charset="UTF-8">
+			<style>
+				body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+				.container { max-width: 600px; margin: 0 auto; padding: 20px; }
+				.header { background-color: #dc3545; color: white; padding: 20px; text-align: center; }
+				.content { padding: 20px; background-color: #f9f9f9; }
+				.footer { text-align: center; padding: 20px; font-size: 12px; color: #666; }
+				.info-box { background-color: white; padding: 15px; margin: 10px 0; border-left: 4px solid #dc3545; }
+				.warning { background-color: #fff3cd; border: 1px solid #ffc107; padding: 15px; border-radius: 5px; margin: 15px 0; }
+			</style>
+		</head>
+		<body>
+			<div class="container">
+				<div class="header">
+					<h1>⚠️ Thông Báo Hủy Lịch Hẹn</h1>
+				</div>
+				<div class="content">
+					<p>Kính gửi <strong>%s</strong>,</p>
+					<p>Chúng tôi rất tiếc phải thông báo rằng lịch hẹn khám bệnh của bạn đã bị hủy.</p>
+					
+					<div class="info-box">
+						<h3>Thông tin lịch hẹn đã hủy:</h3>
+						<p><strong>Bác sĩ:</strong> %s</p>
+						<p><strong>Ngày khám:</strong> %s</p>
+						<p><strong>Giờ khám:</strong> %s</p>
+					</div>
+					
+					<div class="warning">
+						<p><strong>⚠️ Lý do hủy:</strong></p>
+						<p>%s</p>
+					</div>
+					
+					<p>Nếu bạn cần hỗ trợ hoặc muốn đặt lịch hẹn mới, vui lòng liên hệ với chúng tôi.</p>
+					<p>Chúng tôi xin lỗi vì sự bất tiện này.</p>
+					
+					<p style="margin-top: 20px;">Trân trọng,<br><strong>DeepEyeX Medical Center</strong></p>
+				</div>
+				<div class="footer">
+					<p>Email này được gửi tự động. Vui lòng không reply.</p>
+					<p>&copy; 2025 DeepEyeX. All rights reserved.</p>
+				</div>
+			</div>
+		</body>
+		</html>
+	`, patientName, doctorName, appointmentDate, appointmentTime, reason)
+
+	text := fmt.Sprintf(
+		"Kính gửi %s,\n\nChúng tôi rất tiếc phải thông báo rằng lịch hẹn khám bệnh của bạn đã bị hủy.\n\n"+
+			"Bác sĩ: %s\nNgày khám: %s\nGiờ khám: %s\nLý do: %s\n\n"+
+			"Nếu bạn cần hỗ trợ hoặc muốn đặt lịch hẹn mới, vui lòng liên hệ với chúng tôi.\n\nTrân trọng,\nDeepEyeX Medical Center",
+		patientName, doctorName, appointmentDate, appointmentTime, reason,
+	)
+
+	req := SendEmailRequest{
+		From:    "DeepEyeX <onboard@resend.dev>",
+		To:      []string{toEmail},
+		Subject: "Thông báo hủy lịch hẹn",
+		HTML:    html,
+		Text:    text,
+	}
+
+	_, err := s.SendEmail(req)
+	
+	// Gửi WebSocket notification cho bệnh nhân (async)
+	if s.wsHub != nil && patientID != "" {
+		go s.sendCancelWebSocketNotification(patientID, patientName, doctorName, appointmentDate, appointmentTime, reason)
+	}
+
+	if s.notificationSvc != nil {
+		go func() {
+			_, _ = s.notificationSvc.CreateNotification(
+				patientID,
+				"Lịch hẹn đã bị hủy",
+				"Lịch hẹn của bạn đã bị hủy",
+				fmt.Sprintf("/patient/appointments/%s", patientID),
+			)
+		}()
+	}
+	
+	return err
+}
+
+// sendCancelWebSocketNotification gửi WebSocket notification khi hủy lịch
+func (s *EmailService) sendCancelWebSocketNotification(patientID, patientName, doctorName, appointmentDate, appointmentTime, reason string) {
+	payload := map[string]interface{}{
+		"message":           "Lịch hẹn của bạn đã bị hủy",
+		"doctor_name":       doctorName,
+		"appointment_date":  appointmentDate,
+		"appointment_time":  appointmentTime,
+		"reason":            reason,
+		"notification_type": "APPOINTMENT_CANCELLED",
+	}
+
+	// Broadcast WebSocket notification đến patient
+	s.wsHub.BroadcastToPatient(patientID, websocket.CancelAppointment, payload)
+	fmt.Printf("[Email Service] WebSocket notification sent to patient %s\n", patientID)
+}
+
+// SendFollowUpConfirmationEmail gửi email xác nhận lịch tái khám
+func (s *EmailService) SendFollowUpConfirmationEmail(toEmail, patientName, doctorName, doctorFullName, hospitalName, confirmationLink, appointmentDate, appointmentTime string) error {
+	html := fmt.Sprintf(`
+		<!DOCTYPE html>
+		<html>
+		<head>
+			<meta charset="UTF-8">
+			<style>
+			body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+			.container { max-width: 600px; margin: 0 auto; padding: 20px; }
+			.header { background-color: #1250dc; color: white; padding: 20px; text-align: center; }
+			.content { padding: 20px; background-color: #f9f9f9; }
+			.footer { text-align: center; padding: 20px; font-size: 12px; color: #666; }
+			.info-box { background-color: white; padding: 15px; margin: 10px 0; border-left: 4px solid #1250dc; }
+			.button { display: inline-block; background-color: #1250dc !important; color: #ffffff !important; padding: 12px 30px; text-decoration: none !important; border-radius: 5px; margin: 20px 0; font-weight: bold; border: none; text-decoration: none; }
+			.expires { background-color: #fff3cd; border: 1px solid #ffc107; padding: 10px; border-radius: 5px; margin: 15px 0; }
+			</style>
+		</head>
+		<body>
+			<div class="container">
+				<div class="header">
+					<h1>📅 Xác Nhận Lịch Tái Khám</h1>
+				</div>
+				<div class="content">
+					<p>Kính gửi <strong>%s</strong>,</p>
+					<p>Bạn có một lịch tái khám đang chờ xác nhận.</p>
+					
+					<div class="info-box">
+						<h3>Thông tin lịch tái khám:</h3>
+						<p><strong>Bác sĩ:</strong> %s</p>
+						<p><strong>Bệnh viện:</strong> %s</p>
+						<p><strong>Ngày khám:</strong> %s</p>
+						<p><strong>Giờ khám:</strong> %s</p>
+					</div>
+					
+					<div style="text-align: center; margin: 30px 0;">
+						<a href="%s" style="display: inline-block; background-color: #1250dc !important; color: #ffffff !important; padding: 12px 30px; text-decoration: none !important; border-radius: 5px; margin: 20px 0; font-weight: bold;">Xác Nhận Lịch Hẹn</a>
+					</div>
+					
+					<div class="expires">
+						<p><strong>⚠️ Lưu ý:</strong> Vui lòng xác nhận trong vòng 7 ngày. Link xác nhận sẽ hết hạn sau thời gian này.</p>
+					</div>
+					
+					<p>Nếu bạn không yêu cầu lịch tái khám này, vui lòng bỏ qua email này.</p>
+					
+					<p style="margin-top: 20px;">Trân trọng,<br><strong>DeepEyeX Medical Center</strong></p>
+				</div>
+				<div class="footer">
+					<p>Email này được gửi tự động. Vui lòng không reply.</p>
+					<p>&copy; 2025 DeepEyeX. All rights reserved.</p>
+				</div>
+			</div>
+		</body>
+		</html>
+	`, patientName, doctorFullName, hospitalName, appointmentDate, appointmentTime, confirmationLink)
+
+	text := fmt.Sprintf(
+		"Kính gửi %s,\n\nBạn có một lịch tái khám đang chờ xác nhận.\n\n"+
+			"Bác sĩ: %s\nBệnh viện: %s\nNgày khám: %s\nGiờ khám: %s\n\n"+
+			"Vui lòng click vào link sau để xác nhận:\n%s\n\n"+
+			"Link xác nhận sẽ hết hạn trong 7 ngày.\n\n"+
+			"Trân trọng,\nDeepEyeX Medical Center",
+		patientName, doctorFullName, hospitalName, appointmentDate, appointmentTime, confirmationLink,
+	)
+
+	req := SendEmailRequest{
+		From:    "DeepEyeX <onboard@resend.dev>",
+		To:      []string{toEmail},
+		Subject: "Xác nhận lịch tái khám",
+		HTML:    html,
+		Text:    text,
+	}
+
+	_, err := s.SendEmail(req)
+	return err
 }

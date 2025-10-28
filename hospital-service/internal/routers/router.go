@@ -95,9 +95,12 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 		appointments.GET("/patient/:patient_id", aHandler.GetAppointmentsByPatient)
 		appointments.GET("/doctor/:doctor_id", aHandler.GetAppointmentsByDoctor)
 		appointments.POST("/follow-up", aHandler.CreateFollowUpAppointment)
+		appointments.POST("/pending-follow-up", aHandler.CreatePendingFollowUpAppointment)
+		appointments.POST("/confirm-follow-up", aHandler.ConfirmPendingFollowUpAppointment)
 		appointments.PUT("/:appointment_id/status", aHandler.UpdateAppointmentStatus)
 		appointments.PUT("/:appointment_id/detail", aHandler.UpdateAppointmentDetail)
 		appointments.PUT("/:appointment_id/cancel", aHandler.CancelAppointment)
+		appointments.PUT("/:appointment_id/emergency-cancel", aHandler.EmergencyCancelAppointment)
 		appointments.GET("", aHandler.ListAllAppointments)
 		appointments.GET("/online", aHandler.GetOnlineAppointments)
 		appointments.GET("/today", aHandler.GetTodayAppointments)
@@ -151,6 +154,7 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 		medical.GET("", medicalRecordHandler.ListMedicalRecords)
 		medical.GET("/check", medicalRecordHandler.CheckMedicalRecord)
 		medical.GET("/patient", medicalRecordHandler.GetRecordsByPatient)
+		medical.GET("/patient_fe", medicalRecordHandler.GetRecordsByPatientFe)
 		medical.GET("/:record_id", medicalRecordHandler.GetMedicalRecord)    // Get by ID
 		medical.PUT("/:record_id", medicalRecordHandler.UpdateMedicalRecord) // Update
 		medical.DELETE("/:record_id", medicalRecordHandler.DeleteMedicalRecord)
@@ -216,6 +220,7 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 		email.POST("/appointment-reminder", emailHandler.SendAppointmentReminder)
 		email.POST("/prescription", emailHandler.SendPrescription)
 		email.POST("/order-confirmation", emailHandler.SendOrderConfirmation)
+		email.POST("/send-cancel-notification", emailHandler.SendCancelNotification)
 	}
 
 	// ===== Upload routes =====

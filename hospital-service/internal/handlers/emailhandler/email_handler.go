@@ -256,3 +256,54 @@ func (h *EmailHandler) SendOrderConfirmation(c *gin.Context) {
 	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Order confirmation email sent successfully", nil))
 }
 
+// SendCancelNotificationRequest request để gửi email hủy lịch
+type SendCancelNotificationRequest struct {
+	AppointmentID string `json:"appointment_id" binding:"required"`
+	PatientEmail  string `json:"patient_email" binding:"required,email"`
+	PatientID     string `json:"patient_id" binding:"required"`
+	PatientName   string `json:"patient_name" binding:"required"`
+	DoctorName    string `json:"doctor_name" binding:"required"`
+	AppointmentDate string `json:"appointment_date" binding:"required"`
+	AppointmentTime string `json:"appointment_time" binding:"required"`
+	Reason        string `json:"reason" binding:"required"`
+}
+
+// SendCancelNotification gửi email thông báo hủy lịch + notification
+// @Summary Send cancel notification email
+// @Description Send email and notification to patient when appointment is canceled
+// @Tags Email
+// @Accept json
+// @Produce json
+// @Param request body SendCancelNotificationRequest true "Cancel notification details"
+// @Success 200 {object} utils.APIResponse
+// @Failure 400 {object} utils.APIResponse
+// @Failure 500 {object} utils.APIResponse
+// @Router /emails/send-cancel-notification [post]
+func (h *EmailHandler) SendCancelNotification(c *gin.Context) {
+	var req SendCancelNotificationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
+		return
+	}
+
+	// Gửi email thông báo hủy (email service tự động gửi WebSocket notification)
+	err := h.service.SendAppointmentCancelNotification(
+		req.PatientEmail,
+		req.PatientName,
+		req.DoctorName,
+		req.AppointmentDate,
+		req.AppointmentTime,
+		req.Reason,
+		req.PatientID,
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Cancel notification email and WebSocket notification sent successfully", gin.H{
+		"patient_id": req.PatientID,
+		"message":    "Email sent and notification pushed to patient",
+	}))
+}

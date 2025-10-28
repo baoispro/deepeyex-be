@@ -32,6 +32,21 @@ type CreateFollowUpRequest struct {
 	RelatedRecordID string   `json:"related_record_id" binding:"required"`
 }
 
+type CreatePendingFollowUpRequest struct {
+	PatientID       string   `json:"patient_id" binding:"required"`
+	DoctorID        string   `json:"doctor_id" binding:"required"`
+	HospitalID      string   `json:"hospital_id" binding:"required"`
+	SlotIDs         []string `json:"slot_ids" binding:"required"`
+	Notes           string   `json:"notes"`
+	ServiceName     string   `json:"service_name" binding:"required"`
+	RelatedRecordID *string  `json:"related_record_id,omitempty"` // Optional
+}
+
+type EmergencyCancelRequest struct {
+	Reason string `json:"reason" binding:"required"` // Lý do hủy gấp
+}
+
+
 type createAppointmentReq struct {
 	PatientID  string `json:"patient_id" binding:"required"`
 	DoctorID   string `json:"doctor_id" binding:"required"`
@@ -355,3 +370,129 @@ func (h *AppointmentHandler) CancelAppointment(c *gin.Context) {
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Appointment canceled successfully", nil))
 }
+
+// ---------------- Emergency Cancel Appointment ----------------
+// @Summary Emergency cancel appointment with automatic doctor replacement
+// @Description Cancel an appointment urgently (no time restriction) and automatically transfer to a replacement doctor with same specialty and hospital. Use when doctor has emergency surgery, urgent case, sudden illness, etc.
+// @Tags Appointments
+// @Accept json
+// @Produce json
+// @Param appointment_id path string true "Appointment ID"
+// @Param payload body EmergencyCancelRequest true "Emergency cancel reason (e.g., 'Ca phẫu thuật gấp', 'Bác sĩ bị ốm đột xuất', 'Cấp cứu')"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /appointments/{appointment_id}/emergency-cancel [put]
+func (h *AppointmentHandler) EmergencyCancelAppointment(c *gin.Context) {
+	appointmentID := c.Param("appointment_id")
+
+	var req EmergencyCancelRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
+		return
+	}
+
+	if err := h.service.EmergencyCancelAppointment(appointmentID, req.Reason); err != nil {
+		statusCode := http.StatusInternalServerError
+		// Nếu là lỗi validation hoặc trạng thái thì trả về 400
+		errMsg := err.Error()
+		if errMsg == "appointment is already canceled" ||
+			errMsg == "cannot cancel completed appointment" ||
+			errMsg == "appointment has no time slots" ||
+			errMsg == "no available replacement doctor found with same specialty and hospital" ||
+			errMsg[:25] == "no available slot found" ||
+			errMsg[:30] == "no available replacement doctor" ||
+			errMsg[:34] == "emergency cancel only allowed within" ||
+			errMsg == "appointment time has passed" {
+			statusCode = http.StatusBadRequest
+		} else if err.Error()[0:21] == "appointment not found" {
+			statusCode = http.StatusNotFound
+		}
+
+		c.JSON(statusCode, utils.ErrorResponse(statusCode, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Appointment emergency canceled and automatically transferred to replacement doctor", gin.H{
+		"reason": req.Reason,
+		"note":   "Patient will be notified about the change",
+	}))
+}
+
+// ---------------- Create Pending Follow-Up Appointment ----------------
+// @Summary Create a pending follow-up appointment request and send confirmation email
+// @Description Create a pending follow-up appointment for patient to confirm via email. Email will be sent to patient with confirmation link.
+// @Tags Appointments
+// @Accept json
+// @Produce json
+// @Param payload body CreatePendingFollowUpRequest true "Pending follow-up appointment request"
+// @Success 201 {object} map[string]interface{} "Pending appointment created, confirmation email sent"
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /appointments/pending-follow-up [post]
+func (h *AppointmentHandler) CreatePendingFollowUpAppointment(c *gin.Context) {
+	var req CreatePendingFollowUpRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
+		return
+	}
+
+	pendingAppt, err := h.service.CreatePendingFollowUp(
+		req.PatientID,
+		req.DoctorID,
+		req.HospitalID,
+		req.SlotIDs,
+		req.Notes,
+		req.ServiceName,
+		req.RelatedRecordID, // Can be nil
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusCreated, utils.SuccessResponse(http.StatusCreated, "Pending follow-up appointment created successfully, confirmation email sent to patient", gin.H{
+		"pending_id":       pendingAppt.PendingID,
+		"patient_id":       pendingAppt.PatientID,
+		"doctor_id":        pendingAppt.DoctorID,
+		"status":           pendingAppt.Status,
+		"expires_at":       pendingAppt.ExpiresAt,
+		"message":          "Confirmation email has been sent to patient",
+	}))
+}
+
+// ---------------- Confirm Pending Follow-Up Appointment ----------------
+// @Summary Confirm pending follow-up appointment and create actual appointment
+// @Description Patient confirms the pending follow-up appointment by token (from email link)
+// @Tags Appointments
+// @Produce json
+// @Param token query string true "Confirmation token from email"
+// @Success 200 {object} appointment.Appointment
+// @Failure 400 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /appointments/confirm-follow-up [post]
+func (h *AppointmentHandler) ConfirmPendingFollowUpAppointment(c *gin.Context) {
+	token := c.Query("token")
+	if token == "" {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "confirmation token is required"))
+		return
+	}
+
+	appt, err := h.service.ConfirmPendingFollowUp(token)
+	if err != nil {
+		statusCode := http.StatusInternalServerError
+		errMsg := err.Error()
+		if errMsg == "invalid confirmation token" || errMsg == "appointment already confirmed" || 
+			errMsg == "confirmation token has expired" ||
+			errMsg[:22] == "slot is no longer available" {
+			statusCode = http.StatusBadRequest
+		}
+		c.JSON(statusCode, utils.ErrorResponse(statusCode, errMsg))
+		return
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Follow-up appointment confirmed successfully", appt))
+}
+

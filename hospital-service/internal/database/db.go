@@ -88,6 +88,11 @@ func AutoMigrate(db *gorm.DB) error {
 		return err
 	}
 
+	// tạo bảng PendingFollowUpAppointment
+	if err := db.AutoMigrate(&appointment.PendingFollowUpAppointment{}); err != nil {
+		return err
+	}
+
 	// tạo bảng TimeSlot sau, đảm bảo Appointment tồn tại
 	if err := db.AutoMigrate(&appointment.TimeSlot{}); err != nil {
 		return err
