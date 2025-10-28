@@ -123,3 +123,16 @@ func (s *MedicalRecordService) GetRecordsByPatient(patientID string) ([]*medical
 
 	return records, nil
 }
+
+func (s *MedicalRecordService) GetRecordsByPatientFe(patientID string) ([]*medicalrecord.MedicalRecord, error) {
+	if patientID == "" {
+		return nil, errors.New("patient_id is required")
+	}
+
+	records, err := s.repo.GetByPatientIDFe(patientID)
+	if err != nil {
+		return nil, err
+	}
+
+	return records, nil
+}

@@ -1,6 +1,7 @@
 package medicalrecordrepo
 
 import (
+	"hospital-service/internal/models/appointment"
 	"hospital-service/internal/models/medicalrecord"
 	"time"
 
@@ -110,5 +111,29 @@ func (r *MedicalRecordRepo) GetByPatientID(patientID string) ([]*medicalrecord.M
 		return nil, err
 	}
 	
+	return records, nil
+}
+
+// ---------------- Get all records by PatientID ----------------
+func (r *MedicalRecordRepo) GetByPatientIDFe(patientID string) ([]*medicalrecord.MedicalRecord, error) {
+	var records []*medicalrecord.MedicalRecord
+	subQuery := r.db.
+		Model(&appointment.Appointment{}).
+		Select("related_record_id").
+		Where("related_record_id IS NOT NULL")
+	err := r.db.
+		Preload("Attachments").
+		Preload("Prescriptions").
+		Preload("AI_Diagnoses").
+		Preload("Appointment.TimeSlots").
+		Preload("Appointment.Doctor").
+		Preload("Appointment.Hospital").
+		Where("patient_id = ?", patientID).
+		Where("record_id NOT IN (?)", subQuery).
+		Find(&records).Error
+
+	if err != nil {
+		return nil, err
+	}
 	return records, nil
 }
