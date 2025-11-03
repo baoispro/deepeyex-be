@@ -54,6 +54,13 @@ type OrderConfirmationItem struct {
 	Quantity  int      `json:"quantity"`
 }
 
+// PendingAppointmentInfo struct để tránh circular dependency
+type PendingAppointmentInfo struct {
+	ConfirmationToken string `json:"confirmation_token"`
+	AppointmentDate   string `json:"appointment_date"`
+	AppointmentTime   string `json:"appointment_time"`
+	ExpiresAt         string `json:"expires_at"`
+}
 
 // SendEmail gửi email tới khách hàng
 func (s *EmailService) SendEmail(req SendEmailRequest) (string, error) {
@@ -525,7 +532,28 @@ func formatCurrency(value float64) string {
 }
 
 // SendAppointmentCancelNotification gửi email thông báo hủy lịch khám
-func (s *EmailService) SendAppointmentCancelNotification(toEmail, patientName, doctorName, appointmentDate, appointmentTime, reason, patientID string) error {
+func (s *EmailService) SendAppointmentCancelNotification(toEmail, patientName, doctorName, appointmentDate, appointmentTime, reason, patientID string, pendingInfo *PendingAppointmentInfo) error {
+	// Tạo HTML cho phần pending appointment (nếu có)
+	var pendingHTML string
+	var pendingText string
+	if pendingInfo != nil && pendingInfo.ConfirmationToken != "" {
+		confirmationLink := fmt.Sprintf("%s/confirm-appointment?token=%s", s.cfg.FrontendURL, pendingInfo.ConfirmationToken)
+		pendingHTML = fmt.Sprintf(`
+					<div class="info-box" style="border-left: 4px solid #2196F3; background-color: #e7f3ff; margin-top: 20px;">
+						<h3>📅 Lịch hẹn mới được đề xuất:</h3>
+						<p><strong>Ngày khám:</strong> %s</p>
+						<p><strong>Giờ khám:</strong> %s</p>
+						<div style="text-align: center; margin: 20px 0;">
+							<a href="%s" style="display: inline-block; background-color: #2196F3; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">Xác Nhận Lịch Hẹn</a>
+						</div>
+						<p style="margin-top: 10px;"><strong>⚠️ Lưu ý:</strong> Vui lòng xác nhận trước thời điểm lịch hẹn bắt đầu.</p>
+					</div>
+				`, pendingInfo.AppointmentDate, pendingInfo.AppointmentTime, confirmationLink)
+		
+		pendingText = fmt.Sprintf("\n\n📅 LỊCH HẸN MỚI:\nNgày khám: %s\nGiờ khám: %s\n\nXác nhận tại: %s\n\n⚠️ Lưu ý: Vui lòng xác nhận trước thời điểm lịch hẹn bắt đầu.",
+			pendingInfo.AppointmentDate, pendingInfo.AppointmentTime, confirmationLink)
+	}
+
 	html := fmt.Sprintf(`
 		<!DOCTYPE html>
 		<html>
@@ -562,6 +590,13 @@ func (s *EmailService) SendAppointmentCancelNotification(toEmail, patientName, d
 						<p>%s</p>
 					</div>
 					
+					<div class="info-box" style="border-left: 4px solid #28a745; background-color: #d4edda;">
+						<p><strong>💳 Thông tin hoàn tiền:</strong></p>
+						<p>Nếu bạn đã thanh toán trước qua VNPay, số tiền sẽ được hoàn lại vào tài khoản của bạn trong vòng <strong>24 giờ</strong>.</p>
+					</div>
+					
+					%s
+					
 					<p>Nếu bạn cần hỗ trợ hoặc muốn đặt lịch hẹn mới, vui lòng liên hệ với chúng tôi.</p>
 					<p>Chúng tôi xin lỗi vì sự bất tiện này.</p>
 					
@@ -574,13 +609,15 @@ func (s *EmailService) SendAppointmentCancelNotification(toEmail, patientName, d
 			</div>
 		</body>
 		</html>
-	`, patientName, doctorName, appointmentDate, appointmentTime, reason)
+	`, patientName, doctorName, appointmentDate, appointmentTime, reason, pendingHTML)
 
 	text := fmt.Sprintf(
 		"Kính gửi %s,\n\nChúng tôi rất tiếc phải thông báo rằng lịch hẹn khám bệnh của bạn đã bị hủy.\n\n"+
 			"Bác sĩ: %s\nNgày khám: %s\nGiờ khám: %s\nLý do: %s\n\n"+
+			"💳 THÔNG TIN HOÀN TIỀN:\n"+
+			"Nếu bạn đã thanh toán trước qua VNPay, số tiền sẽ được hoàn lại vào tài khoản của bạn trong vòng 24 giờ.\n\n%s"+
 			"Nếu bạn cần hỗ trợ hoặc muốn đặt lịch hẹn mới, vui lòng liên hệ với chúng tôi.\n\nTrân trọng,\nDeepEyeX Medical Center",
-		patientName, doctorName, appointmentDate, appointmentTime, reason,
+		patientName, doctorName, appointmentDate, appointmentTime, reason, pendingText,
 	)
 
 	req := SendEmailRequest{

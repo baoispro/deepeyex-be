@@ -1,6 +1,8 @@
 package emailhandler
 
 import (
+	"fmt"
+	"hospital-service/internal/services/appointmentservice"
 	"hospital-service/internal/services/emailservice"
 	"hospital-service/internal/utils"
 	"net/http"
@@ -9,12 +11,18 @@ import (
 )
 
 type EmailHandler struct {
-	service *emailservice.EmailService
+	service            *emailservice.EmailService
+	appointmentService appointmentservice.AppointmentServiceInterface
 }
 
 // NewEmailHandler khởi tạo handler mới
 func NewEmailHandler(service *emailservice.EmailService) *EmailHandler {
 	return &EmailHandler{service: service}
+}
+
+// SetAppointmentService set appointment service
+func (h *EmailHandler) SetAppointmentService(appointmentSvc appointmentservice.AppointmentServiceInterface) {
+	h.appointmentService = appointmentSvc
 }
 
 // SendEmailRequest cấu trúc request cho API gửi email
@@ -262,7 +270,10 @@ type SendCancelNotificationRequest struct {
 	PatientEmail  string `json:"patient_email" binding:"required,email"`
 	PatientID     string `json:"patient_id" binding:"required"`
 	PatientName   string `json:"patient_name" binding:"required"`
+	DoctorID      string `json:"doctor_id" binding:"required"`     // ✅ Thêm để tạo pending
 	DoctorName    string `json:"doctor_name" binding:"required"`
+	HospitalID    string `json:"hospital_id" binding:"required"`   // ✅ Thêm để tạo pending
+	ServiceName   string `json:"service_name" binding:"required"`  // ✅ Thêm để tạo pending
 	AppointmentDate string `json:"appointment_date" binding:"required"`
 	AppointmentTime string `json:"appointment_time" binding:"required"`
 	Reason        string `json:"reason" binding:"required"`
@@ -286,7 +297,46 @@ func (h *EmailHandler) SendCancelNotification(c *gin.Context) {
 		return
 	}
 
-	// Gửi email thông báo hủy (email service tự động gửi WebSocket notification)
+	// ✅ Tạo pending appointment với slot gần nhất TRƯỚC
+	var pendingInfo *emailservice.PendingAppointmentInfo
+	if h.appointmentService != nil {
+		pendingAppt, err := h.appointmentService.CreatePendingAppointmentAfterCancel(
+			req.PatientID,
+			req.DoctorID,
+			req.HospitalID,
+			req.ServiceName,
+		)
+		if err != nil {
+			c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Failed to create pending appointment", gin.H{
+				"patient_id": req.PatientID,
+				"warning":    err.Error(),
+			}))
+			return
+		}
+		
+		// Convert PendingFollowUpAppointment sang PendingAppointmentInfo
+		if pendingAppt != nil {
+			pendingInfo = &emailservice.PendingAppointmentInfo{
+				ConfirmationToken: pendingAppt.ConfirmationToken,
+				AppointmentDate:   "",
+				AppointmentTime:   "",
+				ExpiresAt:         pendingAppt.ExpiresAt.Format("02/01/2006 15:04"),
+			}
+			
+			// Set date and time from suggested slot times
+			if pendingAppt.SuggestedStartTime != nil {
+				pendingInfo.AppointmentDate = pendingAppt.SuggestedStartTime.Format("02/01/2006")
+			}
+			if pendingAppt.SuggestedStartTime != nil && pendingAppt.SuggestedEndTime != nil {
+				pendingInfo.AppointmentTime = fmt.Sprintf("%s - %s", 
+					pendingAppt.SuggestedStartTime.Format("15:04"), 
+					pendingAppt.SuggestedEndTime.Format("15:04"))
+			}
+		}
+	}
+
+	// Gửi email thông báo hủy với thông tin pending (nếu có)
+	// Email sẽ có cả nút confirm nếu tạo pending thành công
 	err := h.service.SendAppointmentCancelNotification(
 		req.PatientEmail,
 		req.PatientName,
@@ -295,6 +345,7 @@ func (h *EmailHandler) SendCancelNotification(c *gin.Context) {
 		req.AppointmentTime,
 		req.Reason,
 		req.PatientID,
+		pendingInfo, // ✅ Truyền pending info vào
 	)
 
 	if err != nil {
@@ -302,8 +353,8 @@ func (h *EmailHandler) SendCancelNotification(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Cancel notification email and WebSocket notification sent successfully", gin.H{
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Cancel notification and pending appointment created successfully", gin.H{
 		"patient_id": req.PatientID,
-		"message":    "Email sent and notification pushed to patient",
+		"message":    "Email sent and pending appointment created",
 	}))
 }

@@ -177,6 +177,8 @@ func main() {
 	serviceHandler := servicehandler.NewServiceHandler(cfg, serviceService)
 	vnpayHandler := paymenthandler.NewVnpayHandler(vnpayService)
 	emailHandler := emailhandler.NewEmailHandler(emailService)
+	// Set appointment service for email handler to create pending appointments
+	emailHandler.SetAppointmentService(aService)
 	uploadhandler := uploadhandler.NewUploadHandler(uploadservice)
 	callhandler := callhandler.NewStringeeHandler()
 	wsHandler := websockethandler.NewWebSocketHandler(wsHub) // ✅ WebSocket Handler

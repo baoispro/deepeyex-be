@@ -106,6 +106,13 @@ func (s *PrescriptionService) CreatePrescription(req *CreatePrescriptionRequest)
 
 // 🔹 Sub-function: tạo reminders theo auto/manual
 func (s *PrescriptionService) createRemindersForItem(itemID string, itemReq PrescriptionItemRequest) error {
+	// 🌏 Load timezone Việt Nam
+	loc, err := time.LoadLocation("Asia/Ho_Chi_Minh")
+	if err != nil {
+		// Fallback nếu không load được timezone
+		loc = time.FixedZone("UTC+7", 7*60*60)
+	}
+
 	for day := 0; day < itemReq.DurationDays; day++ {
 		currentDate := itemReq.StartDate.AddDate(0, 0, day)
 
@@ -116,9 +123,10 @@ func (s *PrescriptionService) createRemindersForItem(itemID string, itemReq Pres
 				if err != nil {
 					continue // skip invalid time format
 				}
+				// ✅ Tạo reminderTime với timezone Việt Nam
 				reminderTime := time.Date(
 					currentDate.Year(), currentDate.Month(), currentDate.Day(),
-					parsedTime.Hour(), parsedTime.Minute(), 0, 0, currentDate.Location(),
+					parsedTime.Hour(), parsedTime.Minute(), 0, 0, loc,
 				)
 				reminder := &medicalrecord.MedicationReminder{
 					ID:                 uuid.NewString(),

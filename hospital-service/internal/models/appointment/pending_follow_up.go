@@ -25,5 +25,9 @@ type PendingFollowUpAppointment struct {
 	DoctorName  string `json:"doctor_name,omitempty" gorm:"-"`  // Tên bác sĩ
 	PatientName string `json:"patient_name,omitempty" gorm:"-"` // Tên bệnh nhân
 	HospitalName string `json:"hospital_name,omitempty" gorm:"-"` // Tên bệnh viện
+	
+	// Thông tin slot để gửi email
+	SuggestedStartTime *time.Time `json:"suggested_start_time,omitempty" gorm:"-"`
+	SuggestedEndTime   *time.Time `json:"suggested_end_time,omitempty" gorm:"-"`
 }
 
