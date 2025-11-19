@@ -37,6 +37,11 @@ type EmailServiceInterface interface {
 	SendFollowUpConfirmationEmail(patientEmail, patientName, doctorName, doctorFullName, hospitalName, confirmationLink, appointmentDate, appointmentTime string) error
 }
 
+// AppointmentServiceInterface interface cho EmailHandler sử dụng  
+type AppointmentServiceInterface interface {
+	CreatePendingAppointmentAfterCancel(patientID, doctorID, hospitalID, serviceName string) (*appointment.PendingFollowUpAppointment, error)
+}
+
 func NewAppointmentService(cfg config.Config, repo *appointmentrepo.AppointmentRepo, timeSlotRepo *appointmentrepo.TimeSlotRepo, doctorRepo *doctorrepo.DoctorRepo, wsHub *websocket.Hub) *AppointmentService {
 	return &AppointmentService{
 		cfg:          cfg,
@@ -555,6 +560,95 @@ func (s *AppointmentService) isSameShift(time1, time2 time.Time) bool {
 }
 
 // ---------------- CreatePendingFollowUp ----------------
+// CreatePendingAppointmentAfterCancel tạo pending appointment sau khi hủy với slot gần nhất
+// Tự động tìm available slot gần nhất và tạo pending để bệnh nhân confirm
+func (s *AppointmentService) CreatePendingAppointmentAfterCancel(
+	patientID, doctorID, hospitalID, serviceName string,
+) (*appointment.PendingFollowUpAppointment, error) {
+	if patientID == "" || doctorID == "" || hospitalID == "" {
+		return nil, errors.New("missing required fields")
+	}
+
+	// Tìm available slots 7 ngày tới
+	startDate := time.Now()
+	endDate := startDate.AddDate(0, 0, 7)
+	slots, err := s.timeSlotRepo.FindAvailableSlots(doctorID, startDate, endDate)
+	if err != nil || len(slots) == 0 {
+		return nil, fmt.Errorf("no available slots found for doctor %s", doctorID)
+	}
+
+	// Sắp xếp theo thời gian gần nhất
+	for i := 0; i < len(slots)-1; i++ {
+		for j := i + 1; j < len(slots); j++ {
+			if slots[j].StartTime.Before(slots[i].StartTime) {
+				slots[i], slots[j] = slots[j], slots[i]
+			}
+		}
+	}
+
+	// Chọn slot gần nhất
+	nearestSlot := slots[3]
+	slotIDs := []string{nearestSlot.SlotID}
+
+	// Get patient info
+	var patient *patient.Patient
+	if s.patientRepo != nil {
+		patient, err = s.patientRepo.FindByID(patientID)
+		if err != nil {
+			return nil, fmt.Errorf("patient not found: %v", err)
+		}
+	}
+
+	// Get doctor info
+	doctor, err := s.doctorRepo.FindByID(doctorID)
+	if err != nil {
+		return nil, fmt.Errorf("doctor not found: %v", err)
+	}
+
+	// Generate confirmation token
+	token := generateConfirmationToken()
+
+	// Marshal slot IDs to JSON
+	slotIDsJSON, err := json.Marshal(slotIDs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal slot IDs: %v", err)
+	}
+
+	// Create pending appointment - ExpiresAt = slot start time
+	pendingAppt := &appointment.PendingFollowUpAppointment{
+		PendingID:         generateAppointmentID(),
+		PatientID:         patientID,
+		HospitalID:        hospitalID,
+		DoctorID:          doctorID,
+		SlotIDs:           string(slotIDsJSON),
+		ServiceName:       serviceName,
+		ConfirmationToken: token,
+		Status:            "PENDING",
+		Notes:             "Lịch hẹn mới sau khi hủy",
+		ExpiresAt:         nearestSlot.StartTime, // ✅ Expires tại thời điểm slot bắt đầu
+		CreatedAt:         time.Now(),
+		UpdatedAt:         time.Now(),
+	}
+
+	if err := s.pendingRepo.Create(pendingAppt); err != nil {
+		return nil, fmt.Errorf("failed to create pending appointment: %v", err)
+	}
+
+	// Set additional info for response
+	if patient != nil {
+		pendingAppt.PatientName = patient.FullName
+	}
+	pendingAppt.DoctorName = doctor.FullName
+	
+	// Set slot times for email
+	pendingAppt.SuggestedStartTime = &nearestSlot.StartTime
+	pendingAppt.SuggestedEndTime = &nearestSlot.EndTime
+
+	// ✅ KHÔNG gửi email ở đây - EmailHandler sẽ gửi email duy nhất gồm cả thông tin hủy + confirm
+
+	return pendingAppt, nil
+}
+
 // Tạo lịch tái khám pending và gửi email xác nhận cho bệnh nhân
 func (s *AppointmentService) CreatePendingFollowUp(
 	patientID, doctorID, hospitalID string,
