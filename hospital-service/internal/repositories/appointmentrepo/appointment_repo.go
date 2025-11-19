@@ -112,6 +112,61 @@ func (r *AppointmentRepo) FindByDoctorID(doctorID string) ([]appointment.Appoint
 	return appointments, nil
 }
 
+// ---------------- FindByHospitalID ----------------
+// Lấy tất cả các Appointment theo hospital_id
+func (r *AppointmentRepo) FindByHospitalID(hospitalID string) ([]appointment.Appointment, error) {
+	var appointments []appointment.Appointment
+	if err := r.db.Where("hospital_id = ?", hospitalID).
+		Preload("TimeSlots", func(db *gorm.DB) *gorm.DB {
+			return db.Order("start_time ASC")
+		}).
+		Preload("Doctor").
+		Preload("Patient").
+		Preload("Hospital").
+		Order("created_at DESC").
+		Find(&appointments).Error; err != nil {
+		return nil, err
+	}
+	return appointments, nil
+}
+
+// ---------------- FindByHospitalIDWithFilters ----------------
+// Lấy appointments theo hospital_id với filters (patient_name, status, doctor_id)
+func (r *AppointmentRepo) FindByHospitalIDWithFilters(hospitalID, patientName, status, doctorID string) ([]appointment.Appointment, error) {
+	var appointments []appointment.Appointment
+	query := r.db.Where("appointments.hospital_id = ?", hospitalID).
+		Preload("TimeSlots", func(db *gorm.DB) *gorm.DB {
+			return db.Order("start_time ASC")
+		}).
+		Preload("Doctor").
+		Preload("Patient").
+		Preload("Hospital")
+
+	// Filter theo patient name (partial match, case-insensitive)
+	if patientName != "" {
+		query = query.Joins("JOIN patients ON patients.patient_id = appointments.patient_id").
+			Where("LOWER(patients.full_name) LIKE ?", "%"+strings.ToLower(patientName)+"%")
+	}
+
+	// Filter theo status (exact match)
+	if status != "" {
+		query = query.Where("appointments.status = ?", strings.ToUpper(status))
+	}
+
+	// Filter theo doctor_id (exact match)
+	if doctorID != "" {
+		query = query.Where("appointments.doctor_id = ?", doctorID)
+	}
+
+	// Order by created_at DESC
+	query = query.Order("appointments.created_at DESC")
+
+	if err := query.Find(&appointments).Error; err != nil {
+		return nil, err
+	}
+	return appointments, nil
+}
+
 // ---------------- Update ----------------
 // Cập nhật thông tin Appointment
 func (r *AppointmentRepo) Update(a *appointment.Appointment) error {

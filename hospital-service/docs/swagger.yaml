@@ -217,6 +217,25 @@ definitions:
     - date
     - slots
     type: object
+  appointmentservice.UpdateReceptionistRequest:
+    properties:
+      internal_notes:
+        type: string
+      new_slot_ids:
+        items:
+          type: string
+        type: array
+      notes:
+        type: string
+      patient_email:
+        type: string
+      patient_full_name:
+        type: string
+      patient_phone:
+        type: string
+      status:
+        $ref: '#/definitions/enums.AppointmentStatus'
+    type: object
   bookingservice.BookingRequest:
     properties:
       book_user_id:
@@ -1468,6 +1487,52 @@ paths:
       summary: Emergency cancel appointment with automatic doctor replacement
       tags:
       - Appointments
+  /appointments/{appointment_id}/receptionist:
+    put:
+      consumes:
+      - application/json
+      description: Allow receptionist to update patient info, notes, time slots, and
+        status. Cannot change doctor or hospital without permission.
+      parameters:
+      - description: Appointment ID
+        in: path
+        name: appointment_id
+        required: true
+        type: string
+      - description: Receptionist update payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/appointmentservice.UpdateReceptionistRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/appointment.Appointment'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update appointment by receptionist
+      tags:
+      - Appointments
   /appointments/{appointment_id}/status:
     put:
       consumes:
@@ -1600,6 +1665,52 @@ paths:
             additionalProperties: true
             type: object
       summary: Create a follow-up appointment
+      tags:
+      - Appointments
+  /appointments/hospital/{hospital_id}:
+    get:
+      description: Retrieve all appointments at a specific hospital with optional
+        filters (patient_name, status, doctor_id)
+      parameters:
+      - description: Hospital ID
+        in: path
+        name: hospital_id
+        required: true
+        type: string
+      - description: Filter by patient name (partial match)
+        in: query
+        name: patient_name
+        type: string
+      - description: Filter by appointment status (PENDING/CONFIRMED/COMPLETED/CANCELED)
+        in: query
+        name: status
+        type: string
+      - description: Filter by doctor ID (exact match)
+        in: query
+        name: doctor_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/appointment.Appointment'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get appointments by hospital ID with optional filters
       tags:
       - Appointments
   /appointments/online:
@@ -3387,6 +3498,37 @@ paths:
       tags:
       - MedicalRecords
   /medical_records/patient:
+    get:
+      description: Returns a list of MedicalRecords along with related Attachments,
+        Prescriptions, AI Diagnoses, and Appointment info.
+      parameters:
+      - description: Patient ID
+        in: query
+        name: patient_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get all medical records for a patient
+      tags:
+      - MedicalRecords
+  /medical_records/patient_fe:
     get:
       description: Returns a list of MedicalRecords along with related Attachments,
         Prescriptions, AI Diagnoses, and Appointment info.
