@@ -2,6 +2,7 @@ package appointmenthandler
 
 import (
 	"net/http"
+	"strings"
 
 	"hospital-service/internal/config"
 	"hospital-service/internal/enums"
@@ -142,6 +143,40 @@ func (h *AppointmentHandler) GetAppointmentsByDoctor(c *gin.Context) {
 	appointments, err := h.service.GetByDoctorID(doctorID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Appointments retrieved successfully", appointments))
+}
+
+// ---------------- Get Appointments By Hospital ----------------
+// @Summary Get appointments by hospital ID with optional filters
+// @Description Retrieve all appointments at a specific hospital with optional filters (patient_name, status, doctor_id)
+// @Tags Appointments
+// @Produce json
+// @Param hospital_id path string true "Hospital ID"
+// @Param patient_name query string false "Filter by patient name (partial match)"
+// @Param status query string false "Filter by appointment status (PENDING/CONFIRMED/COMPLETED/CANCELED)"
+// @Param doctor_id query string false "Filter by doctor ID (exact match)"
+// @Success 200 {array} appointment.Appointment
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /appointments/hospital/{hospital_id} [get]
+func (h *AppointmentHandler) GetAppointmentsByHospital(c *gin.Context) {
+	hospitalID := c.Param("hospital_id")
+
+	// Lấy query params
+	patientName := c.Query("patient_name")
+	status := c.Query("status")
+	doctorID := c.Query("doctor_id")
+
+	appointments, err := h.service.GetByHospitalID(hospitalID, patientName, status, doctorID)
+	if err != nil {
+		statusCode := http.StatusInternalServerError
+		if err.Error() == "hospital_id is required" {
+			statusCode = http.StatusBadRequest
+		}
+		c.JSON(statusCode, utils.ErrorResponse(statusCode, err.Error()))
 		return
 	}
 
@@ -494,5 +529,56 @@ func (h *AppointmentHandler) ConfirmPendingFollowUpAppointment(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Follow-up appointment confirmed successfully", appt))
+}
+
+// ---------------- Update Appointment By Receptionist ----------------
+// @Summary Update appointment by receptionist
+// @Description Allow receptionist to update patient info, notes, time slots, and status. Cannot change doctor or hospital without permission.
+// @Tags Appointments
+// @Accept json
+// @Produce json
+// @Param appointment_id path string true "Appointment ID"
+// @Param payload body appointmentservice.UpdateReceptionistRequest true "Receptionist update payload"
+// @Success 200 {object} appointment.Appointment
+// @Failure 400 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /appointments/{appointment_id}/receptionist [put]
+func (h *AppointmentHandler) UpdateByReceptionist(c *gin.Context) {
+	appointmentID := c.Param("appointment_id")
+
+	var req appointmentservice.UpdateReceptionistRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
+		return
+	}
+
+	appt, err := h.service.UpdateByReceptionist(appointmentID, &req)
+	if err != nil {
+		statusCode := http.StatusInternalServerError
+		errMsg := err.Error()
+		
+		// Xác định status code dựa trên loại lỗi
+		if errMsg == "appointment not found" {
+			statusCode = http.StatusNotFound
+		} else if errMsg == "patient not found" ||
+			errMsg == "no fields to update" ||
+			errMsg == "cannot update completed appointment" ||
+			errMsg == "cannot update canceled appointment" ||
+			errMsg == "some slots not found" ||
+			strings.Contains(errMsg, "slot not found") ||
+			strings.Contains(errMsg, "slot is already booked") ||
+			strings.Contains(errMsg, "failed to find new") ||
+			strings.Contains(errMsg, "failed to update patient") ||
+			strings.Contains(errMsg, "failed to release old slot") ||
+			strings.Contains(errMsg, "failed to assign new slot") {
+			statusCode = http.StatusBadRequest
+		}
+
+		c.JSON(statusCode, utils.ErrorResponse(statusCode, errMsg))
+		return
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Appointment updated successfully by receptionist", appt))
 }
 

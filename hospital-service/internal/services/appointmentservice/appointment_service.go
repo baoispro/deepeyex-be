@@ -229,6 +229,22 @@ func (s *AppointmentService) GetByDoctorID(doctorID string) ([]appointment.Appoi
 	return s.repo.FindByDoctorID(doctorID)
 }
 
+// ---------------- GetByHospitalID ----------------
+// Lấy tất cả lịch khám theo hospital_id với optional filters
+func (s *AppointmentService) GetByHospitalID(hospitalID, patientName, status, doctorID string) ([]appointment.Appointment, error) {
+	if hospitalID == "" {
+		return nil, errors.New("hospital_id is required")
+	}
+	
+	// Nếu có bất kỳ filter nào thì dùng method có filters
+	if patientName != "" || status != "" || doctorID != "" {
+		return s.repo.FindByHospitalIDWithFilters(hospitalID, patientName, status, doctorID)
+	}
+	
+	// Nếu không có filter thì dùng method cũ (backward compatible)
+	return s.repo.FindByHospitalID(hospitalID)
+}
+
 // ---------------- UpdateStatus ----------------
 // Cập nhật trạng thái lịch khám
 func (s *AppointmentService) UpdateStatus(id string, status enums.AppointmentStatus) error {
@@ -855,6 +871,156 @@ func (s *AppointmentService) ConfirmPendingFollowUp(token string) (*appointment.
 func generateConfirmationToken() string {
 	// Generate a random token using UUID and timestamp
 	return fmt.Sprintf("%s-%d", uuid.NewString(), time.Now().Unix())
+}
+
+// UpdateReceptionistRequest struct cho receptionist update
+type UpdateReceptionistRequest struct {
+	PatientFullName  *string                  `json:"patient_full_name,omitempty"`
+	PatientPhone     *string                  `json:"patient_phone,omitempty"`
+	PatientEmail     *string                  `json:"patient_email,omitempty"`
+	Notes            *string                  `json:"notes,omitempty"`
+	NewSlotIDs       []string                 `json:"new_slot_ids,omitempty"`
+	Status           *enums.AppointmentStatus `json:"status,omitempty"`
+	InternalNotes    *string                  `json:"internal_notes,omitempty"`
+}
+
+// ---------------- UpdateByReceptionist ----------------
+// Cập nhật appointment bởi lễ tân với các quyền hạn cụ thể
+func (s *AppointmentService) UpdateByReceptionist(appointmentID string, updateReq *UpdateReceptionistRequest) (*appointment.Appointment, error) {
+	if updateReq == nil {
+		return nil, errors.New("request cannot be nil")
+	}
+
+	// Lấy appointment hiện tại
+	appt, err := s.repo.GetByID(appointmentID)
+	if err != nil {
+		return nil, errors.New("appointment not found")
+	}
+
+	// Kiểm tra trạng thái appointment - không cho phép update appointment đã hoàn thành hoặc đã hủy
+	if appt.Status == enums.Completed || appt.Status == enums.CompletedOnline {
+		return nil, errors.New("cannot update completed appointment")
+	}
+	if appt.Status == enums.Canceled {
+		return nil, errors.New("cannot update canceled appointment")
+	}
+
+	hasUpdate := false
+
+	// Transaction để đảm bảo tính toàn vẹn dữ liệu
+	err = s.repo.DB().Transaction(func(tx *gorm.DB) error {
+		// 1. Cập nhật thông tin bệnh nhân nếu có
+		if updateReq.PatientFullName != nil || updateReq.PatientPhone != nil || updateReq.PatientEmail != nil {
+			patient, err := s.patientRepo.FindByID(appt.PatientID)
+			if err != nil {
+				return errors.New("patient not found")
+			}
+
+			if updateReq.PatientFullName != nil && *updateReq.PatientFullName != "" {
+				patient.FullName = *updateReq.PatientFullName
+				hasUpdate = true
+			}
+			if updateReq.PatientPhone != nil && *updateReq.PatientPhone != "" {
+				patient.Phone = *updateReq.PatientPhone
+				hasUpdate = true
+			}
+			if updateReq.PatientEmail != nil && *updateReq.PatientEmail != "" {
+				patient.Email = *updateReq.PatientEmail
+				hasUpdate = true
+			}
+
+			patient.UpdatedAt = time.Now()
+			if err := tx.Save(patient).Error; err != nil {
+				return fmt.Errorf("failed to update patient info: %v", err)
+			}
+		}
+
+		// 2. Cập nhật ghi chú của appointment
+		if updateReq.Notes != nil {
+			appt.Notes = updateReq.Notes
+			hasUpdate = true
+		}
+
+		// 3. Cập nhật ghi chú nội bộ (có thể merge với Notes hoặc lưu riêng)
+		if updateReq.InternalNotes != nil && *updateReq.InternalNotes != "" {
+			// Merge internal notes với notes hiện tại
+			currentNotes := ""
+			if appt.Notes != nil {
+				currentNotes = *appt.Notes
+			}
+			
+			internalNotesPrefix := "\n[LỄ TÂN]: "
+			mergedNotes := currentNotes + internalNotesPrefix + *updateReq.InternalNotes
+			appt.Notes = &mergedNotes
+			hasUpdate = true
+		}
+
+		// 4. Dời lịch (thay đổi time slots)
+		if len(updateReq.NewSlotIDs) > 0 {
+			// Validate slots tồn tại và còn trống
+			newSlots, err := s.timeSlotRepo.FindByIDs(updateReq.NewSlotIDs)
+			if err != nil {
+				return fmt.Errorf("failed to find new slots: %v", err)
+			}
+			if len(newSlots) != len(updateReq.NewSlotIDs) {
+				return errors.New("some slots not found")
+			}
+
+			// Kiểm tra slots có trống không
+			for _, slot := range newSlots {
+				if slot.AppointmentID != nil && *slot.AppointmentID != appointmentID {
+					return fmt.Errorf("slot %s is already booked", slot.SlotID)
+				}
+			}
+
+			// Giải phóng các slot cũ
+			if len(appt.TimeSlots) > 0 {
+				for _, oldSlot := range appt.TimeSlots {
+					oldSlot.AppointmentID = nil
+					if err := tx.Save(&oldSlot).Error; err != nil {
+						return fmt.Errorf("failed to release old slot %s: %v", oldSlot.SlotID, err)
+					}
+				}
+			}
+
+			// Gán appointment cho các slot mới
+			for _, newSlot := range newSlots {
+				newSlot.AppointmentID = &appointmentID
+				if err := tx.Save(&newSlot).Error; err != nil {
+					return fmt.Errorf("failed to assign new slot %s: %v", newSlot.SlotID, err)
+				}
+			}
+
+			hasUpdate = true
+		}
+
+		// 5. Cập nhật trạng thái
+		if updateReq.Status != nil {
+			appt.Status = *updateReq.Status
+			hasUpdate = true
+		}
+
+		// Lưu appointment nếu có thay đổi
+		if hasUpdate {
+			appt.UpdatedAt = time.Now()
+			if err := tx.Save(appt).Error; err != nil {
+				return fmt.Errorf("failed to update appointment: %v", err)
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if !hasUpdate {
+		return nil, errors.New("no fields to update")
+	}
+
+	// Lấy lại appointment đã update với đầy đủ relations
+	return s.repo.GetByID(appointmentID)
 }
 
 // ---------------- Helper ----------------

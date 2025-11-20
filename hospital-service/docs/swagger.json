@@ -453,6 +453,74 @@
                 }
             }
         },
+        "/appointments/hospital/{hospital_id}": {
+            "get": {
+                "description": "Retrieve all appointments at a specific hospital with optional filters (patient_name, status, doctor_id)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Appointments"
+                ],
+                "summary": "Get appointments by hospital ID with optional filters",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Hospital ID",
+                        "name": "hospital_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by patient name (partial match)",
+                        "name": "patient_name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by appointment status (PENDING/CONFIRMED/COMPLETED/CANCELED)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by doctor ID (exact match)",
+                        "name": "doctor_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/appointment.Appointment"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/appointments/online": {
             "get": {
                 "description": "Get all online appointments (status = PendingOnline) by bookUserID or doctorID",
@@ -897,6 +965,74 @@
                             "additionalProperties": {
                                 "type": "string"
                             }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/appointments/{appointment_id}/receptionist": {
+            "put": {
+                "description": "Allow receptionist to update patient info, notes, time slots, and status. Cannot change doctor or hospital without permission.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Appointments"
+                ],
+                "summary": "Update appointment by receptionist",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Appointment ID",
+                        "name": "appointment_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Receptionist update payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/appointmentservice.UpdateReceptionistRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/appointment.Appointment"
                         }
                     },
                     "400": {
@@ -3288,6 +3424,50 @@
             }
         },
         "/medical_records/patient": {
+            "get": {
+                "description": "Returns a list of MedicalRecords along with related Attachments, Prescriptions, AI Diagnoses, and Appointment info.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MedicalRecords"
+                ],
+                "summary": "Get all medical records for a patient",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Patient ID",
+                        "name": "patient_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/medical_records/patient_fe": {
             "get": {
                 "description": "Returns a list of MedicalRecords along with related Attachments, Prescriptions, AI Diagnoses, and Appointment info.",
                 "produces": [
@@ -6380,6 +6560,35 @@
                     "items": {
                         "type": "string"
                     }
+                }
+            }
+        },
+        "appointmentservice.UpdateReceptionistRequest": {
+            "type": "object",
+            "properties": {
+                "internal_notes": {
+                    "type": "string"
+                },
+                "new_slot_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "patient_email": {
+                    "type": "string"
+                },
+                "patient_full_name": {
+                    "type": "string"
+                },
+                "patient_phone": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/enums.AppointmentStatus"
                 }
             }
         },
