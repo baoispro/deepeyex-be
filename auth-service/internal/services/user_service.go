@@ -24,11 +24,12 @@ func (s *UserService) CreateUser(username, email, password, firebaseUID, role st
 	if username == "" || email == "" {
 		return nil, errors.New("username and email are required")
 	}
+	hashedPwd, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	u := &models.User{
 		ID:          uuid.NewString(),
 		Username:    username,
 		Email:       email,
-		Password:    password,
+		Password:    string(hashedPwd),
 		FirebaseUID: firebaseUID,
 		Role:        enums.Role(role),
 		CreatedAt:   time.Now(),
@@ -52,6 +53,10 @@ func (s *UserService) UpdateUser(id string, updates map[string]interface{}) (*mo
 		return nil, err
 	}
 	// cập nhật các trường
+	if password, ok := updates["password"].(string); ok {
+		hashedPwd, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		u.Password = string(hashedPwd)
+	}
 	if name, ok := updates["username"].(string); ok {
 		u.Username = name
 	}

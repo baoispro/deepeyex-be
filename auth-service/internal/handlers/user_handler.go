@@ -56,7 +56,6 @@ func (h *UserHandler) Create(c *gin.Context) {
 	if firebaseUID == "" {
 		firebaseUID = ""
 	}
-
 	u, err := h.service.CreateUser(req.Username, req.Email, req.Password, firebaseUID, req.Role)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, err.Error()))
