@@ -5386,6 +5386,203 @@ const docTemplate = `{
                 }
             }
         },
+        "/subscriptions": {
+            "get": {
+                "description": "Get current active subscription of user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Get current subscription",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/subscriptions/check-ai": {
+            "get": {
+                "description": "Check if user can use AI diagnosis feature",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Check AI usage limit",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/subscriptions/check-consult": {
+            "get": {
+                "description": "Check if user can use consultation feature",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Check consultation usage limit",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/subscriptions/subscribe": {
+            "post": {
+                "description": "User subscribes to a plan (FREE, VIP, ENTERPRISE). Old subscription will be deleted.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Subscribe to a plan",
+                "parameters": [
+                    {
+                        "description": "Subscription data",
+                        "name": "subscription",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/subscriptionservice.SubscribeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/timeslots": {
             "get": {
                 "description": "Retrieve all time slots",
@@ -6743,11 +6940,14 @@ const docTemplate = `{
                 "appointment_date",
                 "appointment_id",
                 "appointment_time",
+                "doctor_id",
                 "doctor_name",
+                "hospital_id",
                 "patient_email",
                 "patient_id",
                 "patient_name",
-                "reason"
+                "reason",
+                "service_name"
             ],
             "properties": {
                 "appointment_date": {
@@ -6759,7 +6959,15 @@ const docTemplate = `{
                 "appointment_time": {
                     "type": "string"
                 },
+                "doctor_id": {
+                    "description": "✅ Thêm để tạo pending",
+                    "type": "string"
+                },
                 "doctor_name": {
+                    "type": "string"
+                },
+                "hospital_id": {
+                    "description": "✅ Thêm để tạo pending",
                     "type": "string"
                 },
                 "patient_email": {
@@ -6772,6 +6980,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "reason": {
+                    "type": "string"
+                },
+                "service_name": {
+                    "description": "✅ Thêm để tạo pending",
                     "type": "string"
                 }
             }
@@ -7841,6 +8053,26 @@ const docTemplate = `{
                 },
                 "price": {
                     "type": "number"
+                }
+            }
+        },
+        "subscriptionservice.SubscribeRequest": {
+            "type": "object",
+            "required": [
+                "plan_name",
+                "user_id"
+            ],
+            "properties": {
+                "duration": {
+                    "description": "Số ngày (mặc định 30)",
+                    "type": "integer"
+                },
+                "plan_name": {
+                    "description": "FREE, VIP, ENTERPRISE",
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
                 }
             }
         },
