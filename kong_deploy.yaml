@@ -244,10 +244,62 @@ services:
     response_buffering: true
     strip_path: true
   - https_redirect_status_code: 426
+    name: public-drug
+    path_handling: v0
+    paths:
+    - /drugs
+    preserve_host: false
+    protocols:
+    - http
+    - https
+    regex_priority: 0
+    request_buffering: true
+    response_buffering: true
+    strip_path: false
+  - https_redirect_status_code: 426
+    name: public-email
+    path_handling: v0
+    paths:
+    - /emails
+    preserve_host: false
+    protocols:
+    - http
+    - https
+    regex_priority: 0
+    request_buffering: true
+    response_buffering: true
+    strip_path: false
+  - https_redirect_status_code: 426
     name: public-hospital-route
     path_handling: v0
     paths:
     - /patients
+    preserve_host: false
+    protocols:
+    - http
+    - https
+    regex_priority: 0
+    request_buffering: true
+    response_buffering: true
+    strip_path: false
+  - https_redirect_status_code: 426
+    name: public-order
+    path_handling: v0
+    paths:
+    - /orders
+    preserve_host: false
+    protocols:
+    - http
+    - https
+    regex_priority: 0
+    request_buffering: true
+    response_buffering: true
+    strip_path: false
+  - https_redirect_status_code: 426
+    name: public-vnpay
+    path_handling: v0
+    paths:
+    - /vnpay
     preserve_host: false
     protocols:
     - http
