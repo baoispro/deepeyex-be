@@ -7610,6 +7610,9 @@ const docTemplate = `{
                 "diagnosis": {
                     "type": "string"
                 },
+                "doctor": {
+                    "$ref": "#/definitions/doctor.Doctor"
+                },
                 "doctor_id": {
                     "type": "string"
                 },
@@ -7649,13 +7652,26 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "doctor_id": {
+                    "description": "Computed fields từ MedicalRecord (không lưu trong DB)",
+                    "type": "string"
+                },
+                "doctor_name": {
+                    "type": "string"
+                },
                 "items": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/medicalrecord.PrescriptionItem"
                     }
                 },
+                "medical_record": {
+                    "$ref": "#/definitions/medicalrecord.MedicalRecord"
+                },
                 "medical_record_id": {
+                    "type": "string"
+                },
+                "notes": {
                     "type": "string"
                 },
                 "patient_id": {
