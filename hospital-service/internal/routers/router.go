@@ -266,6 +266,7 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 		subscription.POST("/subscribe", subscriptionHandler.Subscribe)
 		subscription.GET("/check-ai", subscriptionHandler.CheckAILimit)
 		subscription.GET("/check-consult", subscriptionHandler.CheckConsultLimit)
+		subscription.GET("/check-plan", subscriptionHandler.CheckCurrentPlan)
 		subscription.GET("", subscriptionHandler.GetSubscription)
 	}
 
