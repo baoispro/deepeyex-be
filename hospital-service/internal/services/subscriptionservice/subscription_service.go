@@ -345,3 +345,31 @@ func (s *SubscriptionService) GetSubscription(userID string) (*SubscribeResponse
 		UsedConsult:  sub.UsedConsult,
 	}, nil
 }
+
+// CheckCurrentPlan kiểm tra gói subscription đang dùng
+type CheckCurrentPlanResponse struct {
+	PlanName  string `json:"plan_name"`  // FREE, VIP, ENTERPRISE hoặc "" nếu không có
+	IsValid   bool   `json:"is_valid"`   // Gói còn hiệu lực không
+	HasPlan   bool   `json:"has_plan"`   // Có gói subscription không
+}
+
+func (s *SubscriptionService) CheckCurrentPlan(userID string) (*CheckCurrentPlanResponse, error) {
+	sub, err := s.repo.GetActiveByUserID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if sub == nil {
+		return &CheckCurrentPlanResponse{
+			PlanName: "",
+			IsValid:  false,
+			HasPlan:  false,
+		}, nil
+	}
+
+	return &CheckCurrentPlanResponse{
+		PlanName: string(sub.PlanName),
+		IsValid:  sub.IsValid(),
+		HasPlan:  true,
+	}, nil
+}

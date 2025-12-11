@@ -137,3 +137,29 @@ func (h *SubscriptionHandler) GetSubscription(c *gin.Context) {
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Subscription retrieved successfully", result))
 }
+
+// CheckCurrentPlan - Kiểm tra gói subscription đang dùng
+// @Summary Check current subscription plan
+// @Description Check which subscription plan user is currently using
+// @Tags Subscriptions
+// @Produce json
+// @Param userId query string true "User ID"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /subscriptions/check-plan [get]
+func (h *SubscriptionHandler) CheckCurrentPlan(c *gin.Context) {
+	userID := c.Query("userId")
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "userId is required"))
+		return
+	}
+
+	result, err := h.service.CheckCurrentPlan(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Plan checked successfully", result))
+}
