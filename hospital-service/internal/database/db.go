@@ -11,6 +11,7 @@ import (
 	"hospital-service/internal/models/order"
 	"hospital-service/internal/models/patient"
 	"hospital-service/internal/models/service"
+	"hospital-service/internal/models/subscription"
 	"log"
 
 	"gorm.io/driver/postgres"
@@ -142,6 +143,10 @@ func AutoMigrate(db *gorm.DB) error {
 	}
 
 	if err := db.AutoMigrate(&notification.Notification{}); err != nil {
+		return err
+	}
+
+	if err := db.AutoMigrate(&subscription.Subscription{}); err != nil {
 		return err
 	}
 

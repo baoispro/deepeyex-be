@@ -16,6 +16,7 @@ import (
 	"hospital-service/internal/handlers/patienthandler"
 	"hospital-service/internal/handlers/paymenthandler"
 	"hospital-service/internal/handlers/servicehandler"
+	"hospital-service/internal/handlers/subscriptionhandler"
 	"hospital-service/internal/handlers/uploadhandler"
 	"hospital-service/internal/handlers/websockethandler"
 
@@ -42,6 +43,7 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	aidiagnosisHandler *medicalrecordhandler.AIDiagnosisHandler,
 	fullRecordHandler *fullrecordhandler.FullRecordHandler,
 	handler *notificationhandler.NotificationHandler,
+	subscriptionHandler *subscriptionhandler.SubscriptionHandler,
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -256,6 +258,15 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 		ai.GET("", aidiagnosisHandler.FindAllPending)
 		ai.GET("/patient/:patient_id", aidiagnosisHandler.FindByPatientID)
 		ai.PUT("/:id/verify", aidiagnosisHandler.Verify)
+	}
+
+	// ===== Subscription routes =====
+	subscription := r.Group("/subscriptions")
+	{
+		subscription.POST("/subscribe", subscriptionHandler.Subscribe)
+		subscription.GET("/check-ai", subscriptionHandler.CheckAILimit)
+		subscription.GET("/check-consult", subscriptionHandler.CheckConsultLimit)
+		subscription.GET("", subscriptionHandler.GetSubscription)
 	}
 
 	fr := r.Group("/full-records")
