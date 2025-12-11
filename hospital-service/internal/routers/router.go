@@ -16,6 +16,7 @@ import (
 	"hospital-service/internal/handlers/patienthandler"
 	"hospital-service/internal/handlers/paymenthandler"
 	"hospital-service/internal/handlers/servicehandler"
+	"hospital-service/internal/handlers/statistichandler"
 	"hospital-service/internal/handlers/subscriptionhandler"
 	"hospital-service/internal/handlers/uploadhandler"
 	"hospital-service/internal/handlers/websockethandler"
@@ -44,6 +45,7 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	fullRecordHandler *fullrecordhandler.FullRecordHandler,
 	handler *notificationhandler.NotificationHandler,
 	subscriptionHandler *subscriptionhandler.SubscriptionHandler,
+	statisticHandler *statistichandler.StatisticHandler,
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -287,6 +289,12 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 		noti.DELETE("/:id", handler.DeleteNotification)
 		noti.DELETE("/all", handler.DeleteAllNotifications)
 		noti.GET("/unread", handler.CountUnreadNotifications)
+	}
+
+	// Statistics
+	statistics := r.Group("/statistics")
+	{
+		statistics.GET("", statisticHandler.GetStatistics)
 	}
 
 	// Swagger

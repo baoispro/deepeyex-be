@@ -4724,6 +4724,44 @@ paths:
       summary: Assign service to doctor
       tags:
       - Services
+  /statistics:
+    get:
+      consumes:
+      - application/json
+      description: Get statistics including orders, revenue, bookings, appointments,
+        timeline, order status, and revenue by service
+      parameters:
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get statistics
+      tags:
+      - Statistics
   /subscriptions:
     get:
       description: Get current active subscription of user
