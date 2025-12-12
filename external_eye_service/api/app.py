@@ -13,6 +13,7 @@ import timm
 import numpy as np
 import uvicorn
 import mediapipe as mp
+import cv2 as cv
 
 mp_face_mesh = mp.solutions.face_mesh
 
@@ -131,6 +132,19 @@ def health():
 def labels():
     return {"classes": CLASS_NAMES}
 
+eye_cascade = cv.CascadeClassifier(cv.data.haarcascades + "haarcascade_eye.xml")
+
+def detect_eye_opencv(img_np):
+    gray = cv.cvtColor(img_np, cv.COLOR_RGB2GRAY)
+
+    eyes = eye_cascade.detectMultiScale(
+        gray,
+        scaleFactor=1.1,
+        minNeighbors=4,
+        minSize=(30, 30)
+    )
+    return eyes
+
 @app.post("/predict")
 async def predict(file: UploadFile = File(...), top_k: int = 3):
     """
@@ -146,23 +160,14 @@ async def predict(file: UploadFile = File(...), top_k: int = 3):
     except Exception:
         raise HTTPException(status_code=400, detail="Không thể mở file ảnh. Hãy upload file ảnh hợp lệ (jpg/png).")
 
-    # Convert sang numpy để đưa vào FaceMeshDetector
+    # Convert sang numpy
     img_np = np.array(img)
 
-    # Chạy FaceMesh để xem có mắt không
-    img_out, faces = fm.findFaceMesh(img_np, draw=False)
+    eyes = detect_eye_opencv(img_np)
 
-    if faces is None or len(faces) == 0:
-        raise HTTPException(status_code=400, detail="Không phát hiện được khuôn mặt.")
+    if eyes is None or len(eyes) == 0:
+        raise HTTPException(status_code=400, detail="Không phát hiện được mắt trong ảnh.")
 
-    # Lấy landmarks của face 0
-    face = faces[0]
-
-    # Kiểm tra xem các điểm mắt có tồn tại
-    has_eye = all(0 <= idx < len(face) for idx in eyes)
-
-    if not has_eye:
-        raise HTTPException(status_code=400, detail="Không phát hiện được mắt. Vui lòng cung cấp ảnh rõ mặt.")
 
     # preprocess
     input_tensor = preprocess(img).unsqueeze(0).to(DEVICE)

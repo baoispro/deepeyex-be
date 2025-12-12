@@ -7,3 +7,4 @@ uvicorn[standard]
 numpy
 python-multipart
 mediapipe
+opencv-python-headless
