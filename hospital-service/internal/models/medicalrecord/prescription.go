@@ -11,8 +11,14 @@ type Prescription struct {
 	Description     *string            `gorm:"type:text" json:"description,omitempty"`
 	Status          string             `gorm:"size:20;default:'PENDING'" json:"status"` // PENDING, APPROVED, REJECTED
 	Items           []PrescriptionItem `gorm:"foreignKey:PrescriptionID;references:PrescriptionID" json:"items,omitempty"`
+	MedicalRecord   *MedicalRecord    `gorm:"foreignKey:MedicalRecordID;references:RecordID" json:"medical_record,omitempty"`
 	CreatedAt       time.Time          `gorm:"autoCreateTime"`
 	UpdatedAt       time.Time          `gorm:"autoUpdateTime"`
+	
+	// Computed fields từ MedicalRecord (không lưu trong DB)
+	DoctorID   string  `gorm:"-" json:"doctor_id,omitempty"`
+	DoctorName string  `gorm:"-" json:"doctor_name,omitempty"`
+	Notes      *string `gorm:"-" json:"notes,omitempty"`
 }
 
 type PrescriptionItem struct {

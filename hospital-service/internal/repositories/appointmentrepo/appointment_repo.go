@@ -279,3 +279,18 @@ func (r *AppointmentRepo) FindTodayAppointmentsByDoctor(doctorID string) ([]appo
 
 	return appointments, err
 }
+
+// CountAppointmentsByDate đếm số appointment được tạo trong một ngày cụ thể
+func (r *AppointmentRepo) CountAppointmentsByDate(date time.Time) (int64, error) {
+	var count int64
+	
+	// Lấy start và end của ngày
+	startOfDay := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
+	endOfDay := startOfDay.Add(24 * time.Hour).Add(-1 * time.Second)
+	
+	err := r.db.Model(&appointment.Appointment{}).
+		Where("created_at >= ? AND created_at <= ?", startOfDay, endOfDay).
+		Count(&count).Error
+	
+	return count, err
+}

@@ -23,23 +23,69 @@ func (r *PrescriptionRepo) Create(prescription *medicalrecord.Prescription) erro
 // --------------- Get Prescription By ID ----------------
 func (r *PrescriptionRepo) GetPrescriptionByID(id string) (*medicalrecord.Prescription, error) {
 	var p medicalrecord.Prescription
-	err := r.db.Preload("Items").First(&p, "prescription_id = ?", id).Error
+	err := r.db.Preload("Items").
+		Preload("MedicalRecord").
+		Preload("MedicalRecord.Doctor").
+		First(&p, "prescription_id = ?", id).Error
+	
+	if err == nil && p.MedicalRecord != nil {
+		p.DoctorID = p.MedicalRecord.DoctorID
+		p.Notes = p.MedicalRecord.Notes
+		if p.MedicalRecord.Doctor.DoctorID != "" {
+			p.DoctorName = p.MedicalRecord.Doctor.FullName
+		}
+	}
+	
 	return &p, err
 }
 
 // --------------- Get Prescriptions By Medical Record ID ----------------
 func (r *PrescriptionRepo) GetPrescriptionsByMedicalRecordID(medicalRecordID string) ([]*medicalrecord.Prescription, error) {
 	var prescriptions []*medicalrecord.Prescription
-	err := r.db.Preload("Items").Where("medical_record_id = ?", medicalRecordID).Find(&prescriptions).Error
+	err := r.db.Preload("Items").
+		Preload("MedicalRecord").
+		Preload("MedicalRecord.Doctor").
+		Where("medical_record_id = ?", medicalRecordID).Find(&prescriptions).Error
+	
+	// Populate computed fields từ MedicalRecord
+	if err == nil {
+		for _, p := range prescriptions {
+			if p.MedicalRecord != nil {
+				p.DoctorID = p.MedicalRecord.DoctorID
+				p.Notes = p.MedicalRecord.Notes
+				if p.MedicalRecord.Doctor.DoctorID != "" {
+					p.DoctorName = p.MedicalRecord.Doctor.FullName
+				}
+			}
+		}
+	}
+	
 	return prescriptions, err
 }
 
 // --------------- Get Prescriptions By Patient ID ----------------
 func (r *PrescriptionRepo) GetPrescriptionsByPatientID(patientID string) ([]*medicalrecord.Prescription, error) {
 	var prescriptions []*medicalrecord.Prescription
-	err := r.db.Preload("Items").Where("patient_id = ?", patientID).
+	err := r.db.Preload("Items").
+		Preload("MedicalRecord").
+		Preload("MedicalRecord.Doctor").
+		Where("patient_id = ?", patientID).
 		Order("created_at DESC").
 		Find(&prescriptions).Error
+	
+	// Populate computed fields từ MedicalRecord
+	if err == nil {
+		for _, p := range prescriptions {
+			if p.MedicalRecord != nil {
+				p.DoctorID = p.MedicalRecord.DoctorID
+				p.Notes = p.MedicalRecord.Notes
+				if p.MedicalRecord.Doctor.DoctorID != "" {
+					p.DoctorName = p.MedicalRecord.Doctor.FullName
+				}
+			}
+		}
+	}
+	
 	return prescriptions, err
 }
 
@@ -48,7 +94,9 @@ func (r *PrescriptionRepo) FindByPatientIDWithFilters(patientID, status, date, s
 	var prescriptions []*medicalrecord.Prescription
 
 	query := r.db.Where("patient_id = ?", patientID).
-		Preload("Items")
+		Preload("Items").
+		Preload("MedicalRecord").
+		Preload("MedicalRecord.Doctor")
 
 	// Filter theo status
 	if status != "" {
@@ -78,6 +126,17 @@ func (r *PrescriptionRepo) FindByPatientIDWithFilters(patientID, status, date, s
 
 	if err := query.Find(&prescriptions).Error; err != nil {
 		return nil, err
+	}
+
+	// Populate computed fields từ MedicalRecord
+	for _, p := range prescriptions {
+		if p.MedicalRecord != nil {
+			p.DoctorID = p.MedicalRecord.DoctorID
+			p.Notes = p.MedicalRecord.Notes
+			if p.MedicalRecord.Doctor.DoctorID != "" {
+				p.DoctorName = p.MedicalRecord.Doctor.FullName
+			}
+		}
 	}
 
 	return prescriptions, nil

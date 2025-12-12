@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math/rand"
 	"time"
 
 	"hospital-service/internal/config"
@@ -95,6 +94,15 @@ func (s *AppointmentService) Create(
 
 	// Transaction bắt đầu
 	err = s.repo.DB().Transaction(func(tx *gorm.DB) error {
+		// Lấy ngày khám từ start_time của slot đầu tiên
+		appointmentDate := slots[0].StartTime
+		
+		// Tạo appointment code trước (dựa vào ngày khám)
+		appointmentCode, err := s.generateAppointmentCode(tx, appointmentDate)
+		if err != nil {
+			return err
+		}
+		
 		a = &appointment.Appointment{
 			AppointmentID:   generateAppointmentID(),
 			PatientID:       patientID,
@@ -107,8 +115,8 @@ func (s *AppointmentService) Create(
 			UpdatedAt:       time.Now(),
 			RelatedRecordID: nil,
 			Status:          status,
+			AppointmentCode: appointmentCode,
 		}
-		a.AppointmentCode = fmt.Sprintf("APPT-%d-%04d", time.Now().UnixNano(), rand.Intn(10000))
 
 		if err := tx.Create(a).Error; err != nil {
 			return err
@@ -163,6 +171,15 @@ func (s *AppointmentService) CreateFollowUp(
 
 	// Transaction bắt đầu
 	err = s.repo.DB().Transaction(func(tx *gorm.DB) error {
+		// Lấy ngày khám từ start_time của slot đầu tiên
+		appointmentDate := slots[0].StartTime
+		
+		// Tạo appointment code trước (dựa vào ngày khám)
+		appointmentCode, err := s.generateAppointmentCode(tx, appointmentDate)
+		if err != nil {
+			return err
+		}
+		
 		a = &appointment.Appointment{
 			AppointmentID:   generateAppointmentID(),
 			PatientID:       patientID,
@@ -175,8 +192,8 @@ func (s *AppointmentService) CreateFollowUp(
 			UpdatedAt:       time.Now(),
 			RelatedRecordID: &relatedRecordID,
 			Status:          status,
+			AppointmentCode: appointmentCode,
 		}
-		a.AppointmentCode = fmt.Sprintf("APPT-%d-%04d", time.Now().UnixNano(), rand.Intn(10000))
 
 		if err := tx.Create(a).Error; err != nil {
 			return err
@@ -815,6 +832,15 @@ func (s *AppointmentService) ConfirmPendingFollowUp(token string) (*appointment.
 
 	// Transaction: Create appointment and update pending status
 	err = s.repo.DB().Transaction(func(tx *gorm.DB) error {
+		// Lấy ngày khám từ start_time của slot đầu tiên
+		appointmentDate := slots[0].StartTime
+		
+		// Tạo appointment code trước (dựa vào ngày khám)
+		appointmentCode, err := s.generateAppointmentCode(tx, appointmentDate)
+		if err != nil {
+			return err
+		}
+		
 		// Create the actual appointment
 		a := &appointment.Appointment{
 			AppointmentID:   generateAppointmentID(),
@@ -827,8 +853,8 @@ func (s *AppointmentService) ConfirmPendingFollowUp(token string) (*appointment.
 			Status:         enums.Pending,
 			CreatedAt:      time.Now(),
 			UpdatedAt:      time.Now(),
+			AppointmentCode: appointmentCode,
 		}
-		a.AppointmentCode = fmt.Sprintf("APPT-%d-%04d", time.Now().UnixNano(), rand.Intn(10000))
 
 		// Set RelatedRecordID if exists
 		if pendingAppt.RelatedRecordID != nil && *pendingAppt.RelatedRecordID != "" {
@@ -871,6 +897,25 @@ func (s *AppointmentService) ConfirmPendingFollowUp(token string) (*appointment.
 func generateConfirmationToken() string {
 	// Generate a random token using UUID and timestamp
 	return fmt.Sprintf("%s-%d", uuid.NewString(), time.Now().Unix())
+}
+
+// generateAppointmentCode tạo appointment code theo số thứ tự trong ngày khám
+func (s *AppointmentService) generateAppointmentCode(tx *gorm.DB, appointmentDate time.Time) (string, error) {
+	var count int64
+	err := tx.Model(&appointment.Appointment{}).
+		Joins("JOIN time_slots ON time_slots.appointment_id = appointments.appointment_id").
+		Where("DATE(time_slots.start_time) = DATE(?)", appointmentDate).
+		Distinct("appointments.appointment_id").
+		Count(&count).Error
+	if err != nil {
+		return "", fmt.Errorf("failed to count appointments: %v", err)
+	}
+	
+	sequenceNumber := count + 1
+	
+	code := fmt.Sprintf("%d", sequenceNumber)
+	
+	return code, nil
 }
 
 // UpdateReceptionistRequest struct cho receptionist update
