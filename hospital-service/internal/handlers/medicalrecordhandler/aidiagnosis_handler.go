@@ -168,6 +168,24 @@ func (h *AIDiagnosisHandler) FindByPatientID(c *gin.Context) {
 	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Diagnoses for patient retrieved successfully", diagnoses))
 }
 
+// ---------------- Get All Approved Diagnoses ----------------
+// @Summary Get all AI diagnoses with status APPROVED
+// @Description Retrieve all AI diagnosis records that have been approved by doctors
+// @Tags AI Diagnoses
+// @Produce json
+// @Success 200 {array} medicalrecord.AIDiagnosis
+// @Failure 500 {object} map[string]string
+// @Router /ai-diagnoses/approved [get]
+func (h *AIDiagnosisHandler) FindAllApproved(c *gin.Context) {
+	diagnoses, err := h.service.FindAllApproved()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Approved diagnoses retrieved successfully", diagnoses))
+}
+
 // ---------------- Verify Diagnosis ----------------
 // @Summary Verify an AI diagnosis
 // @Description Doctor verifies AI diagnosis and updates status, notes, and signature

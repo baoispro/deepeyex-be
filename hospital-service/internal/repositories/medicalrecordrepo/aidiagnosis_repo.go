@@ -1,8 +1,9 @@
 package medicalrecordrepo
 
 import (
-	"gorm.io/gorm"
 	"hospital-service/internal/models/medicalrecord"
+
+	"gorm.io/gorm"
 )
 
 type AIDiagnosisRepo struct {
@@ -23,6 +24,15 @@ func (r *AIDiagnosisRepo) Create(d *medicalrecord.AIDiagnosis) error {
 func (r *AIDiagnosisRepo) FindAllPending() ([]medicalrecord.AIDiagnosis, error) {
 	var diagnoses []medicalrecord.AIDiagnosis
 	if err := r.db.Where("status = ?", "PENDING").Order("created_at DESC").Find(&diagnoses).Error; err != nil {
+		return nil, err
+	}
+	return diagnoses, nil
+}
+
+// FindAllApproved lấy toàn bộ bản ghi chẩn đoán AI có status APPROVED
+func (r *AIDiagnosisRepo) FindAllApproved() ([]medicalrecord.AIDiagnosis, error) {
+	var diagnoses []medicalrecord.AIDiagnosis
+	if err := r.db.Where("status = ?", "APPROVED").Order("created_at DESC").Find(&diagnoses).Error; err != nil {
 		return nil, err
 	}
 	return diagnoses, nil

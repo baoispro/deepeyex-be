@@ -1280,6 +1280,27 @@ paths:
       summary: Verify an AI diagnosis
       tags:
       - AI Diagnoses
+  /ai-diagnoses/approved:
+    get:
+      description: Retrieve all AI diagnosis records that have been approved by doctors
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/medicalrecord.AIDiagnosis'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get all AI diagnoses with status APPROVED
+      tags:
+      - AI Diagnoses
   /ai-diagnoses/patient/{patient_id}:
     get:
       description: Retrieve AI diagnosis records for a specific patient (all statuses)

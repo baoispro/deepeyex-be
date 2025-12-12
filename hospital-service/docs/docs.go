@@ -134,6 +134,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/ai-diagnoses/approved": {
+            "get": {
+                "description": "Retrieve all AI diagnosis records that have been approved by doctors",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AI Diagnoses"
+                ],
+                "summary": "Get all AI diagnoses with status APPROVED",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/medicalrecord.AIDiagnosis"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/ai-diagnoses/patient/{patient_id}": {
             "get": {
                 "description": "Retrieve AI diagnosis records for a specific patient (all statuses)",
