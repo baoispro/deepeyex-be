@@ -258,6 +258,7 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 	{
 		ai.POST("", aidiagnosisHandler.Create)
 		ai.GET("", aidiagnosisHandler.FindAllPending)
+		ai.GET("/approved", aidiagnosisHandler.FindAllApproved)
 		ai.GET("/patient/:patient_id", aidiagnosisHandler.FindByPatientID)
 		ai.PUT("/:id/verify", aidiagnosisHandler.Verify)
 	}

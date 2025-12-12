@@ -122,6 +122,11 @@ func (s *AIDiagnosisService) FindAll() ([]medicalrecord.AIDiagnosis, error) {
 	return s.repo.FindAllPending()
 }
 
+// FindAllApproved lấy toàn bộ chẩn đoán AI có status APPROVED
+func (s *AIDiagnosisService) FindAllApproved() ([]medicalrecord.AIDiagnosis, error) {
+	return s.repo.FindAllApproved()
+}
+
 // Verify cho bác sĩ xác nhận chẩn đoán AI
 func (s *AIDiagnosisService) Verify(id, doctorID, status, notes string, signatureFile interface{}) error {
 	diagnosis, err := s.repo.FindByID(id)
