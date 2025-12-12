@@ -336,7 +336,13 @@ definitions:
         type: string
       appointment_time:
         type: string
+      doctor_id:
+        description: ✅ Thêm để tạo pending
+        type: string
       doctor_name:
+        type: string
+      hospital_id:
+        description: ✅ Thêm để tạo pending
         type: string
       patient_email:
         type: string
@@ -346,15 +352,21 @@ definitions:
         type: string
       reason:
         type: string
+      service_name:
+        description: ✅ Thêm để tạo pending
+        type: string
     required:
     - appointment_date
     - appointment_id
     - appointment_time
+    - doctor_id
     - doctor_name
+    - hospital_id
     - patient_email
     - patient_id
     - patient_name
     - reason
+    - service_name
     type: object
   emailhandler.sendAppointmentConfirmationRequest:
     properties:
@@ -725,6 +737,8 @@ definitions:
         type: string
       diagnosis:
         type: string
+      doctor:
+        $ref: '#/definitions/doctor.Doctor'
       doctor_id:
         type: string
       notes:
@@ -751,11 +765,20 @@ definitions:
         type: string
       description:
         type: string
+      doctor_id:
+        description: Computed fields từ MedicalRecord (không lưu trong DB)
+        type: string
+      doctor_name:
+        type: string
       items:
         items:
           $ref: '#/definitions/medicalrecord.PrescriptionItem'
         type: array
+      medical_record:
+        $ref: '#/definitions/medicalrecord.MedicalRecord'
       medical_record_id:
+        type: string
+      notes:
         type: string
       patient_id:
         type: string
@@ -1095,6 +1118,20 @@ definitions:
       price:
         type: number
     type: object
+  subscriptionservice.SubscribeRequest:
+    properties:
+      duration:
+        description: Số ngày (mặc định 30)
+        type: integer
+      plan_name:
+        description: FREE, VIP, ENTERPRISE
+        type: string
+      user_id:
+        type: string
+    required:
+    - plan_name
+    - user_id
+    type: object
   utils.APIResponse:
     properties:
       data: {}
@@ -1241,6 +1278,27 @@ paths:
               type: string
             type: object
       summary: Verify an AI diagnosis
+      tags:
+      - AI Diagnoses
+  /ai-diagnoses/approved:
+    get:
+      description: Retrieve all AI diagnosis records that have been approved by doctors
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/medicalrecord.AIDiagnosis'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get all AI diagnoses with status APPROVED
       tags:
       - AI Diagnoses
   /ai-diagnoses/patient/{patient_id}:
@@ -4698,6 +4756,208 @@ paths:
       summary: Assign service to doctor
       tags:
       - Services
+  /statistics:
+    get:
+      consumes:
+      - application/json
+      description: Get statistics including orders, revenue, bookings, appointments,
+        timeline, order status, and revenue by service
+      parameters:
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get statistics
+      tags:
+      - Statistics
+  /subscriptions:
+    get:
+      description: Get current active subscription of user
+      parameters:
+      - description: User ID
+        in: query
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get current subscription
+      tags:
+      - Subscriptions
+  /subscriptions/check-ai:
+    get:
+      description: Check if user can use AI diagnosis feature
+      parameters:
+      - description: User ID
+        in: query
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Check AI usage limit
+      tags:
+      - Subscriptions
+  /subscriptions/check-consult:
+    get:
+      description: Check if user can use consultation feature
+      parameters:
+      - description: User ID
+        in: query
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Check consultation usage limit
+      tags:
+      - Subscriptions
+  /subscriptions/check-plan:
+    get:
+      description: Check which subscription plan user is currently using
+      parameters:
+      - description: User ID
+        in: query
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Check current subscription plan
+      tags:
+      - Subscriptions
+  /subscriptions/subscribe:
+    post:
+      consumes:
+      - application/json
+      description: User subscribes to a plan (FREE, VIP, ENTERPRISE). Old subscription
+        will be deleted.
+      parameters:
+      - description: Subscription data
+        in: body
+        name: subscription
+        required: true
+        schema:
+          $ref: '#/definitions/subscriptionservice.SubscribeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Subscribe to a plan
+      tags:
+      - Subscriptions
   /timeslots:
     get:
       description: Retrieve all time slots

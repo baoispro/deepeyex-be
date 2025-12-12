@@ -12,7 +12,7 @@ import (
 // Appointment model đại diện cho lịch hẹn khám bệnh
 type Appointment struct {
 	AppointmentID   string                  `gorm:"column:appointment_id;primaryKey;size:36" json:"appointment_id"`
-	AppointmentCode string                  `gorm:"size:64;unique;not null" json:"appointment_code"` // Mã lịch hẹn duy nhất
+	AppointmentCode string                  `gorm:"size:64;not null" json:"appointment_code"` // Mã lịch hẹn duy nhất
 	PatientID       string                  `gorm:"not null;size:36" json:"patient_id"`              // ID bệnh nhân
 	HospitalID      string                  `gorm:"not null;size:36" json:"hospital_id"`             // ID bệnh viện
 	DoctorID        string                  `gorm:"not null;size:36" json:"doctor_id"`               // ID bác sĩ

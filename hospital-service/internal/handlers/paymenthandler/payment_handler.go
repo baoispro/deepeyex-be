@@ -2,18 +2,24 @@ package paymenthandler
 
 import (
 	"hospital-service/internal/services/paymentservice"
+	"hospital-service/internal/services/subscriptionservice"
 	"hospital-service/internal/utils"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 type VnpayHandler struct {
-	service *paymentservice.VnpayService
+	service            *paymentservice.VnpayService
+	subscriptionService *subscriptionservice.SubscriptionService
 }
 
-func NewVnpayHandler(service *paymentservice.VnpayService) *VnpayHandler {
-	return &VnpayHandler{service: service}
+func NewVnpayHandler(service *paymentservice.VnpayService, subscriptionService *subscriptionservice.SubscriptionService) *VnpayHandler {
+	return &VnpayHandler{
+		service:            service,
+		subscriptionService: subscriptionService,
+	}
 }
 
 // ---------------- Create Payment ----------------
@@ -63,7 +69,44 @@ func (h *VnpayHandler) VnpayReturn(c *gin.Context) {
 
 	statusCode := query.Get("vnp_ResponseCode")
 	orderId := query.Get("vnp_TxnRef")
+	paymentType := query.Get("type")
 
+	// Nếu là subscription payment
+	if paymentType == "subscription" {
+		if statusCode == "00" {
+			subscriptionID := query.Get("subscriptionId")
+			userID := query.Get("userId")
+			planName := query.Get("planName")
+			durationStr := query.Get("duration")
+
+			duration, err := strconv.Atoi(durationStr)
+			if err != nil {
+				duration = 30 // default
+			}
+
+			// Tạo subscription sau khi thanh toán thành công
+			result, err := h.subscriptionService.CompleteSubscription(subscriptionID, userID, planName, duration)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Failed to create subscription: "+err.Error()))
+				return
+			}
+
+			c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Thanh toán và đăng ký gói thành công", map[string]interface{}{
+				"subscriptionId": subscriptionID,
+				"status":         "success",
+				"subscription":   result,
+			}))
+		} else {
+			c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Thanh toán thất bại, mã lỗi: "+statusCode, map[string]interface{}{
+				"subscriptionId": orderId,
+				"status":         "failed",
+				"code":           statusCode,
+			}))
+		}
+		return
+	}
+
+	// Xử lý order payment bình thường
 	if statusCode == "00" {
 		c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Thanh toán thành công", map[string]interface{}{
 			"orderId": orderId,

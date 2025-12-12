@@ -1,7 +1,9 @@
 package medicalrecordhandler
 
 import (
+	"hospital-service/internal/repositories/patientrepo"
 	"hospital-service/internal/services/medicalrecordservice"
+	"hospital-service/internal/services/subscriptionservice"
 	"hospital-service/internal/utils"
 	"net/http"
 	"strconv"
@@ -10,12 +12,18 @@ import (
 )
 
 type AIDiagnosisHandler struct {
-	service *medicalrecordservice.AIDiagnosisService
+	service            *medicalrecordservice.AIDiagnosisService
+	subscriptionService *subscriptionservice.SubscriptionService
+	patientRepo        *patientrepo.PatientRepo
 }
 
 // NewAIDiagnosisHandler khởi tạo handler
-func NewAIDiagnosisHandler(service *medicalrecordservice.AIDiagnosisService) *AIDiagnosisHandler {
-	return &AIDiagnosisHandler{service: service}
+func NewAIDiagnosisHandler(service *medicalrecordservice.AIDiagnosisService, subscriptionService *subscriptionservice.SubscriptionService, patientRepo *patientrepo.PatientRepo) *AIDiagnosisHandler {
+	return &AIDiagnosisHandler{
+		service:             service,
+		subscriptionService: subscriptionService,
+		patientRepo:         patientRepo,
+	}
 }
 
 // ---------------- Create AI Diagnosis ----------------
@@ -45,6 +53,30 @@ func (h *AIDiagnosisHandler) Create(c *gin.Context) {
 
 	if patientID == "" || diseaseCode == "" || confidenceStr == "" {
 		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "Missing required fields"))
+		return
+	}
+
+	// Lấy patient để lấy user_id
+	patient, err := h.patientRepo.FindByID(patientID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "Patient not found"))
+		return
+	}
+
+	if patient.UserID == "" {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "Patient does not have user_id"))
+		return
+	}
+
+	// Check subscription limit trước khi tạo AI diagnosis
+	checkResult, err := h.subscriptionService.CheckAILimit(patient.UserID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
+		return
+	}
+
+	if !checkResult.CanUse {
+		c.JSON(http.StatusForbidden, utils.ErrorResponse(http.StatusForbidden, "Subscription limit exceeded. Please upgrade your plan."))
 		return
 	}
 
@@ -78,6 +110,14 @@ func (h *AIDiagnosisHandler) Create(c *gin.Context) {
 	res, err := h.service.Create(req, mainImageFile)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
+		return
+	}
+
+	// Update usage sau khi tạo thành công
+	err = h.subscriptionService.UpdateUsage(patient.UserID, true) // true = AI usage
+	if err != nil {
+		// Log error nhưng không fail request vì đã tạo thành công
+		c.JSON(http.StatusCreated, utils.SuccessResponse(http.StatusCreated, "AI diagnosis created successfully but failed to update usage", res))
 		return
 	}
 
@@ -126,6 +166,24 @@ func (h *AIDiagnosisHandler) FindByPatientID(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Diagnoses for patient retrieved successfully", diagnoses))
+}
+
+// ---------------- Get All Approved Diagnoses ----------------
+// @Summary Get all AI diagnoses with status APPROVED
+// @Description Retrieve all AI diagnosis records that have been approved by doctors
+// @Tags AI Diagnoses
+// @Produce json
+// @Success 200 {array} medicalrecord.AIDiagnosis
+// @Failure 500 {object} map[string]string
+// @Router /ai-diagnoses/approved [get]
+func (h *AIDiagnosisHandler) FindAllApproved(c *gin.Context) {
+	diagnoses, err := h.service.FindAllApproved()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Approved diagnoses retrieved successfully", diagnoses))
 }
 
 // ---------------- Verify Diagnosis ----------------

@@ -2,6 +2,7 @@ package medicalrecord
 
 import (
 	"hospital-service/internal/models/appointment"
+	"hospital-service/internal/models/doctor"
 	"time"
 )
 
@@ -19,6 +20,7 @@ type MedicalRecord struct {
 	Attachments     []Attachment            `gorm:"foreignKey:RecordID;references:RecordID" json:"attachments"`
 	Prescriptions   []Prescription          `gorm:"foreignKey:MedicalRecordID;references:RecordID" json:"prescriptions"`
 	Appointment     appointment.Appointment `gorm:"foreignKey:AppointmentID;references:AppointmentID" json:"appointment,omitempty"`
+	Doctor          doctor.Doctor          `gorm:"foreignKey:DoctorID;references:DoctorID" json:"doctor,omitempty"`
 }
 
 // Request khi gọi endpoint
