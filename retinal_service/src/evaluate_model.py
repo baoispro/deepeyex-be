@@ -50,7 +50,7 @@ with torch.no_grad():
         y_pred.extend(preds.cpu().numpy())
 
 accuracy = 100.0 * correct / total
-print(f"✅ Test Accuracy: {accuracy:.2f}%")
+print(f"Test Accuracy: {accuracy:.2f}%")
 
 # ==== 5. Báo cáo chi tiết ====
 print("\nClassification Report:")

@@ -50,7 +50,7 @@ with torch.no_grad():
         y_pred.extend(preds.cpu().numpy())
 
 accuracy = 100.0 * correct / total
-print(f"✅ Test Accuracy: {accuracy:.2f}%")
+print(f"Test Accuracy: {accuracy:.2f}%")
 
 # ==== 5. Báo cáo chi tiết ====
 print("\nClassification Report:")
@@ -58,3 +58,26 @@ print(classification_report(y_true, y_pred, target_names=class_names))
 
 print("\nConfusion Matrix:")
 print(confusion_matrix(y_true, y_pred))
+
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
+from sklearn.metrics import confusion_matrix
+
+# Tạo confusion matrix
+cm = confusion_matrix(y_true, y_pred)
+cm_normalized = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]  # chuẩn hóa hàng
+
+plt.figure(figsize=(12, 10))
+sns.heatmap(cm_normalized, annot=True, fmt=".2f", cmap="Blues",
+            xticklabels=class_names, yticklabels=class_names)
+
+plt.xlabel("Predicted Label")
+plt.ylabel("True Label")
+plt.title("Normalized Confusion Matrix - EfficientNet-B3")
+plt.xticks(rotation=45)
+plt.yticks(rotation=45)
+
+plt.tight_layout()
+plt.show()
+

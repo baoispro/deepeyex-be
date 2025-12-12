@@ -12,6 +12,13 @@ from torchvision import transforms
 import timm
 import numpy as np
 import uvicorn
+import mediapipe as mp
+
+mp_face_mesh = mp.solutions.face_mesh
+
+RIGHT_EYE = [463, 414, 286, 258, 257, 259, 260, 467, 359, 255, 339, 254, 253, 252, 256, 341]
+LEFT_EYE  = [130, 247, 30, 29, 27, 28, 56, 190, 243, 112, 26, 22, 23, 24, 110, 25]
+EYES = RIGHT_EYE + LEFT_EYE
 
 # -------- CONFIG (chỉnh đường dẫn nếu cần) --------
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -138,6 +145,24 @@ async def predict(file: UploadFile = File(...), top_k: int = 3):
         img = Image.open(io.BytesIO(contents)).convert("RGB")
     except Exception:
         raise HTTPException(status_code=400, detail="Không thể mở file ảnh. Hãy upload file ảnh hợp lệ (jpg/png).")
+
+    # Convert sang numpy để đưa vào FaceMeshDetector
+    img_np = np.array(img)
+
+    # Chạy FaceMesh để xem có mắt không
+    img_out, faces = fm.findFaceMesh(img_np, draw=False)
+
+    if faces is None or len(faces) == 0:
+        raise HTTPException(status_code=400, detail="Không phát hiện được khuôn mặt.")
+
+    # Lấy landmarks của face 0
+    face = faces[0]
+
+    # Kiểm tra xem các điểm mắt có tồn tại
+    has_eye = all(0 <= idx < len(face) for idx in eyes)
+
+    if not has_eye:
+        raise HTTPException(status_code=400, detail="Không phát hiện được mắt. Vui lòng cung cấp ảnh rõ mặt.")
 
     # preprocess
     input_tensor = preprocess(img).unsqueeze(0).to(DEVICE)
