@@ -12,10 +12,7 @@ from torchvision import transforms
 import timm
 import numpy as np
 import uvicorn
-import mediapipe as mp
 import cv2 as cv
-
-mp_face_mesh = mp.solutions.face_mesh
 
 RIGHT_EYE = [463, 414, 286, 258, 257, 259, 260, 467, 359, 255, 339, 254, 253, 252, 256, 341]
 LEFT_EYE  = [130, 247, 30, 29, 27, 28, 56, 190, 243, 112, 26, 22, 23, 24, 110, 25]
