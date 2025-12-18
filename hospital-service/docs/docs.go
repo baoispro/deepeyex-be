@@ -3702,6 +3702,56 @@ const docTemplate = `{
                 }
             }
         },
+        "/medication-reminders/patient/{patient_id}": {
+            "get": {
+                "description": "Retrieve all medication reminders for a given patient ID on today with prescription item details",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Prescriptions"
+                ],
+                "summary": "Get medication reminders by patient ID for today",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Patient ID",
+                        "name": "patient_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/medicalrecord.MedicationReminderWithItem"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/notifications": {
             "get": {
                 "description": "List all notifications for a user",
@@ -7668,6 +7718,39 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "medicalrecord.MedicationReminderWithItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "dosage": {
+                    "type": "string"
+                },
+                "drug_name": {
+                    "description": "PrescriptionItem info",
+                    "type": "string"
+                },
+                "frequency": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "prescription_item_id": {
+                    "type": "string"
+                },
+                "reminder_time": {
+                    "type": "string"
+                },
+                "status": {
                     "type": "string"
                 }
             }

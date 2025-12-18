@@ -180,3 +180,11 @@ func (s *PrescriptionService) UpdatePrecription(p *medicalrecord.Prescription) e
 func (s *PrescriptionService) Delete(id string) error {
 	return s.repo.Delete(id)
 }
+
+// ---------------- GetMedicationRemindersByPatientID ----------------
+func (s *PrescriptionService) GetMedicationRemindersByPatientID(patientID string) ([]medicalrecord.MedicationReminderWithItem, error) {
+	if patientID == "" {
+		return nil, errors.New("patient_id is required")
+	}
+	return s.medicationReminderRepo.FindByPatientIDWithItem(patientID)
+}

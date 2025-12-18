@@ -179,6 +179,12 @@ func SetupRouter(cfg *config.Config, patientHandler *patienthandler.PatientHandl
 		prescription.DELETE("/:prescription_id", prescriptionHandler.DeletePrescription)
 	}
 
+	// ===== Medication Reminder routes =====
+	medicationReminder := r.Group("/medication-reminders")
+	{
+		medicationReminder.GET("/patient/:patient_id", prescriptionHandler.GetMedicationRemindersByPatientID)
+	}
+
 	// ===== Attachment routes =====
 	attachment := r.Group("/attachments")
 	{
