@@ -237,3 +237,30 @@ func (h *PrescriptionHandler) DeletePrescription(c *gin.Context) {
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Prescription deleted successfully", nil))
 }
+
+// -------------------- Get Medication Reminders By Patient ID --------------------
+// @Summary Get medication reminders by patient ID for today
+// @Description Retrieve all medication reminders for a given patient ID on today with prescription item details
+// @Tags Prescriptions
+// @Produce json
+// @Param patient_id path string true "Patient ID"
+// @Success 200 {array} medicalrecord.MedicationReminderWithItem
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /medication-reminders/patient/{patient_id} [get]
+func (h *PrescriptionHandler) GetMedicationRemindersByPatientID(c *gin.Context) {
+	patientID := c.Param("patient_id")
+
+	if patientID == "" {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "patient_id is required"))
+		return
+	}
+
+	reminders, err := h.service.GetMedicationRemindersByPatientID(patientID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(http.StatusOK, "Medication reminders retrieved successfully", reminders))
+}
