@@ -40,11 +40,10 @@ func (r *OrderRepo) FindByPatientID(patientID string) ([]order.Order, error) {
 	err := r.db.
 		Joins("JOIN order_items ON order_items.order_id = orders.order_id").
 		Where("orders.patient_id = ?", patientID).
-		Where("orders.appointment_id IS NULL OR orders.appointment_id = '' OR orders.appointment_id = 'EMPTY'").
-		Where("order_items.drug_id IS NOT NULL AND order_items.drug_id != ''").
 		Distinct().
-		Preload("OrderItems", "drug_id IS NOT NULL AND drug_id != ''").
+		Preload("OrderItems").
 		Preload("OrderItems.Drug").
+		Preload("OrderItems.Service").
 		Preload("Patient").
 		Find(&orders).Error
 	
